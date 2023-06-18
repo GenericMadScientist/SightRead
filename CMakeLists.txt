@@ -10,7 +10,7 @@ project(
 
 add_library(sightread INTERFACE)
 
-target_include_directories(sightread PUBLIC include)
+target_include_directories(sightread INTERFACE include)
 
 set_target_properties(
     sightread
