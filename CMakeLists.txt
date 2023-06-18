@@ -8,7 +8,7 @@ project(
     DESCRIPTION "A library to read .mid and .chart files for GH/RB-style games"
     LANGUAGES CXX)
 
-add_library(sightread)
+add_library(sightread INTERFACE)
 
 target_include_directories(sightread PUBLIC include)
 
