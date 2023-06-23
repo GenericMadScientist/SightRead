@@ -36,6 +36,7 @@ if(SIGHTREAD_BUILD_TESTS)
     target_include_directories(sightread_tests PRIVATE "${PROJECT_SOURCE_DIR}/include")
     target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
     target_link_libraries(sightread_tests PRIVATE Boost::unit_test_framework)
+    add_test(NAME sightread_tests COMMAND sightread_tests)
     set_cpp_standard(sightread_tests)
     target_compile_options(
         sightread_tests
