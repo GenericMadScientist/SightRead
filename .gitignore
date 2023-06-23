@@ -1,2 +1,5 @@
 .vs/
 out/
+vcpkg_installed/
+CMakePresets.json
+vcpkg.json
