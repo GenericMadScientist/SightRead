@@ -17,7 +17,9 @@ function(set_cpp_standard target)
         CXX_EXTENSIONS OFF)
 endfunction()
 
-add_library(sightread src/sightread/tempomap.cpp)
+add_library(sightread
+    src/sightread/songparts.cpp
+    src/sightread/tempomap.cpp)
 
 target_include_directories(sightread PUBLIC include)
 set_cpp_standard(sightread)
@@ -33,6 +35,7 @@ if(SIGHTREAD_BUILD_TESTS)
         tests/sightread/test_main.cpp
         tests/sightread/tempomap_unittest.cpp
         tests/sightread/time_unittest.cpp
+        src/sightread/songparts.cpp
         src/sightread/tempomap.cpp)
 
     target_include_directories(sightread_tests PRIVATE "${PROJECT_SOURCE_DIR}/include")
