@@ -31,6 +31,7 @@ if(SIGHTREAD_BUILD_TESTS)
     add_executable(
         sightread_tests
         tests/sightread/test_main.cpp
+        tests/sightread/tempomap_unittest.cpp
         tests/sightread/time_unittest.cpp
         src/sightread/tempomap.cpp)
 
