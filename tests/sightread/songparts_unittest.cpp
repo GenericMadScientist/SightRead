@@ -10,7 +10,7 @@ SightRead::Note make_note(int position, int length = 0,
     SightRead::Note note;
     note.position = SightRead::Tick {position};
     note.flags = SightRead::FLAGS_FIVE_FRET_GUITAR;
-    note.lengths[colour] = SightRead::Tick {length};
+    note.lengths.at(colour) = SightRead::Tick {length};
 
     return note;
 }
@@ -22,8 +22,8 @@ SightRead::Note make_chord(
     SightRead::Note note;
     note.position = SightRead::Tick {position};
     note.flags = SightRead::FLAGS_FIVE_FRET_GUITAR;
-    for (auto& [lane, length] : lengths) {
-        note.lengths[lane] = SightRead::Tick {length};
+    for (const auto& [lane, length] : lengths) {
+        note.lengths.at(lane) = SightRead::Tick {length};
     }
 
     return note;
@@ -37,7 +37,7 @@ make_drum_note(int position, SightRead::DrumNotes colour = SightRead::DRUM_RED,
     note.position = SightRead::Tick {position};
     note.flags
         = static_cast<SightRead::NoteFlags>(flags | SightRead::FLAGS_DRUMS);
-    note.lengths[colour] = SightRead::Tick {0};
+    note.lengths.at(colour) = SightRead::Tick {0};
 
     return note;
 }
@@ -74,8 +74,8 @@ std::ostream& operator<<(std::ostream& stream, const Note& note)
 {
     stream << "{Pos " << note.position << ", ";
     for (auto i = 0; i < 7; ++i) {
-        if (note.lengths[i] != SightRead::Tick {-1}) {
-            stream << "Colour " << i << " with Length " << note.lengths[i]
+        if (note.lengths.at(i) != SightRead::Tick {-1}) {
+            stream << "Colour " << i << " with Length " << note.lengths.at(i)
                    << ", ";
         }
     }
