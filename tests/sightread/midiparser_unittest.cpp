@@ -1,7 +1,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include "sightread/midiparser.hpp"
-
 #include "test_helpers.hpp"
 
 namespace {
@@ -9,32 +8,6 @@ SightRead::Detail::MetaEvent part_event(std::string_view name)
 {
     std::vector<std::uint8_t> bytes {name.cbegin(), name.cend()};
     return SightRead::Detail::MetaEvent {3, bytes};
-}
-
-SightRead::Note make_ghl_note(int position, int length = 0,
-                              SightRead::SixFretNotes colour
-                              = SightRead::SIX_FRET_WHITE_LOW)
-{
-    SightRead::Note note;
-    note.position = SightRead::Tick {position};
-    note.flags = SightRead::FLAGS_SIX_FRET_GUITAR;
-    note.lengths.at(colour) = SightRead::Tick {length};
-
-    return note;
-}
-}
-
-namespace SightRead {
-bool operator!=(const DiscoFlip& lhs, const DiscoFlip& rhs)
-{
-    return std::tie(lhs.position, lhs.length)
-        != std::tie(rhs.position, rhs.length);
-}
-
-std::ostream& operator<<(std::ostream& stream, const DiscoFlip& flip)
-{
-    stream << "{Pos " << flip.position << ", Length " << flip.length << '}';
-    return stream;
 }
 }
 

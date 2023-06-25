@@ -18,6 +18,18 @@ inline SightRead::Note make_note(int position, int length = 0,
     return note;
 }
 
+inline SightRead::Note make_ghl_note(int position, int length = 0,
+                                     SightRead::SixFretNotes colour
+                                     = SightRead::SIX_FRET_WHITE_LOW)
+{
+    SightRead::Note note;
+    note.position = SightRead::Tick {position};
+    note.flags = SightRead::FLAGS_SIX_FRET_GUITAR;
+    note.lengths.at(colour) = SightRead::Tick {length};
+
+    return note;
+}
+
 inline SightRead::Note
 make_drum_note(int position, SightRead::DrumNotes colour = SightRead::DRUM_RED,
                SightRead::NoteFlags flags = SightRead::FLAGS_NONE)
@@ -41,6 +53,30 @@ inline std::ostream& operator<<(std::ostream& stream, const BPM& bpm)
 {
     stream << "{Pos " << bpm.position << ", BPM " << bpm.bpm << '}';
     return stream;
+}
+
+inline bool operator==(const DiscoFlip& lhs, const DiscoFlip& rhs)
+{
+    return std::tie(lhs.position, lhs.length)
+        == std::tie(rhs.position, rhs.length);
+}
+
+inline bool operator!=(const DiscoFlip& lhs, const DiscoFlip& rhs)
+{
+    return std::tie(lhs.position, lhs.length)
+        != std::tie(rhs.position, rhs.length);
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const DiscoFlip& flip)
+{
+    stream << "{Pos " << flip.position << ", Length " << flip.length << '}';
+    return stream;
+}
+
+inline bool operator==(const DrumFill& lhs, const DrumFill& rhs)
+{
+    return std::tie(lhs.position, lhs.length)
+        == std::tie(rhs.position, rhs.length);
 }
 
 inline bool operator!=(const DrumFill& lhs, const DrumFill& rhs)

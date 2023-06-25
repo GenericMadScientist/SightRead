@@ -18,6 +18,7 @@ function(set_cpp_standard target)
 endfunction()
 
 add_library(sightread
+    src/sightread/chartparser.cpp
     src/sightread/midiparser.cpp
     src/sightread/song.cpp
     src/sightread/songparts.cpp
@@ -38,6 +39,7 @@ if(SIGHTREAD_BUILD_TESTS)
     add_executable(
         sightread_tests
         tests/sightread/test_main.cpp
+        tests/sightread/chartparser_unittest.cpp
         tests/sightread/midiparser_unittest.cpp
         tests/sightread/song_unittest.cpp
         tests/sightread/songparts_unittest.cpp
@@ -45,6 +47,7 @@ if(SIGHTREAD_BUILD_TESTS)
         tests/sightread/time_unittest.cpp
         tests/sightread/detail/chart_unittest.cpp
         tests/sightread/detail/midi_unittest.cpp
+        src/sightread/chartparser.cpp
         src/sightread/midiparser.cpp
         src/sightread/song.cpp
         src/sightread/songparts.cpp
