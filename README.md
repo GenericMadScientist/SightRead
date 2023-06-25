@@ -52,7 +52,7 @@ following:
 
 ```cmake
 add_subdirectory("extern/sightread")
-target_link_libraries(<YOUR-TARGET> PRIVATE sightead)
+target_link_libraries(<YOUR-TARGET> PRIVATE sightread)
 ```
 
 You should use a tagged version, for now `main` is a development branch and
