@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <set>
 #include <stdexcept>
-#include <string>
 #include <utility>
 
 #include "sightread/detail/parserutil.hpp"
