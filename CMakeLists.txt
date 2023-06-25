@@ -21,6 +21,7 @@ add_library(sightread
     src/sightread/song.cpp
     src/sightread/songparts.cpp
     src/sightread/tempomap.cpp
+    src/sightread/detail/midi.cpp
     src/sightread/detail/parserutil.cpp)
 
 target_include_directories(sightread PUBLIC include src)
@@ -39,9 +40,11 @@ if(SIGHTREAD_BUILD_TESTS)
         tests/sightread/songparts_unittest.cpp
         tests/sightread/tempomap_unittest.cpp
         tests/sightread/time_unittest.cpp
+        tests/sightread/detail/midi_unittest.cpp
         src/sightread/song.cpp
         src/sightread/songparts.cpp
         src/sightread/tempomap.cpp
+        src/sightread/detail/midi.cpp
         src/sightread/detail/parserutil.cpp)
 
     target_include_directories(sightread_tests PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
