@@ -44,9 +44,9 @@ make_drum_note(int position, SightRead::DrumNotes colour = SightRead::DRUM_RED,
 }
 
 namespace SightRead {
-inline bool operator!=(const BPM& lhs, const BPM& rhs)
+inline bool operator==(const BPM& lhs, const BPM& rhs)
 {
-    return std::tie(lhs.position, lhs.bpm) != std::tie(rhs.position, rhs.bpm);
+    return std::tie(lhs.position, lhs.bpm) == std::tie(rhs.position, rhs.bpm);
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const BPM& bpm)
@@ -61,12 +61,6 @@ inline bool operator==(const DiscoFlip& lhs, const DiscoFlip& rhs)
         == std::tie(rhs.position, rhs.length);
 }
 
-inline bool operator!=(const DiscoFlip& lhs, const DiscoFlip& rhs)
-{
-    return std::tie(lhs.position, lhs.length)
-        != std::tie(rhs.position, rhs.length);
-}
-
 inline std::ostream& operator<<(std::ostream& stream, const DiscoFlip& flip)
 {
     stream << "{Pos " << flip.position << ", Length " << flip.length << '}';
@@ -77,12 +71,6 @@ inline bool operator==(const DrumFill& lhs, const DrumFill& rhs)
 {
     return std::tie(lhs.position, lhs.length)
         == std::tie(rhs.position, rhs.length);
-}
-
-inline bool operator!=(const DrumFill& lhs, const DrumFill& rhs)
-{
-    return std::tie(lhs.position, lhs.length)
-        != std::tie(rhs.position, rhs.length);
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const DrumFill& fill)
@@ -97,10 +85,10 @@ inline std::ostream& operator<<(std::ostream& stream, Instrument instrument)
     return stream;
 }
 
-inline bool operator!=(const Note& lhs, const Note& rhs)
+inline bool operator==(const Note& lhs, const Note& rhs)
 {
     return std::tie(lhs.position, lhs.lengths, lhs.flags)
-        != std::tie(rhs.position, rhs.lengths, rhs.flags);
+        == std::tie(rhs.position, rhs.lengths, rhs.flags);
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const Note& note)
@@ -116,10 +104,10 @@ inline std::ostream& operator<<(std::ostream& stream, const Note& note)
     return stream;
 }
 
-inline bool operator!=(const Solo& lhs, const Solo& rhs)
+inline bool operator==(const Solo& lhs, const Solo& rhs)
 {
     return std::tie(lhs.start, lhs.end, lhs.value)
-        != std::tie(rhs.start, rhs.end, rhs.value);
+        == std::tie(rhs.start, rhs.end, rhs.value);
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const Solo& solo)
@@ -129,10 +117,10 @@ inline std::ostream& operator<<(std::ostream& stream, const Solo& solo)
     return stream;
 }
 
-inline bool operator!=(const StarPower& lhs, const StarPower& rhs)
+inline bool operator==(const StarPower& lhs, const StarPower& rhs)
 {
     return std::tie(lhs.position, lhs.length)
-        != std::tie(rhs.position, rhs.length);
+        == std::tie(rhs.position, rhs.length);
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const StarPower& sp)
@@ -141,10 +129,10 @@ inline std::ostream& operator<<(std::ostream& stream, const StarPower& sp)
     return stream;
 }
 
-inline bool operator!=(const TimeSignature& lhs, const TimeSignature& rhs)
+inline bool operator==(const TimeSignature& lhs, const TimeSignature& rhs)
 {
     return std::tie(lhs.position, lhs.numerator, lhs.denominator)
-        != std::tie(rhs.position, rhs.numerator, rhs.denominator);
+        == std::tie(rhs.position, rhs.numerator, rhs.denominator);
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const TimeSignature& ts)

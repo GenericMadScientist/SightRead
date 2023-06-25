@@ -3,7 +3,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include "sightread/tempomap.hpp"
-
 #include "test_helpers.hpp"
 
 BOOST_AUTO_TEST_SUITE(sync_track_ctor_maintains_invariants)

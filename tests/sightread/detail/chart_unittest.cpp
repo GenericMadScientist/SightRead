@@ -6,9 +6,9 @@
 #include "sightread/tempomap.hpp"
 
 namespace SightRead::Detail {
-bool operator!=(const BpmEvent& lhs, const BpmEvent& rhs)
+bool operator==(const BpmEvent& lhs, const BpmEvent& rhs)
 {
-    return std::tie(lhs.position, lhs.bpm) != std::tie(rhs.position, rhs.bpm);
+    return std::tie(lhs.position, lhs.bpm) == std::tie(rhs.position, rhs.bpm);
 }
 
 std::ostream& operator<<(std::ostream& stream, const BpmEvent& event)
@@ -17,9 +17,9 @@ std::ostream& operator<<(std::ostream& stream, const BpmEvent& event)
     return stream;
 }
 
-bool operator!=(const Event& lhs, const Event& rhs)
+bool operator==(const Event& lhs, const Event& rhs)
 {
-    return std::tie(lhs.position, lhs.data) != std::tie(rhs.position, rhs.data);
+    return std::tie(lhs.position, lhs.data) == std::tie(rhs.position, rhs.data);
 }
 
 std::ostream& operator<<(std::ostream& stream, const Event& event)
@@ -28,10 +28,10 @@ std::ostream& operator<<(std::ostream& stream, const Event& event)
     return stream;
 }
 
-bool operator!=(const NoteEvent& lhs, const NoteEvent& rhs)
+bool operator==(const NoteEvent& lhs, const NoteEvent& rhs)
 {
     return std::tie(lhs.position, lhs.fret, lhs.length)
-        != std::tie(rhs.position, rhs.fret, rhs.length);
+        == std::tie(rhs.position, rhs.fret, rhs.length);
 }
 
 std::ostream& operator<<(std::ostream& stream, const NoteEvent& event)
@@ -41,10 +41,10 @@ std::ostream& operator<<(std::ostream& stream, const NoteEvent& event)
     return stream;
 }
 
-bool operator!=(const SpecialEvent& lhs, const SpecialEvent& rhs)
+bool operator==(const SpecialEvent& lhs, const SpecialEvent& rhs)
 {
     return std::tie(lhs.position, lhs.key, lhs.length)
-        != std::tie(rhs.position, rhs.key, rhs.length);
+        == std::tie(rhs.position, rhs.key, rhs.length);
 }
 
 std::ostream& operator<<(std::ostream& stream, const SpecialEvent& event)
@@ -54,10 +54,10 @@ std::ostream& operator<<(std::ostream& stream, const SpecialEvent& event)
     return stream;
 }
 
-bool operator!=(const TimeSigEvent& lhs, const TimeSigEvent& rhs)
+bool operator==(const TimeSigEvent& lhs, const TimeSigEvent& rhs)
 {
     return std::tie(lhs.position, lhs.numerator, lhs.denominator)
-        != std::tie(rhs.position, rhs.numerator, rhs.denominator);
+        == std::tie(rhs.position, rhs.numerator, rhs.denominator);
 }
 
 std::ostream& operator<<(std::ostream& stream, const TimeSigEvent& ts)
