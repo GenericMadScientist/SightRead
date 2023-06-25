@@ -21,6 +21,7 @@ add_library(sightread
     src/sightread/song.cpp
     src/sightread/songparts.cpp
     src/sightread/tempomap.cpp
+    src/sightread/detail/chart.cpp
     src/sightread/detail/midi.cpp
     src/sightread/detail/parserutil.cpp)
 
@@ -40,10 +41,12 @@ if(SIGHTREAD_BUILD_TESTS)
         tests/sightread/songparts_unittest.cpp
         tests/sightread/tempomap_unittest.cpp
         tests/sightread/time_unittest.cpp
+        tests/sightread/detail/chart_unittest.cpp
         tests/sightread/detail/midi_unittest.cpp
         src/sightread/song.cpp
         src/sightread/songparts.cpp
         src/sightread/tempomap.cpp
+        src/sightread/detail/chart.cpp
         src/sightread/detail/midi.cpp
         src/sightread/detail/parserutil.cpp)
 
