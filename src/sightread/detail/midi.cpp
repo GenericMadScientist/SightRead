@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <utility>
 
-#include <sightread/songparts.hpp>
+#include "sightread/songparts.hpp"
 
 #include "midi.hpp"
 
