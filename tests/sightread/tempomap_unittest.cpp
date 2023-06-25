@@ -4,33 +4,7 @@
 
 #include "sightread/tempomap.hpp"
 
-namespace SightRead {
-bool operator!=(const SightRead::BPM& lhs, const SightRead::BPM& rhs)
-{
-    return std::tie(lhs.position, lhs.bpm) != std::tie(rhs.position, rhs.bpm);
-}
-
-std::ostream& operator<<(std::ostream& stream, const SightRead::BPM& bpm)
-{
-    stream << "{Pos " << bpm.position << ", BPM " << bpm.bpm << '}';
-    return stream;
-}
-
-bool operator!=(const SightRead::TimeSignature& lhs,
-                const SightRead::TimeSignature& rhs)
-{
-    return std::tie(lhs.position, lhs.numerator, lhs.denominator)
-        != std::tie(rhs.position, rhs.numerator, rhs.denominator);
-}
-
-std::ostream& operator<<(std::ostream& stream,
-                         const SightRead::TimeSignature& ts)
-{
-    stream << "{Pos " << ts.position << ", " << ts.numerator << '/'
-           << ts.denominator << '}';
-    return stream;
-}
-}
+#include "test_helpers.hpp"
 
 BOOST_AUTO_TEST_SUITE(sync_track_ctor_maintains_invariants)
 

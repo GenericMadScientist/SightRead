@@ -9,12 +9,6 @@ std::ostream& operator<<(std::ostream& stream, Difficulty difficulty)
     stream << static_cast<int>(difficulty);
     return stream;
 }
-
-std::ostream& operator<<(std::ostream& stream, Instrument instrument)
-{
-    stream << static_cast<int>(instrument);
-    return stream;
-}
 }
 
 BOOST_AUTO_TEST_CASE(instruments_returns_the_supported_instruments)
