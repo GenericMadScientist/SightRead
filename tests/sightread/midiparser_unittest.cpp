@@ -18,7 +18,7 @@ SightRead::Note make_ghl_note(int position, int length = 0,
     SightRead::Note note;
     note.position = SightRead::Tick {position};
     note.flags = SightRead::FLAGS_SIX_FRET_GUITAR;
-    note.lengths[colour] = SightRead::Tick {length};
+    note.lengths.at(colour) = SightRead::Tick {length};
 
     return note;
 }
