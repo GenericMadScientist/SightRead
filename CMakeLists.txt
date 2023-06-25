@@ -18,6 +18,7 @@ function(set_cpp_standard target)
 endfunction()
 
 add_library(sightread
+    src/sightread/song.cpp
     src/sightread/songparts.cpp
     src/sightread/tempomap.cpp
     src/sightread/detail/parserutil.cpp)
@@ -37,11 +38,12 @@ if(SIGHTREAD_BUILD_TESTS)
         tests/sightread/songparts_unittest.cpp
         tests/sightread/tempomap_unittest.cpp
         tests/sightread/time_unittest.cpp
+        src/sightread/song.cpp
         src/sightread/songparts.cpp
         src/sightread/tempomap.cpp
         src/sightread/detail/parserutil.cpp)
 
-    target_include_directories(sightread_tests PRIVATE "${PROJECT_SOURCE_DIR}/include")
+    target_include_directories(sightread_tests PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
     target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
     target_link_libraries(sightread_tests PRIVATE Boost::unit_test_framework)
     add_test(NAME sightread_tests COMMAND sightread_tests)
