@@ -1,6 +1,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "sightread/chartparser.hpp"
+#include "sightread/detail/chart.hpp"
 #include "test_helpers.hpp"
 
 namespace {
