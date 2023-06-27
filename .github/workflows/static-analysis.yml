@@ -28,7 +28,7 @@ jobs:
       - name: Application files
         run: clang-tidy-16 src/sightread/*.cpp src/sightread/detail/*.cpp -- -Iinclude -Isrc -std=c++20
       - name: Test files
-        run: clang-tidy-16 tests/sightread/*_unittest.cpp tests/sightread/detail/*_unittest.cpp -checks=-cppcoreguidelines-avoid-do-while,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-macro-usage,-clang-analyzer-*,-readability-function-cognitive-complexity,-readability-magic-numbers -- -Iinclude -Isrc -I$HOME/boost_1_81_0 -std=c++20
+        run: clang-tidy-16 tests/sightread/*_unittest.cpp tests/sightread/detail/*_unittest.cpp -checks=-cppcoreguidelines-avoid-do-while,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-macro-usage,-clang-analyzer-*,-readability-function-cognitive-complexity,-readability-magic-numbers -- -Iinclude -Isrc -Itests/sightread -I$HOME/boost_1_81_0 -std=c++20
 
   clang-format-ubuntu:
     runs-on: ubuntu-latest
