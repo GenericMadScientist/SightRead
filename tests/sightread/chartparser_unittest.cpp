@@ -2,7 +2,7 @@
 
 #include "sightread/chartparser.hpp"
 #include "sightread/detail/chart.hpp"
-#include "test_helpers.hpp"
+#include "testhelpers.hpp"
 
 namespace {
 std::string section_string(

@@ -4,8 +4,8 @@
 #include <tuple>
 #include <vector>
 
-#include <sightread/songparts.hpp>
-#include <sightread/time.hpp>
+#include "sightread/songparts.hpp"
+#include "sightread/time.hpp"
 
 namespace SightRead::Detail {
 bool is_six_fret_instrument(SightRead::Instrument instrument);

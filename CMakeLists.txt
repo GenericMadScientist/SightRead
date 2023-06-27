@@ -29,7 +29,7 @@ add_library(sightread
     src/sightread/detail/midiconverter.cpp
     src/sightread/detail/parserutil.cpp)
 
-target_include_directories(sightread PUBLIC include src)
+target_include_directories(sightread PUBLIC include PRIVATE src)
 set_cpp_standard(sightread)
 
 option(SIGHTREAD_BUILD_TESTS "Build SightRead tests" OFF)
@@ -59,7 +59,7 @@ if(SIGHTREAD_BUILD_TESTS)
         src/sightread/detail/midiconverter.cpp
         src/sightread/detail/parserutil.cpp)
 
-    target_include_directories(sightread_tests PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+    target_include_directories(sightread_tests PRIVATE include src tests/sightread)
     target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
     target_link_libraries(sightread_tests PRIVATE Boost::unit_test_framework)
     add_test(NAME sightread_tests COMMAND sightread_tests)

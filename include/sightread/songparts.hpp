@@ -10,9 +10,9 @@
 #include <utility>
 #include <vector>
 
-#include <sightread/drumsettings.hpp>
-#include <sightread/tempomap.hpp>
-#include <sightread/time.hpp>
+#include "sightread/drumsettings.hpp"
+#include "sightread/tempomap.hpp"
+#include "sightread/time.hpp"
 
 namespace SightRead {
 enum class Difficulty { Easy = 0, Medium = 1, Hard = 2, Expert = 3 };

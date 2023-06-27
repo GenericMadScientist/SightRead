@@ -1,7 +1,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "sightread/song.hpp"
-#include "test_helpers.hpp"
+#include "testhelpers.hpp"
 
 namespace SightRead {
 std::ostream& operator<<(std::ostream& stream, Difficulty difficulty)

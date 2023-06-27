@@ -1,7 +1,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "sightread/songparts.hpp"
-#include "test_helpers.hpp"
+#include "testhelpers.hpp"
 
 namespace {
 SightRead::Note make_chord(

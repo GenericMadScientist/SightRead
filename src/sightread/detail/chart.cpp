@@ -1,9 +1,8 @@
 #include <charconv>
 #include <optional>
 
+#include "sightread/detail/chart.hpp"
 #include "sightread/songparts.hpp"
-
-#include "chart.hpp"
 
 namespace {
 std::string_view skip_whitespace(std::string_view input)

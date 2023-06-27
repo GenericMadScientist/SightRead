@@ -5,9 +5,8 @@
 #include <utility>
 #include <vector>
 
+#include "sightread/detail/midiconverter.hpp"
 #include "sightread/detail/parserutil.hpp"
-
-#include "midiconverter.hpp"
 
 namespace {
 SightRead::TempoMap

@@ -1,7 +1,7 @@
 #include <boost/test/unit_test.hpp>
 
-#include "../test_helpers.hpp"
 #include "sightread/detail/midiconverter.hpp"
+#include "testhelpers.hpp"
 
 namespace {
 SightRead::Detail::MetaEvent part_event(std::string_view name)

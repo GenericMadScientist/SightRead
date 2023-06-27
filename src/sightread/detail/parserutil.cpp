@@ -2,7 +2,7 @@
 #include <array>
 #include <set>
 
-#include "parserutil.hpp"
+#include "sightread/detail/parserutil.hpp"
 
 bool SightRead::Detail::is_six_fret_instrument(SightRead::Instrument instrument)
 {
