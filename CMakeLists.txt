@@ -17,17 +17,38 @@ function(set_cpp_standard target)
         CXX_EXTENSIONS OFF)
 endfunction()
 
-add_library(sightread
-    src/sightread/chartparser.cpp
-    src/sightread/midiparser.cpp
-    src/sightread/song.cpp
-    src/sightread/songparts.cpp
-    src/sightread/tempomap.cpp
-    src/sightread/detail/chart.cpp
-    src/sightread/detail/chartconverter.cpp
-    src/sightread/detail/midi.cpp
-    src/sightread/detail/midiconverter.cpp
-    src/sightread/detail/parserutil.cpp)
+if (DEFINED EMSCRIPTEN)
+	add_executable(sightread
+		src/sightread/chartparser.cpp
+		src/sightread/midiparser.cpp
+		src/sightread/song.cpp
+		src/sightread/bindings.cpp
+		src/sightread/songparts.cpp
+		src/sightread/tempomap.cpp
+		src/sightread/detail/chart.cpp
+		src/sightread/detail/chartconverter.cpp
+		src/sightread/detail/midi.cpp
+		src/sightread/detail/midiconverter.cpp
+		src/sightread/detail/parserutil.cpp)
+
+	# set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
+
+	set_target_properties(sightread PROPERTIES COMPILE_FLAGS "-lembind -Os -s MAIN_MODULE ")
+	set_target_properties(sightread PROPERTIES LINK_FLAGS    "-lembind -Os -s WASM=1 -s MAIN_MODULE --no-entry")
+else()
+	add_library(sightread
+		src/sightread/chartparser.cpp
+		src/sightread/midiparser.cpp
+		src/sightread/song.cpp
+		src/sightread/test.cpp
+		src/sightread/songparts.cpp
+		src/sightread/tempomap.cpp
+		src/sightread/detail/chart.cpp
+		src/sightread/detail/chartconverter.cpp
+		src/sightread/detail/midi.cpp
+		src/sightread/detail/midiconverter.cpp
+		src/sightread/detail/parserutil.cpp)
+endif()
 
 target_include_directories(sightread PUBLIC include PRIVATE src)
 set_cpp_standard(sightread)

@@ -3,3 +3,11 @@ out/
 vcpkg_installed/
 CMakePresets.json
 vcpkg.json
+.DS_Store
+.ccls-cache/
+compile_commands.json
+
+wasm-test/*
+!wasm-test/build.sh
+!wasm-test/run-server.sh
+!wasm-test/index.html
