@@ -153,8 +153,7 @@ BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_space_are_read)
     const SightRead::Detail::Midi midi {192, {events_track}};
 
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
-    const auto global_data = song.global_data();
-    const auto& practice_sections = global_data.practice_sections();
+    const auto& practice_sections = song.global_data().practice_sections();
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         practice_sections.cbegin(), practice_sections.cend(),
@@ -170,8 +169,7 @@ BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_underscore_are_read)
     const SightRead::Detail::Midi midi {192, {events_track}};
 
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
-    const auto global_data = song.global_data();
-    const auto& practice_sections = global_data.practice_sections();
+    const auto& practice_sections = song.global_data().practice_sections();
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         practice_sections.cbegin(), practice_sections.cend(),
@@ -187,8 +185,7 @@ BOOST_AUTO_TEST_CASE(sections_prefixed_with_prc_underscore_are_read)
     const SightRead::Detail::Midi midi {192, {events_track}};
 
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
-    const auto global_data = song.global_data();
-    const auto& practice_sections = global_data.practice_sections();
+    const auto& practice_sections = song.global_data().practice_sections();
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         practice_sections.cbegin(), practice_sections.cend(),
@@ -202,8 +199,7 @@ BOOST_AUTO_TEST_CASE(sections_with_other_prefixes_are_ignored)
     const SightRead::Detail::Midi midi {192, {events_track}};
 
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
-    const auto global_data = song.global_data();
-    const auto& practice_sections = global_data.practice_sections();
+    const auto& practice_sections = song.global_data().practice_sections();
 
     BOOST_TEST(practice_sections.empty());
 }
@@ -215,8 +211,7 @@ BOOST_AUTO_TEST_CASE(non_text_events_are_ignored)
     const SightRead::Detail::Midi midi {192, {events_track}};
 
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
-    const auto global_data = song.global_data();
-    const auto& practice_sections = global_data.practice_sections();
+    const auto& practice_sections = song.global_data().practice_sections();
 
     BOOST_TEST(practice_sections.empty());
 }
