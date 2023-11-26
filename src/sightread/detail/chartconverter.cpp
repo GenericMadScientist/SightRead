@@ -45,8 +45,8 @@ practice_sections_from_section(const SightRead::Detail::ChartSection& section)
 {
     using namespace std::string_view_literals;
 
-    constexpr std::array practice_section_prefixes {"\"section "sv,
-                                                    "\"section_"sv, "\"prc_"sv};
+    constexpr std::array practice_section_prefixes {
+        R"("section )"sv, R"("section_)"sv, R"("prc_)"sv};
     std::vector<SightRead::PracticeSection> practice_sections;
     for (const auto& event : section.events) {
         std::string_view section_name = event.data;
