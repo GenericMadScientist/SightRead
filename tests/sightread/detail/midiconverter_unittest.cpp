@@ -9,6 +9,12 @@ SightRead::Detail::MetaEvent part_event(std::string_view name)
     std::vector<std::uint8_t> bytes {name.cbegin(), name.cend()};
     return SightRead::Detail::MetaEvent {3, bytes};
 }
+
+SightRead::Detail::MetaEvent text_event(std::string_view text)
+{
+    std::vector<std::uint8_t> bytes {text.cbegin(), text.cend()};
+    return SightRead::Detail::MetaEvent {1, bytes};
+}
 }
 
 BOOST_AUTO_TEST_CASE(midi_to_song_has_correct_value_for_is_from_midi)
@@ -135,6 +141,87 @@ BOOST_AUTO_TEST_CASE(ini_values_are_used_when_converting_mid_files)
     BOOST_CHECK_EQUAL(song.global_data().artist(), "GMS");
     BOOST_CHECK_EQUAL(song.global_data().charter(), "NotGMS");
 }
+
+BOOST_AUTO_TEST_SUITE(practice_mode_sections_are_read_from_mid_files)
+
+BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_space_are_read)
+{
+    const std::vector<SightRead::PracticeSection> expected_sections {
+        {"Start", SightRead::Tick {768}}};
+    SightRead::Detail::MidiTrack events_track {
+        {{0, {part_event("EVENTS")}}, {768, {text_event("[section Start]")}}}};
+    const SightRead::Detail::Midi midi {192, {events_track}};
+
+    const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
+    const auto global_data = song.global_data();
+    const auto& practice_sections = global_data.practice_sections();
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        practice_sections.cbegin(), practice_sections.cend(),
+        expected_sections.cbegin(), expected_sections.cend());
+}
+
+BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_underscore_are_read)
+{
+    const std::vector<SightRead::PracticeSection> expected_sections {
+        {"Start", SightRead::Tick {768}}};
+    SightRead::Detail::MidiTrack events_track {
+        {{0, {part_event("EVENTS")}}, {768, {text_event("[section_Start]")}}}};
+    const SightRead::Detail::Midi midi {192, {events_track}};
+
+    const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
+    const auto global_data = song.global_data();
+    const auto& practice_sections = global_data.practice_sections();
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        practice_sections.cbegin(), practice_sections.cend(),
+        expected_sections.cbegin(), expected_sections.cend());
+}
+
+BOOST_AUTO_TEST_CASE(sections_prefixed_with_prc_underscore_are_read)
+{
+    const std::vector<SightRead::PracticeSection> expected_sections {
+        {"Start", SightRead::Tick {768}}};
+    SightRead::Detail::MidiTrack events_track {
+        {{0, {part_event("EVENTS")}}, {768, {text_event("[prc_Start]")}}}};
+    const SightRead::Detail::Midi midi {192, {events_track}};
+
+    const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
+    const auto global_data = song.global_data();
+    const auto& practice_sections = global_data.practice_sections();
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        practice_sections.cbegin(), practice_sections.cend(),
+        expected_sections.cbegin(), expected_sections.cend());
+}
+
+BOOST_AUTO_TEST_CASE(sections_with_other_prefixes_are_ignored)
+{
+    SightRead::Detail::MidiTrack events_track {
+        {{0, {part_event("EVENTS")}}, {768, {text_event("[ignored Start]")}}}};
+    const SightRead::Detail::Midi midi {192, {events_track}};
+
+    const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
+    const auto global_data = song.global_data();
+    const auto& practice_sections = global_data.practice_sections();
+
+    BOOST_TEST(practice_sections.empty());
+}
+
+BOOST_AUTO_TEST_CASE(non_text_events_are_ignored)
+{
+    SightRead::Detail::MidiTrack events_track {
+        {{0, {part_event("EVENTS")}}, {768, {part_event("[section Start]")}}}};
+    const SightRead::Detail::Midi midi {192, {events_track}};
+
+    const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
+    const auto global_data = song.global_data();
+    const auto& practice_sections = global_data.practice_sections();
+
+    BOOST_TEST(practice_sections.empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(notes_are_read_from_mids_correctly)
 

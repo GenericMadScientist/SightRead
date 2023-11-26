@@ -2,6 +2,7 @@
 #include <climits>
 #include <limits>
 #include <optional>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -101,6 +102,43 @@ od_beats_from_track(const SightRead::Detail::MidiTrack& track)
     }
 
     return od_beats;
+}
+
+std::vector<SightRead::PracticeSection>
+practice_sections_from_track(const SightRead::Detail::MidiTrack& track)
+{
+    using namespace std::string_view_literals;
+
+    constexpr std::array practice_section_prefixes {"[section "sv,
+                                                    "[section_"sv, "[prc_"sv};
+
+    std::vector<SightRead::PracticeSection> practice_sections;
+    for (const auto& event : track.events) {
+        const auto* meta_event
+            = std::get_if<SightRead::Detail::MetaEvent>(&event.event);
+        if (meta_event == nullptr || meta_event->type != 1) {
+            continue;
+        }
+        std::span<const std::uint8_t> section_name {meta_event->data.cbegin(),
+                                                    meta_event->data.cend()};
+        if (section_name.empty() || section_name.back() != ']') {
+            continue;
+        }
+        section_name = section_name.first(section_name.size() - 1);
+        for (auto prefix : practice_section_prefixes) {
+            if (section_name.size() < prefix.size()
+                || !std::equal(prefix.cbegin(), prefix.cend(),
+                               section_name.begin())) {
+                continue;
+            }
+            section_name = section_name.subspan(prefix.size());
+            practice_sections.push_back(
+                {std::string {section_name.begin(), section_name.end()},
+                 SightRead::Tick {event.time}});
+            break;
+        }
+    }
+    return practice_sections;
 }
 
 std::optional<SightRead::Instrument>
@@ -1094,6 +1132,10 @@ SightRead::Song SightRead::Detail::MidiConverter::convert(
         }
         if (*track_name == "BEAT") {
             song.global_data().od_beats(od_beats_from_track(track));
+        }
+        if (*track_name == "EVENTS") {
+            song.global_data().practice_sections(
+                practice_sections_from_track(track));
         }
         const auto inst = midi_section_instrument(*track_name);
         if (!inst.has_value() || !m_permitted_instruments.contains(*inst)) {
