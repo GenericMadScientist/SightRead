@@ -40,6 +40,29 @@ tempo_map_from_section(const SightRead::Detail::ChartSection& section,
     return {std::move(tses), std::move(bpms), {}, resolution};
 }
 
+std::vector<SightRead::PracticeSection>
+practice_sections_from_section(const SightRead::Detail::ChartSection& section)
+{
+    std::vector<SightRead::PracticeSection> practice_sections;
+    for (const auto& event : section.events) {
+        std::string_view section_name = event.data;
+        if (!section_name.ends_with('"')) {
+            continue;
+        }
+        if (section_name.starts_with("\"section ")
+            || section_name.starts_with("\"section_")) {
+            section_name = section_name.substr(9, section_name.size() - 10);
+        } else if (section_name.starts_with("\"prc_")) {
+            section_name = section_name.substr(5, section_name.size() - 6);
+        } else {
+            continue;
+        }
+        practice_sections.push_back(
+            {std::string {section_name}, SightRead::Tick {event.position}});
+    }
+    return practice_sections;
+}
+
 std::optional<std::tuple<SightRead::Difficulty, SightRead::Instrument>>
 diff_inst_from_header(const std::string& header)
 {
@@ -62,8 +85,8 @@ diff_inst_from_header(const std::string& header)
                      {"GHLRhythm"sv, SightRead::Instrument::GHLRhythm},
                      {"GHLCoop"sv, SightRead::Instrument::GHLGuitarCoop},
                      {"Drums"sv, SightRead::Instrument::Drums}};
-    // NOLINT is required because following clang-tidy here causes the VS2017
-    // compile to fail.
+    // NOLINT is required because following clang-tidy here causes the
+    // VS2017 compile to fail.
     auto diff_iter = std::find_if( // NOLINT
         DIFFICULTIES.cbegin(), DIFFICULTIES.cend(), [&](const auto& pair) {
             return header.starts_with(std::get<0>(pair));
@@ -510,6 +533,9 @@ SightRead::Song SightRead::Detail::ChartConverter::convert(
         } else if (section.name == "SyncTrack") {
             song.global_data().tempo_map(tempo_map_from_section(
                 section, song.global_data().resolution()));
+        } else if (section.name == "Events") {
+            song.global_data().practice_sections(
+                practice_sections_from_section(section));
         } else {
             auto pair = diff_inst_from_header(section.name);
             if (!pair.has_value()) {

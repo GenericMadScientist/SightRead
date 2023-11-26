@@ -104,6 +104,18 @@ inline std::ostream& operator<<(std::ostream& stream, const Note& note)
     return stream;
 }
 
+inline bool operator==(const PracticeSection& lhs, const PracticeSection& rhs)
+{
+    return std::tie(lhs.name, lhs.start) == std::tie(rhs.name, rhs.start);
+}
+
+inline std::ostream& operator<<(std::ostream& stream,
+                                const PracticeSection& section)
+{
+    stream << '"' << section.name << " at " << section.start;
+    return stream;
+}
+
 inline bool operator==(const Solo& lhs, const Solo& rhs)
 {
     return std::tie(lhs.start, lhs.end, lhs.value)

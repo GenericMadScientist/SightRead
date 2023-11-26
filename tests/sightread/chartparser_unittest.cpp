@@ -139,6 +139,82 @@ BOOST_AUTO_TEST_CASE(bad_values_are_ignored)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(practice_mode_sections_are_read)
+
+BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_space_are_read)
+{
+    using namespace std::string_literals;
+
+    const std::vector<SightRead::PracticeSection> expected_sections {
+        {"Start"s, SightRead::Tick {768}}};
+    const auto events = "[Events]\n{\n    768 = E \"section Start\"\n}"s;
+    const auto guitar_track = section_string("ExpertSingle", {{768, 0, 0}});
+    const auto chart_file = events + '\n' + guitar_track;
+
+    const auto global_data
+        = SightRead::ChartParser({}).parse(chart_file).global_data();
+    const auto& practice_sections = global_data.practice_sections();
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        practice_sections.cbegin(), practice_sections.cend(),
+        expected_sections.cbegin(), expected_sections.cend());
+}
+
+BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_underscore_are_read)
+{
+    using namespace std::string_literals;
+
+    const std::vector<SightRead::PracticeSection> expected_sections {
+        {"Start"s, SightRead::Tick {768}}};
+    const auto events = "[Events]\n{\n    768 = E \"section_Start\"\n}"s;
+    const auto guitar_track = section_string("ExpertSingle", {{768, 0, 0}});
+    const auto chart_file = events + '\n' + guitar_track;
+
+    const auto global_data
+        = SightRead::ChartParser({}).parse(chart_file).global_data();
+    const auto& practice_sections = global_data.practice_sections();
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        practice_sections.cbegin(), practice_sections.cend(),
+        expected_sections.cbegin(), expected_sections.cend());
+}
+
+BOOST_AUTO_TEST_CASE(sections_prefixed_with_prc_underscore_are_read)
+{
+    using namespace std::string_literals;
+
+    const std::vector<SightRead::PracticeSection> expected_sections {
+        {"Start"s, SightRead::Tick {768}}};
+    const auto events = "[Events]\n{\n    768 = E \"prc_Start\"\n}"s;
+    const auto guitar_track = section_string("ExpertSingle", {{768, 0, 0}});
+    const auto chart_file = events + '\n' + guitar_track;
+
+    const auto global_data
+        = SightRead::ChartParser({}).parse(chart_file).global_data();
+    const auto& practice_sections = global_data.practice_sections();
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        practice_sections.cbegin(), practice_sections.cend(),
+        expected_sections.cbegin(), expected_sections.cend());
+}
+
+BOOST_AUTO_TEST_CASE(sections_with_other_prefixes_are_ignored)
+{
+    using namespace std::string_literals;
+
+    const auto events = "[Events]\n{\n    768 = E \"ignored Start\"\n}"s;
+    const auto guitar_track = section_string("ExpertSingle", {{768, 0, 0}});
+    const auto chart_file = events + '\n' + guitar_track;
+
+    const auto global_data
+        = SightRead::ChartParser({}).parse(chart_file).global_data();
+    const auto& practice_sections = global_data.practice_sections();
+
+    BOOST_TEST(practice_sections.empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_CASE(chart_header_values_besides_resolution_are_discarded)
 {
     const auto header = header_string({{"Name", "\"TestName\""},
@@ -702,7 +778,7 @@ BOOST_AUTO_TEST_CASE(solos_ignored_from_charts_if_not_permitted)
                      SightRead::Difficulty::Expert)
               .solos(SightRead::DrumSettings::default_settings());
 
-    BOOST_CHECK(parsed_solos.empty());
+    BOOST_TEST(parsed_solos.empty());
 }
 
 BOOST_AUTO_TEST_SUITE(chart_hopos_and_taps)

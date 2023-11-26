@@ -123,6 +123,11 @@ struct BigRockEnding {
     SightRead::Tick end;
 };
 
+struct PracticeSection {
+    std::string name;
+    SightRead::Tick start;
+};
+
 // Invariants:
 // resolution() > 0.
 class SongGlobalData {
@@ -135,6 +140,7 @@ private:
     std::string m_artist;
     std::string m_charter;
     SightRead::TempoMap m_tempo_map;
+    std::vector<SightRead::PracticeSection> m_practice_sections;
     std::vector<SightRead::Tick> m_od_beats;
 
 public:
@@ -149,6 +155,11 @@ public:
     [[nodiscard]] const SightRead::TempoMap& tempo_map() const
     {
         return m_tempo_map;
+    }
+    [[nodiscard]] const std::vector<SightRead::PracticeSection>&
+    practice_sections() const
+    {
+        return m_practice_sections;
     }
     [[nodiscard]] const std::vector<SightRead::Tick>& od_beats() const
     {
@@ -169,6 +180,11 @@ public:
     void tempo_map(SightRead::TempoMap value)
     {
         m_tempo_map = std::move(value);
+    }
+    void
+    practice_sections(std::vector<SightRead::PracticeSection> practice_sections)
+    {
+        m_practice_sections = std::move(practice_sections);
     }
     void od_beats(std::vector<SightRead::Tick> value)
     {

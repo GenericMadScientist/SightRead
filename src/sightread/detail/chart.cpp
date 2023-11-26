@@ -148,7 +148,15 @@ convert_line_to_event(int position,
     if (split_line.size() < 4) {
         throw SightRead::ParseError("Line incomplete");
     }
-    return {position, std::string {split_line[3]}};
+    SightRead::Detail::Event event;
+    event.position = position;
+    for (auto i = 3U; i < split_line.size(); ++i) {
+        event.data += split_line[i];
+        if (i + 1 != split_line.size()) {
+            event.data += ' ';
+        }
+    }
+    return event;
 }
 
 SightRead::Detail::ChartSection read_section(std::string_view& input)
