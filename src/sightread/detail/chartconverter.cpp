@@ -43,22 +43,26 @@ tempo_map_from_section(const SightRead::Detail::ChartSection& section,
 std::vector<SightRead::PracticeSection>
 practice_sections_from_section(const SightRead::Detail::ChartSection& section)
 {
+    using namespace std::string_view_literals;
+
+    constexpr std::array practice_section_prefixes {"\"section "sv,
+                                                    "\"section_"sv, "\"prc_"sv};
     std::vector<SightRead::PracticeSection> practice_sections;
     for (const auto& event : section.events) {
         std::string_view section_name = event.data;
         if (!section_name.ends_with('"')) {
             continue;
         }
-        if (section_name.starts_with("\"section ")
-            || section_name.starts_with("\"section_")) {
-            section_name = section_name.substr(9, section_name.size() - 10);
-        } else if (section_name.starts_with("\"prc_")) {
-            section_name = section_name.substr(5, section_name.size() - 6);
-        } else {
-            continue;
+        section_name = section_name.substr(0, section_name.size() - 1);
+        for (auto prefix : practice_section_prefixes) {
+            if (!section_name.starts_with(prefix)) {
+                continue;
+            }
+            section_name = section_name.substr(prefix.size());
+            practice_sections.push_back(
+                {std::string {section_name}, SightRead::Tick {event.position}});
+            break;
         }
-        practice_sections.push_back(
-            {std::string {section_name}, SightRead::Tick {event.position}});
     }
     return practice_sections;
 }
