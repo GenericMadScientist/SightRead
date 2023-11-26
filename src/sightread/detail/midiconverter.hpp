@@ -20,6 +20,10 @@ private:
     std::set<SightRead::Instrument> m_permitted_instruments;
     bool m_permit_solos;
 
+    void process_instrument_track(const std::string& track_name,
+                                  const SightRead::Detail::MidiTrack& track,
+                                  SightRead::Song& song) const;
+
 public:
     explicit MidiConverter(SightRead::Metadata metadata);
     MidiConverter& hopo_threshold(SightRead::HopoThreshold hopo_threshold);

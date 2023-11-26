@@ -1103,6 +1103,36 @@ SightRead::Detail::MidiConverter::parse_solos(bool permit_solos)
     return *this;
 }
 
+void SightRead::Detail::MidiConverter::process_instrument_track(
+    const std::string& track_name, const SightRead::Detail::MidiTrack& track,
+    SightRead::Song& song) const
+{
+    const auto inst = midi_section_instrument(track_name);
+    if (!inst.has_value() || !m_permitted_instruments.contains(*inst)) {
+        return;
+    }
+    if (SightRead::Detail::is_six_fret_instrument(*inst)) {
+        auto tracks = ghl_note_tracks_from_midi(
+            track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos);
+        for (auto& [diff, note_track] : tracks) {
+            song.add_note_track(*inst, diff, std::move(note_track));
+        }
+    } else if (*inst == SightRead::Instrument::Drums) {
+        auto tracks = drum_note_tracks_from_midi(track, song.global_data_ptr(),
+                                                 m_permit_solos);
+        for (auto& [diff, note_track] : tracks) {
+            song.add_note_track(SightRead::Instrument::Drums, diff,
+                                std::move(note_track));
+        }
+    } else {
+        auto tracks = note_tracks_from_midi(track, song.global_data_ptr(),
+                                            m_hopo_threshold, m_permit_solos);
+        for (auto& [diff, note_track] : tracks) {
+            song.add_note_track(*inst, diff, std::move(note_track));
+        }
+    }
+}
+
 SightRead::Song SightRead::Detail::MidiConverter::convert(
     const SightRead::Detail::Midi& midi) const
 {
@@ -1132,36 +1162,11 @@ SightRead::Song SightRead::Detail::MidiConverter::convert(
         }
         if (*track_name == "BEAT") {
             song.global_data().od_beats(od_beats_from_track(track));
-        }
-        if (*track_name == "EVENTS") {
+        } else if (*track_name == "EVENTS") {
             song.global_data().practice_sections(
                 practice_sections_from_track(track));
-        }
-        const auto inst = midi_section_instrument(*track_name);
-        if (!inst.has_value() || !m_permitted_instruments.contains(*inst)) {
-            continue;
-        }
-        if (SightRead::Detail::is_six_fret_instrument(*inst)) {
-            auto tracks
-                = ghl_note_tracks_from_midi(track, song.global_data_ptr(),
-                                            m_hopo_threshold, m_permit_solos);
-            for (auto& [diff, note_track] : tracks) {
-                song.add_note_track(*inst, diff, std::move(note_track));
-            }
-        } else if (*inst == SightRead::Instrument::Drums) {
-            auto tracks = drum_note_tracks_from_midi(
-                track, song.global_data_ptr(), m_permit_solos);
-            for (auto& [diff, note_track] : tracks) {
-                song.add_note_track(SightRead::Instrument::Drums, diff,
-                                    std::move(note_track));
-            }
         } else {
-            auto tracks
-                = note_tracks_from_midi(track, song.global_data_ptr(),
-                                        m_hopo_threshold, m_permit_solos);
-            for (auto& [diff, note_track] : tracks) {
-                song.add_note_track(*inst, diff, std::move(note_track));
-            }
+            process_instrument_track(*track_name, track, song);
         }
     }
 
