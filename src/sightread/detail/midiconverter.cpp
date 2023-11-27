@@ -119,8 +119,8 @@ practice_sections_from_track(const SightRead::Detail::MidiTrack& track)
         if (meta_event == nullptr || meta_event->type != 1) {
             continue;
         }
-        std::span<const std::uint8_t> section_name {meta_event->data.cbegin(),
-                                                    meta_event->data.cend()};
+        std::span<const std::uint8_t> section_name {meta_event->data.data(),
+                                                    meta_event->data.size()};
         if (section_name.empty() || section_name.back() != ']') {
             continue;
         }
