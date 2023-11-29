@@ -6,9 +6,8 @@ jobs:
   clang-tidy-ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
+      - uses: actions/checkout@v4
+
       - name: Install clang-tidy-16
         run: |
           wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
@@ -16,6 +15,7 @@ jobs:
           sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main"
           sudo apt-get update
           sudo apt-get install -y clang-tidy-16
+
       - name: Install Boost 1.81.0
         run: |
           wget -O "$HOME/boost_1_81_0.tar.bz2" https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.bz2
@@ -25,15 +25,18 @@ jobs:
           export CXX=g++-10
           ./bootstrap.sh --with-libraries=test --prefix=.
           ./b2 install > /dev/null
+
       - name: Application files
         run: clang-tidy-16 src/sightread/*.cpp src/sightread/detail/*.cpp -- -Iinclude -Isrc -std=c++20
+
       - name: Test files
         run: clang-tidy-16 tests/sightread/*_unittest.cpp tests/sightread/detail/*_unittest.cpp -checks=-cppcoreguidelines-avoid-do-while,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-macro-usage,-clang-analyzer-*,-readability-function-cognitive-complexity,-readability-magic-numbers -- -Iinclude -Isrc -Itests/sightread -I$HOME/boost_1_81_0 -std=c++20
 
   clang-format-ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: Install clang-format-16
         run: |
           wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
@@ -41,7 +44,23 @@ jobs:
           sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main"
           sudo apt-get update
           sudo apt-get install -y clang-format-16
+
       - name: Format
         run: |
           clang-format-16 -i include/sightread/*.hpp src/sightread/*.cpp src/sightread/detail/*.cpp src/sightread/detail/*.hpp tests/sightread/*.cpp tests/sightread/*.hpp tests/sightread/detail/*.cpp
           git diff --color --exit-code
+
+  msvc-compiler-warnings:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Boost Test
+        run: vcpkg --triplet x64-windows install boost-test
+
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake -DSIGHTREAD_BUILD_TESTS=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -G "Visual Studio 17 2022" ..
+          cmake --build . --verbose --config Debug
