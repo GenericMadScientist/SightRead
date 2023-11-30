@@ -101,3 +101,25 @@ jobs:
           cd build
           cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON -DCMAKE_CXX_COMPILER=g++-10 -DBOOST_ROOT=$HOME/boost_1_81_0 ..
           cmake --build . --verbose --config Debug
+
+  linux-clang-compiler-warnings:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Boost 1.81.0
+        run: |
+          wget -O "$HOME/boost_1_81_0.tar.bz2" https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.bz2
+          tar --bzip2 -xf "$HOME/boost_1_81_0.tar.bz2" -C "$HOME"
+          cd "$HOME/boost_1_81_0"
+          export CC=clang-15
+          export CXX=clang++-15
+          ./bootstrap.sh --with-libraries=test --prefix=.
+          ./b2 install > /dev/null
+
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON -DCMAKE_CXX_COMPILER=clang++-15 -DBOOST_ROOT=$HOME/boost_1_81_0 ..
+          cmake --build . --verbose --config Debug
