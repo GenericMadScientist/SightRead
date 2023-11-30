@@ -17,6 +17,20 @@ function(set_cpp_standard target)
         CXX_EXTENSIONS OFF)
 endfunction()
 
+function(add_warnings target)
+    target_compile_options(
+        ${target}
+        PRIVATE $<$<CXX_COMPILER_ID:Clang,AppleClang,GNU>:
+        -Wall
+        -Wextra
+        -Werror
+        -Wno-c++98-compat
+        -Wno-unknown-warning-option>
+        $<$<CXX_COMPILER_ID:MSVC>:
+        /W4
+        /WX>)
+endfunction()
+
 add_library(sightread
     src/sightread/chartparser.cpp
     src/sightread/midiparser.cpp
@@ -31,6 +45,12 @@ add_library(sightread
 
 target_include_directories(sightread PUBLIC include PRIVATE src)
 set_cpp_standard(sightread)
+
+option(SIGHTREAD_ENABLE_WARNINGS "Build SightRead with warnings" OFF)
+
+if(SIGHTREAD_ENABLE_WARNINGS)
+    add_warnings(sightread)
+endif()
 
 option(SIGHTREAD_BUILD_TESTS "Build SightRead tests" OFF)
 
@@ -64,17 +84,7 @@ if(SIGHTREAD_BUILD_TESTS)
     target_link_libraries(sightread_tests PRIVATE Boost::unit_test_framework)
     add_test(NAME sightread_tests COMMAND sightread_tests)
     set_cpp_standard(sightread_tests)
-    target_compile_options(
-        sightread_tests
-        PRIVATE $<$<CXX_COMPILER_ID:Clang,AppleClang,GNU>:
-        -Wall
-        -Wextra
-        -Werror
-        -Wno-c++98-compat
-        -Wno-unknown-warning-option>
-        $<$<CXX_COMPILER_ID:MSVC>:
-        /W4
-        /WX>)
+    add_warnings(sightread_tests)
 
     set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
     include(cmake/Sanitisers.cmake)
