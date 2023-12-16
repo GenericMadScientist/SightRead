@@ -1,0 +1,123 @@
+name: Compiler Warnings
+
+on: push
+
+jobs:
+  msvc:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Boost Test
+        run: vcpkg --triplet x64-windows install boost-test
+
+      - name: Make build directory
+        run: mkdir build
+
+      - name: Build
+        working-directory: build
+        env:
+          CMAKE_GENERATOR: "Visual Studio 17 2022"
+          CMAKE_TOOLCHAIN_FILE: C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        run: |
+          cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
+          cmake --build . --verbose --config Debug
+
+  windows-gcc:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Boost Test
+        run: |
+          $env:PATH = "C:\msys64\usr\bin;$env:PATH"
+          vcpkg --triplet x64-mingw-static install boost-test
+
+      - name: Make build directory
+        run: mkdir build
+
+      - name: Build
+        working-directory: build
+        env:
+          CMAKE_GENERATOR: "MinGW Makefiles"
+          CMAKE_TOOLCHAIN_FILE: C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        run: |
+          $env:PATH = "C:\msys64\usr\bin;$env:PATH"
+          cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON -DVCPKG_TARGET_TRIPLET=x64-mingw-static ..
+          cmake --build . --verbose --config Debug
+
+  apple-clang:
+    runs-on: macos-12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Boost
+        run: brew install boost
+
+      - name: Make build directory
+        run: mkdir build
+
+      - name: Build
+        working-directory: build
+        run: |
+          cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
+          cmake --build . --verbose --config Debug
+
+  linux-gcc:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Boost 1.81.0
+        run: |
+          wget -O "$HOME/boost_1_81_0.tar.bz2" https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.bz2
+          tar --bzip2 -xf "$HOME/boost_1_81_0.tar.bz2" -C "$HOME"
+          cd "$HOME/boost_1_81_0"
+          export CC=gcc-10
+          export CXX=g++-10
+          ./bootstrap.sh --with-libraries=test --prefix=.
+          ./b2 install > /dev/null
+
+      - name: Make build directory
+        run: mkdir build
+
+      - name: Build
+        working-directory: build
+        env:
+          BOOST_ROOT: ~/boost_1_81_0
+          CXX: g++-10
+        run: |
+          cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
+          cmake --build . --verbose --config Debug
+
+  linux-clang:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Boost 1.81.0
+        run: |
+          wget -O "$HOME/boost_1_81_0.tar.bz2" https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.bz2
+          tar --bzip2 -xf "$HOME/boost_1_81_0.tar.bz2" -C "$HOME"
+          cd "$HOME/boost_1_81_0"
+          export CC=clang-15
+          export CXX=clang++-15
+          ./bootstrap.sh --with-libraries=test --prefix=.
+          ./b2 install > /dev/null
+
+      - name: Make build directory
+        run: mkdir build
+
+      - name: Build
+        working-directory: build
+        env:
+          BOOST_ROOT: ~/boost_1_81_0
+          CXX: clang++-15
+        run: |
+          cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
+          cmake --build . --verbose --config Debug

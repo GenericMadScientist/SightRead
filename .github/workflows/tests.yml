@@ -1,4 +1,4 @@
-name: tests
+name: Tests
 
 on: push
 
@@ -6,7 +6,8 @@ jobs:
   tests:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install Boost 1.81.0
         run: |
