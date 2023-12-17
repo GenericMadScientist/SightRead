@@ -76,12 +76,12 @@ void SightRead::Note::merge_non_opens_into_open()
     if (index == -1) {
         return;
     }
-    const auto open_length = lengths.at(index);
+    const auto open_length = lengths.at(static_cast<unsigned int>(index));
     if (open_length == SightRead::Tick {-1}) {
         return;
     }
-    for (auto i = 0; i < static_cast<int>(lengths.size()); ++i) {
-        if (i != index && lengths.at(i) == open_length) {
+    for (auto i = 0U; i < lengths.size(); ++i) {
+        if (static_cast<int>(i) != index && lengths.at(i) == open_length) {
             lengths.at(i) = SightRead::Tick {-1};
         }
     }

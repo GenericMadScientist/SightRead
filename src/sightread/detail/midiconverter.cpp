@@ -334,9 +334,9 @@ int colour_from_key(std::uint8_t key, SightRead::TrackType track_type,
         }
         return colour_from_key_and_bounds(key, diff_ranges, DRUM_NOTE_COLOURS);
     }
-    default:
-        throw std::invalid_argument("Invalid track type");
     }
+
+    throw std::invalid_argument("Invalid track type");
 }
 
 SightRead::NoteFlags flags_from_track_type(SightRead::TrackType track_type)
@@ -348,9 +348,9 @@ SightRead::NoteFlags flags_from_track_type(SightRead::TrackType track_type)
         return SightRead::FLAGS_SIX_FRET_GUITAR;
     case SightRead::TrackType::Drums:
         return SightRead::FLAGS_DRUMS;
-    default:
-        throw std::invalid_argument("Invalid track type");
     }
+
+    throw std::invalid_argument("Invalid track type");
 }
 
 bool is_cymbal_key(std::uint8_t key, bool from_five_lane)
@@ -759,7 +759,8 @@ notes_from_event_track(
             }
             SightRead::Note note;
             note.position = SightRead::Tick {pos};
-            note.lengths.at(note_colour) = SightRead::Tick {note_length};
+            note.lengths.at(static_cast<unsigned int>(note_colour))
+                = SightRead::Tick {note_length};
             note.flags = flags_from_track_type(track_type);
             if (position_in_event_spans(tap_events, pos)
                 && track_type != SightRead::TrackType::Drums) {
@@ -917,7 +918,8 @@ drum_note_tracks_from_midi(
              combine_note_on_off_events(note_ons, note_offs)) {
             SightRead::Note note;
             note.position = SightRead::Tick {pos};
-            note.lengths.at(colour) = SightRead::Tick {0};
+            note.lengths.at(static_cast<unsigned int>(colour))
+                = SightRead::Tick {0};
             note.flags = flags;
             if (tom_events.force_tom(colour, pos)) {
                 note.flags = static_cast<SightRead::NoteFlags>(

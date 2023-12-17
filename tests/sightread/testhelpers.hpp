@@ -94,7 +94,7 @@ inline bool operator==(const Note& lhs, const Note& rhs)
 inline std::ostream& operator<<(std::ostream& stream, const Note& note)
 {
     stream << "{Pos " << note.position << ", ";
-    for (auto i = 0; i < 7; ++i) {
+    for (auto i = 0U; i < 7; ++i) {
         if (note.lengths.at(i) != SightRead::Tick {-1}) {
             stream << "Colour " << i << " with Length " << note.lengths.at(i)
                    << ", ";

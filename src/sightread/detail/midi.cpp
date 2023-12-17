@@ -7,7 +7,7 @@
 #include "midi.hpp"
 
 namespace {
-void throw_on_insufficient_bytes()
+[[noreturn]] void throw_on_insufficient_bytes()
 {
     throw SightRead::ParseError("insufficient bytes");
 }

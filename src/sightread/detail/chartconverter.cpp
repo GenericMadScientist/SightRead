@@ -117,7 +117,8 @@ note_from_colour_key_map(const std::map<int, int>& colour_map, int position,
     }
     SightRead::Note note;
     note.position = SightRead::Tick {position};
-    note.lengths.at(colour_iter->second) = SightRead::Tick {length};
+    note.lengths.at(static_cast<unsigned int>(colour_iter->second))
+        = SightRead::Tick {length};
     note.flags = flags;
     return note;
 }
@@ -166,9 +167,9 @@ note_from_note_colour(int position, int length, int fret_type,
         }
         return note;
     }
-    default:
-        throw std::invalid_argument("Invalid track type");
     }
+
+    throw std::invalid_argument("Invalid track type");
 }
 
 std::vector<SightRead::Note> add_fifth_lane_greens(
@@ -308,9 +309,11 @@ private:
         case SightRead::TrackType::FiveFret:
         case SightRead::TrackType::SixFret:
             return fret_type == HOPO_FORCE_KEY;
-        default:
+        case SightRead::TrackType::Drums:
             return false;
         }
+
+        throw std::invalid_argument("Invalid TrackType");
     }
 
     static bool is_tap_key(int fret_type, SightRead::TrackType track_type)
@@ -321,9 +324,11 @@ private:
         case SightRead::TrackType::FiveFret:
         case SightRead::TrackType::SixFret:
             return fret_type == TAP_FORCE_KEY;
-        default:
+        case SightRead::TrackType::Drums:
             return false;
         }
+
+        throw std::invalid_argument("Invalid TrackType");
     }
 
 public:
@@ -473,9 +478,9 @@ track_type_from_instrument(SightRead::Instrument instrument)
         return SightRead::TrackType::SixFret;
     case SightRead::Instrument::Drums:
         return SightRead::TrackType::Drums;
-    default:
-        throw std::invalid_argument("Invalid instrument");
     }
+
+    throw std::invalid_argument("Invalid instrument");
 }
 }
 

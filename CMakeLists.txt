@@ -18,17 +18,31 @@ function(set_cpp_standard target)
 endfunction()
 
 function(add_warnings target)
-    target_compile_options(
-        ${target}
-        PRIVATE $<$<CXX_COMPILER_ID:Clang,AppleClang,GNU>:
-        -Wall
-        -Wextra
-        -Werror
-        -Wno-c++98-compat
-        -Wno-unknown-warning-option>
-        $<$<CXX_COMPILER_ID:MSVC>:
-        /W4
-        /WX>)
+    if("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
+        target_compile_options(
+            ${target} PRIVATE
+            /W4
+            /WX)
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang AND "x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
+        target_compile_options(
+            ${target} PRIVATE
+            /W4
+            /WX
+            -Wcovered-switch-default
+            -Wimplicit-int-float-conversion
+            -Wmissing-noreturn
+            -Wnewline-eof
+            -Wsign-conversion
+            -Wswitch-enum)
+    else()
+        target_compile_options(
+            ${target} PRIVATE
+            -Wall
+            -Wextra
+            -Werror
+            -Wno-c++98-compat
+            -Wno-unknown-warning-option)
+    endif()
 endfunction()
 
 add_library(sightread

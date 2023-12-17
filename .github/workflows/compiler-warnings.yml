@@ -48,6 +48,28 @@ jobs:
           cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON -DVCPKG_TARGET_TRIPLET=x64-mingw-static ..
           cmake --build . --verbose --config Debug
 
+  windows-clang:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Boost Test
+        run: vcpkg --triplet x64-windows install boost-test
+
+      - name: Make build directory
+        run: mkdir build
+
+      - name: Build
+        working-directory: build
+        env:
+          CMAKE_GENERATOR: "Visual Studio 17 2022"
+          CMAKE_GENERATOR_TOOLSET: ClangCL
+          CMAKE_TOOLCHAIN_FILE: C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        run: |
+          cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
+          cmake --build . --verbose --config Debug
+
   apple-clang:
     runs-on: macos-12
     steps:

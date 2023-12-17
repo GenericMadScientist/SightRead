@@ -261,7 +261,7 @@ public:
     [[nodiscard]] Beat to_beat(std::int64_t bpm) const
     {
         constexpr double MS_PER_MINUTE = 60000.0;
-        return Beat(m_value * bpm / MS_PER_MINUTE);
+        return Beat(m_value * static_cast<double>(bpm) / MS_PER_MINUTE);
     }
 
     std::partial_ordering operator<=>(const Second& rhs) const
@@ -325,7 +325,7 @@ inline Measure Beat::to_measure(double beat_rate) const
 inline Second Beat::to_second(std::int64_t bpm) const
 {
     constexpr double MS_PER_MINUTE = 60000.0;
-    return Second(m_value * MS_PER_MINUTE / bpm);
+    return Second(m_value * MS_PER_MINUTE / static_cast<double>(bpm));
 }
 }
 
