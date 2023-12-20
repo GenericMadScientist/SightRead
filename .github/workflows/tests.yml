@@ -9,24 +9,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Boost 1.81.0
+      - name: Install Boost 1.84.0
         run: |
-          wget -O "$HOME/boost_1_81_0.tar.bz2" https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.bz2
-          tar --bzip2 -xf "$HOME/boost_1_81_0.tar.bz2" -C "$HOME"
-          cd "$HOME/boost_1_81_0"
-          export CC=gcc-10
-          export CXX=g++-10
+          wget -O "$HOME/boost_1_84_0.tar.bz2" https://boostorg.jfrog.io/artifactory/main/release/1.84.0/source/boost_1_84_0.tar.bz2
+          tar --bzip2 -xf "$HOME/boost_1_84_0.tar.bz2" -C "$HOME"
+          cd "$HOME/boost_1_84_0"
           ./bootstrap.sh --with-libraries=test --prefix=.
-          ./b2 install > /dev/null
+          ./b2 toolset=gcc-13 install > /dev/null
+
+      - name: Make build directory
+        run: mkdir build
+
+      - name: Generate build files
+        working-directory: build
+        env:
+          BOOST_ROOT: ~/boost_1_84_0
+          CXX: g++-13
+        run: cmake -DSIGHTREAD_BUILD_TESTS=ON ..
 
       - name: Build
-        run: |
-          mkdir build
-          cd build
-          cmake -DSIGHTREAD_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=g++-10 -DBOOST_ROOT=$HOME/boost_1_81_0 ..
-          cmake --build . --verbose --config Debug
+        working-directory: build
+        run: cmake --build . --verbose
 
       - name: Unit tests
-        run: |
-          cd build
-          ctest --verbose -C Debug
+        working-directory: build
+        run: ctest --verbose
