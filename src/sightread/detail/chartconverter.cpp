@@ -166,10 +166,10 @@ note_from_note_colour(int position, int length, int fret_type,
                 note->flags | SightRead::FLAGS_CYMBAL);
         }
         return note;
+    }
     case SightRead::TrackType::FortniteFestival:
         throw std::invalid_argument(
             ".chart files not supported with Fortnite Festival");
-    }
     }
 
     throw std::invalid_argument("Invalid track type");
