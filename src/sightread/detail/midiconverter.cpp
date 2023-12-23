@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <climits>
 #include <limits>
-#include <optional>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -141,29 +140,6 @@ practice_sections_from_track(const SightRead::Detail::MidiTrack& track)
     return practice_sections;
 }
 
-std::optional<SightRead::Instrument>
-midi_section_instrument(const std::string& track_name)
-{
-    const std::map<std::string, SightRead::Instrument> INSTRUMENTS {
-        {"PART GUITAR", SightRead::Instrument::Guitar},
-        {"T1 GEMS", SightRead::Instrument::Guitar},
-        {"PART GUITAR COOP", SightRead::Instrument::GuitarCoop},
-        {"PART BASS", SightRead::Instrument::Bass},
-        {"PART RHYTHM", SightRead::Instrument::Rhythm},
-        {"PART KEYS", SightRead::Instrument::Keys},
-        {"PART GUITAR GHL", SightRead::Instrument::GHLGuitar},
-        {"PART BASS GHL", SightRead::Instrument::GHLBass},
-        {"PART RHYTHM GHL", SightRead::Instrument::GHLRhythm},
-        {"PART GUITAR COOP GHL", SightRead::Instrument::GHLGuitarCoop},
-        {"PART DRUMS", SightRead::Instrument::Drums}};
-
-    const auto iter = INSTRUMENTS.find(track_name);
-    if (iter == INSTRUMENTS.end()) {
-        return std::nullopt;
-    }
-    return iter->second;
-}
-
 bool is_five_lane_green_note(const SightRead::Detail::TimedEvent& event)
 {
     constexpr std::array<std::uint8_t, 4> GREEN_LANE_KEYS {65, 77, 89, 101};
@@ -260,6 +236,7 @@ difficulty_from_key(std::uint8_t key, SightRead::TrackType track_type)
     std::array<std::tuple<int, int, SightRead::Difficulty>, 4> diff_ranges;
     switch (track_type) {
     case SightRead::TrackType::FiveFret:
+    case SightRead::TrackType::FortniteFestival:
         diff_ranges = {{{96, 102, SightRead::Difficulty::Expert}, // NOLINT
                         {84, 90, SightRead::Difficulty::Hard}, // NOLINT
                         {72, 78, SightRead::Difficulty::Medium}, // NOLINT
@@ -300,7 +277,8 @@ int colour_from_key(std::uint8_t key, SightRead::TrackType track_type,
 {
     std::array<unsigned int, 4> diff_ranges {};
     switch (track_type) {
-    case SightRead::TrackType::FiveFret: {
+    case SightRead::TrackType::FiveFret:
+    case SightRead::TrackType::FortniteFestival: {
         diff_ranges = {96, 84, 72, 60}; // NOLINT
         constexpr std::array NOTE_COLOURS {
             SightRead::FIVE_FRET_GREEN, SightRead::FIVE_FRET_RED,
@@ -343,6 +321,7 @@ SightRead::NoteFlags flags_from_track_type(SightRead::TrackType track_type)
 {
     switch (track_type) {
     case SightRead::TrackType::FiveFret:
+    case SightRead::TrackType::FortniteFestival:
         return SightRead::FLAGS_FIVE_FRET_GUITAR;
     case SightRead::TrackType::SixFret:
         return SightRead::FLAGS_SIX_FRET_GUITAR;
@@ -1012,6 +991,65 @@ read_bre(const SightRead::Detail::MidiTrack& midi_track)
     return std::nullopt;
 }
 
+bool is_fortnite_instrument(SightRead::Instrument instrument)
+{
+    const std::set<SightRead::Instrument> fortnite_instruments {
+        SightRead::Instrument::FortniteGuitar,
+        SightRead::Instrument::FortniteBass,
+        SightRead::Instrument::FortniteDrums,
+        SightRead::Instrument::FortniteVocals};
+    return fortnite_instruments.contains(instrument);
+}
+
+std::map<SightRead::Difficulty, SightRead::NoteTrack>
+fortnite_note_tracks_from_midi(
+    const SightRead::Detail::MidiTrack& midi_track,
+    const std::shared_ptr<SightRead::SongGlobalData>& global_data,
+    bool permit_solos)
+{
+    const auto event_track = read_instrument_midi_track(
+        midi_track, SightRead::TrackType::FortniteFestival);
+    const auto bre = read_bre(midi_track);
+
+    const auto notes = notes_from_event_track(
+        event_track, {}, SightRead::TrackType::FortniteFestival);
+
+    std::vector<SightRead::StarPower> sp_phrases;
+    for (const auto& [start, end] : combine_note_on_off_events(
+             event_track.sp_on_events, event_track.sp_off_events)) {
+        sp_phrases.push_back(
+            {SightRead::Tick {start}, SightRead::Tick {end - start}});
+    }
+
+    std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
+    for (const auto& [diff, note_set] : notes) {
+        std::vector<int> solo_ons;
+        std::vector<int> solo_offs;
+        solo_ons.reserve(event_track.solo_on_events.size());
+        for (const auto& [pos, rank] : event_track.solo_on_events) {
+            solo_ons.push_back(pos);
+        }
+        solo_offs.reserve(event_track.solo_off_events.size());
+        for (const auto& [pos, rank] : event_track.solo_off_events) {
+            solo_offs.push_back(pos);
+        }
+        auto solos = SightRead::Detail::form_solo_vector(
+            solo_ons, solo_offs, note_set,
+            SightRead::TrackType::FortniteFestival, true);
+        if (!permit_solos) {
+            solos.clear();
+        }
+        SightRead::NoteTrack note_track {note_set, sp_phrases,
+                                         SightRead::TrackType::FortniteFestival,
+                                         global_data};
+        note_track.solos(std::move(solos));
+        note_track.bre(bre);
+        note_tracks.emplace(diff, std::move(note_track));
+    }
+
+    return note_tracks;
+}
+
 std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
@@ -1105,15 +1143,58 @@ SightRead::Detail::MidiConverter::parse_solos(bool permit_solos)
     return *this;
 }
 
+std::optional<SightRead::Instrument>
+SightRead::Detail::MidiConverter::midi_section_instrument(
+    const std::string& track_name) const
+{
+    const std::map<std::string, std::vector<SightRead::Instrument>>
+        INSTRUMENTS {
+            {"PART GUITAR",
+             {SightRead::Instrument::FortniteGuitar,
+              SightRead::Instrument::Guitar}},
+            {"T1 GEMS", {SightRead::Instrument::Guitar}},
+            {"PART GUITAR COOP", {SightRead::Instrument::GuitarCoop}},
+            {"PART BASS",
+             {SightRead::Instrument::FortniteBass,
+              SightRead::Instrument::Bass}},
+            {"PART RHYTHM", {SightRead::Instrument::Rhythm}},
+            {"PART KEYS", {SightRead::Instrument::Keys}},
+            {"PART GUITAR GHL", {SightRead::Instrument::GHLGuitar}},
+            {"PART BASS GHL", {SightRead::Instrument::GHLBass}},
+            {"PART RHYTHM GHL", {SightRead::Instrument::GHLRhythm}},
+            {"PART GUITAR COOP GHL", {SightRead::Instrument::GHLGuitarCoop}},
+            {"PART DRUMS",
+             {SightRead::Instrument::FortniteDrums,
+              SightRead::Instrument::Drums}},
+            {"PART VOCALS", {SightRead::Instrument::FortniteVocals}}};
+
+    const auto iter = INSTRUMENTS.find(track_name);
+    if (iter == INSTRUMENTS.end()) {
+        return std::nullopt;
+    }
+    for (auto instrument : iter->second) {
+        if (m_permitted_instruments.contains(instrument)) {
+            return instrument;
+        }
+    }
+    return std::nullopt;
+}
+
 void SightRead::Detail::MidiConverter::process_instrument_track(
     const std::string& track_name, const SightRead::Detail::MidiTrack& track,
     SightRead::Song& song) const
 {
     const auto inst = midi_section_instrument(track_name);
-    if (!inst.has_value() || !m_permitted_instruments.contains(*inst)) {
+    if (!inst.has_value()) {
         return;
     }
-    if (SightRead::Detail::is_six_fret_instrument(*inst)) {
+    if (is_fortnite_instrument(*inst)) {
+        auto tracks = fortnite_note_tracks_from_midi(
+            track, song.global_data_ptr(), m_permit_solos);
+        for (auto& [diff, note_track] : tracks) {
+            song.add_note_track(*inst, diff, std::move(note_track));
+        }
+    } else if (SightRead::Detail::is_six_fret_instrument(*inst)) {
         auto tracks = ghl_note_tracks_from_midi(
             track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos);
         for (auto& [diff, note_track] : tracks) {

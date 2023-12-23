@@ -39,12 +39,20 @@ bool is_chord(const SightRead::Note& note)
 namespace SightRead {
 std::set<Instrument> all_instruments()
 {
-    return {
-        SightRead::Instrument::Guitar,        SightRead::Instrument::GuitarCoop,
-        SightRead::Instrument::Bass,          SightRead::Instrument::Rhythm,
-        SightRead::Instrument::Keys,          SightRead::Instrument::GHLGuitar,
-        SightRead::Instrument::GHLBass,       SightRead::Instrument::GHLRhythm,
-        SightRead::Instrument::GHLGuitarCoop, SightRead::Instrument::Drums};
+    return {SightRead::Instrument::Guitar,
+            SightRead::Instrument::GuitarCoop,
+            SightRead::Instrument::Bass,
+            SightRead::Instrument::Rhythm,
+            SightRead::Instrument::Keys,
+            SightRead::Instrument::GHLGuitar,
+            SightRead::Instrument::GHLBass,
+            SightRead::Instrument::GHLRhythm,
+            SightRead::Instrument::GHLGuitarCoop,
+            SightRead::Instrument::Drums,
+            SightRead::Instrument::FortniteGuitar,
+            SightRead::Instrument::FortniteBass,
+            SightRead::Instrument::FortniteDrums,
+            SightRead::Instrument::FortniteVocals};
 }
 }
 
@@ -141,7 +149,8 @@ void SightRead::NoteTrack::compute_base_score_ticks()
 
 void SightRead::NoteTrack::merge_same_time_notes()
 {
-    if (m_track_type == TrackType::Drums) {
+    if (m_track_type == TrackType::Drums
+        || m_track_type == TrackType::FortniteFestival) {
         return;
     }
 

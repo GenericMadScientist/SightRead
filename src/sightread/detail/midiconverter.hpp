@@ -1,6 +1,7 @@
 #ifndef SIGHTREAD_DETAIL_MIDICONVERTER_HPP
 #define SIGHTREAD_DETAIL_MIDICONVERTER_HPP
 
+#include <optional>
 #include <set>
 #include <string>
 
@@ -20,6 +21,8 @@ private:
     std::set<SightRead::Instrument> m_permitted_instruments;
     bool m_permit_solos;
 
+    std::optional<SightRead::Instrument>
+    midi_section_instrument(const std::string& track_name) const;
     void process_instrument_track(const std::string& track_name,
                                   const SightRead::Detail::MidiTrack& track,
                                   SightRead::Song& song) const;

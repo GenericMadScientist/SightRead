@@ -27,12 +27,16 @@ enum class Instrument {
     GHLBass,
     GHLRhythm,
     GHLGuitarCoop,
-    Drums
+    Drums,
+    FortniteGuitar,
+    FortniteBass,
+    FortniteDrums,
+    FortniteVocals
 };
 
 std::set<Instrument> all_instruments();
 
-enum class TrackType { FiveFret, SixFret, Drums };
+enum class TrackType { FiveFret, SixFret, Drums, FortniteFestival };
 
 enum NoteFlags : std::uint32_t {
     FLAGS_NONE = 0,
