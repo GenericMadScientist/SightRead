@@ -166,6 +166,9 @@ note_from_note_colour(int position, int length, int fret_type,
                 note->flags | SightRead::FLAGS_CYMBAL);
         }
         return note;
+    case SightRead::TrackType::FortniteFestival:
+        throw std::invalid_argument(
+            ".chart files not supported with Fortnite Festival");
     }
     }
 
@@ -311,6 +314,9 @@ private:
             return fret_type == HOPO_FORCE_KEY;
         case SightRead::TrackType::Drums:
             return false;
+        case SightRead::TrackType::FortniteFestival:
+            throw std::invalid_argument(
+                ".chart files not supported with Fortnite Festival");
         }
 
         throw std::invalid_argument("Invalid TrackType");
@@ -326,6 +332,9 @@ private:
             return fret_type == TAP_FORCE_KEY;
         case SightRead::TrackType::Drums:
             return false;
+        case SightRead::TrackType::FortniteFestival:
+            throw std::invalid_argument(
+                ".chart files not supported with Fortnite Festival");
         }
 
         throw std::invalid_argument("Invalid TrackType");
@@ -478,6 +487,12 @@ track_type_from_instrument(SightRead::Instrument instrument)
         return SightRead::TrackType::SixFret;
     case SightRead::Instrument::Drums:
         return SightRead::TrackType::Drums;
+    case SightRead::Instrument::FortniteGuitar:
+    case SightRead::Instrument::FortniteBass:
+    case SightRead::Instrument::FortniteDrums:
+    case SightRead::Instrument::FortniteVocals:
+        throw std::invalid_argument(
+            ".chart files not supported with Fortnite Festival");
     }
 
     throw std::invalid_argument("Invalid instrument");
