@@ -149,8 +149,7 @@ void SightRead::NoteTrack::compute_base_score_ticks()
 
 void SightRead::NoteTrack::merge_same_time_notes()
 {
-    if (m_track_type == TrackType::Drums
-        || m_track_type == TrackType::FortniteFestival) {
+  if (m_track_type == TrackType::Drums) {
         return;
     }
 
