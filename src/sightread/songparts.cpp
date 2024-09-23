@@ -52,7 +52,9 @@ std::set<Instrument> all_instruments()
             SightRead::Instrument::FortniteGuitar,
             SightRead::Instrument::FortniteBass,
             SightRead::Instrument::FortniteDrums,
-            SightRead::Instrument::FortniteVocals};
+            SightRead::Instrument::FortniteVocals,
+            SightRead::Instrument::FortniteProGuitar,
+            SightRead::Instrument::FortniteProBass};
 }
 }
 

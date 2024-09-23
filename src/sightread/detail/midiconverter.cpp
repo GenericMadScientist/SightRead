@@ -1001,7 +1001,9 @@ bool is_fortnite_instrument(SightRead::Instrument instrument)
         SightRead::Instrument::FortniteGuitar,
         SightRead::Instrument::FortniteBass,
         SightRead::Instrument::FortniteDrums,
-        SightRead::Instrument::FortniteVocals};
+        SightRead::Instrument::FortniteVocals,
+        SightRead::Instrument::FortniteProGuitar,
+        SightRead::Instrument::FortniteProBass};
     return fortnite_instruments.contains(instrument);
 }
 
@@ -1170,7 +1172,9 @@ SightRead::Detail::MidiConverter::midi_section_instrument(
             {"PART DRUMS",
              {SightRead::Instrument::FortniteDrums,
               SightRead::Instrument::Drums}},
-            {"PART VOCALS", {SightRead::Instrument::FortniteVocals}}};
+            {"PART VOCALS", {SightRead::Instrument::FortniteVocals}},
+            {"PLASTIC GUITAR", {SightRead::Instrument::FortniteProGuitar}},
+            {"PLASTIC BASS", {SightRead::Instrument::FortniteProBass}}};
 
     const auto iter = INSTRUMENTS.find(track_name);
     if (iter == INSTRUMENTS.end()) {
