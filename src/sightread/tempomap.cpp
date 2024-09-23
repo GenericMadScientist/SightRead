@@ -70,8 +70,8 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
     auto last_measure = 0.0;
 
     for (const auto& ts : m_time_sigs) {
-        last_measure += to_beats(ts.position - last_tick).value()
-            / static_cast<double>(last_beat_rate);
+        last_measure
+            += to_beats(ts.position - last_tick).value() / last_beat_rate;
         const auto beat = to_beats(ts.position);
         m_measure_timestamps.push_back(
             {SightRead::Measure(last_measure), beat});

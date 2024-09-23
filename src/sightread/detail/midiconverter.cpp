@@ -46,6 +46,8 @@ read_first_midi_track(const SightRead::Detail::MidiTrack& track, int resolution)
                                  meta_event->data[0],
                                  1 << meta_event->data[1]});
             break;
+        default:
+            break;
         }
     }
 
@@ -660,6 +662,8 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
         case NOTE_ON_ID:
             add_note_on_event(event_track, midi_event->data, event.time, rank,
                               from_five_lane, parse_dynamics, track_type);
+            break;
+        default:
             break;
         }
     }

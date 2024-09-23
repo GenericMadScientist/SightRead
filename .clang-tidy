@@ -4,6 +4,7 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -bugprone-unchecked-optional-access,
   cert-*,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,
   -clang-analyzer-optin.cplusplus.VirtualCall,
   concurrency-*,
   cppcoreguidelines-*,

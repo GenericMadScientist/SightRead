@@ -549,7 +549,7 @@ SightRead::Song SightRead::Detail::ChartConverter::convert(
                 const auto resolution = std::stoi(get_with_default(
                     section.key_value_pairs, "Resolution", "192"));
                 song.global_data().resolution(resolution);
-            } catch (const std::invalid_argument&) {
+            } catch (const std::invalid_argument&) { // NOLINT
                 // CH just ignores this kind of parsing mistake.
                 // TODO: Use from_chars instead to avoid having to use
                 // exceptions as control flow.
