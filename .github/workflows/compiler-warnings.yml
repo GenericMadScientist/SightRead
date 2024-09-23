@@ -83,11 +83,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Boost 1.84.0
+      - name: Install Boost 1.86.0
         run: |
-          wget -O "$HOME/boost_1_84_0.tar.bz2" https://boostorg.jfrog.io/artifactory/main/release/1.84.0/source/boost_1_84_0.tar.bz2
-          tar --bzip2 -xf "$HOME/boost_1_84_0.tar.bz2" -C "$HOME"
-          cd "$HOME/boost_1_84_0"
+          wget -O "$HOME/boost_1_86_0.tar.bz2" https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.bz2
+          tar --bzip2 -xf "$HOME/boost_1_86_0.tar.bz2" -C "$HOME"
+          cd "$HOME/boost_1_86_0"
           ./bootstrap.sh --with-libraries=test --prefix=.
           ./b2 toolset=gcc-14 install > /dev/null
 
@@ -97,7 +97,7 @@ jobs:
       - name: Generate build files
         working-directory: build
         env:
-          BOOST_ROOT: ~/boost_1_84_0
+          BOOST_ROOT: ~/boost_1_86_0
           CXX: g++-14
         run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
 
@@ -131,11 +131,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Boost 1.84.0
+      - name: Install Boost 1.86.0
         run: |
-          wget -O "$HOME/boost_1_84_0.tar.bz2" https://boostorg.jfrog.io/artifactory/main/release/1.84.0/source/boost_1_84_0.tar.bz2
-          tar --bzip2 -xf "$HOME/boost_1_84_0.tar.bz2" -C "$HOME"
-          cd "$HOME/boost_1_84_0"
+          wget -O "$HOME/boost_1_86_0.tar.bz2" https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.bz2
+          tar --bzip2 -xf "$HOME/boost_1_86_0.tar.bz2" -C "$HOME"
+          cd "$HOME/boost_1_86_0"
           ./bootstrap.sh --with-libraries=test --prefix=.
           ./b2 toolset=gcc-14 install > /dev/null
 
@@ -145,7 +145,7 @@ jobs:
       - name: Generate build files
         working-directory: build
         env:
-          BOOST_ROOT: ~/boost_1_84_0
+          BOOST_ROOT: ~/boost_1_86_0
           CXX: g++-14
         run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
 
@@ -159,11 +159,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Boost 1.84.0
+      - name: Install Boost 1.86.0
         run: |
-          wget -O "$HOME/boost_1_84_0.tar.bz2" https://boostorg.jfrog.io/artifactory/main/release/1.84.0/source/boost_1_84_0.tar.bz2
-          tar --bzip2 -xf "$HOME/boost_1_84_0.tar.bz2" -C "$HOME"
-          cd "$HOME/boost_1_84_0"
+          wget -O "$HOME/boost_1_86_0.tar.bz2" https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.bz2
+          tar --bzip2 -xf "$HOME/boost_1_86_0.tar.bz2" -C "$HOME"
+          cd "$HOME/boost_1_86_0"
           ./bootstrap.sh --with-libraries=test --prefix=.
           ./b2 toolset=clang-18 install > /dev/null
 
@@ -173,7 +173,7 @@ jobs:
       - name: Generate build files
         working-directory: build
         env:
-          BOOST_ROOT: ~/boost_1_84_0
+          BOOST_ROOT: ~/boost_1_86_0
           CXX: clang++-18
         run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
 
