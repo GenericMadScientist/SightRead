@@ -78,7 +78,7 @@ jobs:
         run: cmake --build . --verbose
 
   mac-gcc:
-    runs-on: macos-12
+    runs-on: macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,7 +89,7 @@ jobs:
           tar --bzip2 -xf "$HOME/boost_1_84_0.tar.bz2" -C "$HOME"
           cd "$HOME/boost_1_84_0"
           ./bootstrap.sh --with-libraries=test --prefix=.
-          ./b2 toolset=gcc-13 install > /dev/null
+          ./b2 toolset=gcc-14 install > /dev/null
 
       - name: Make build directory
         run: mkdir build
@@ -98,7 +98,7 @@ jobs:
         working-directory: build
         env:
           BOOST_ROOT: ~/boost_1_84_0
-          CXX: g++-13
+          CXX: g++-14
         run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
 
       - name: Build
@@ -106,7 +106,7 @@ jobs:
         run: cmake --build . --verbose
 
   apple-clang:
-    runs-on: macos-12
+    runs-on: macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -126,7 +126,7 @@ jobs:
         run: cmake --build . --verbose
 
   linux-gcc:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -137,7 +137,7 @@ jobs:
           tar --bzip2 -xf "$HOME/boost_1_84_0.tar.bz2" -C "$HOME"
           cd "$HOME/boost_1_84_0"
           ./bootstrap.sh --with-libraries=test --prefix=.
-          ./b2 toolset=gcc-13 install > /dev/null
+          ./b2 toolset=gcc-14 install > /dev/null
 
       - name: Make build directory
         run: mkdir build
@@ -146,7 +146,7 @@ jobs:
         working-directory: build
         env:
           BOOST_ROOT: ~/boost_1_84_0
-          CXX: g++-13
+          CXX: g++-14
         run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
 
       - name: Build
@@ -154,7 +154,7 @@ jobs:
         run: cmake --build . --verbose
 
   linux-clang:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -165,7 +165,7 @@ jobs:
           tar --bzip2 -xf "$HOME/boost_1_84_0.tar.bz2" -C "$HOME"
           cd "$HOME/boost_1_84_0"
           ./bootstrap.sh --with-libraries=test --prefix=.
-          ./b2 toolset=clang-15 install > /dev/null
+          ./b2 toolset=clang-18 install > /dev/null
 
       - name: Make build directory
         run: mkdir build
@@ -174,7 +174,7 @@ jobs:
         working-directory: build
         env:
           BOOST_ROOT: ~/boost_1_84_0
-          CXX: clang++-15
+          CXX: clang++-18
         run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
 
       - name: Build
