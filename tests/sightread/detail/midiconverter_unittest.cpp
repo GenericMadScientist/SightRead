@@ -1216,7 +1216,7 @@ BOOST_AUTO_TEST_CASE(solos_ignored_from_midis_if_not_permitted)
 
 BOOST_AUTO_TEST_SUITE(fortnite_instruments)
 
-BOOST_AUTO_TEST_CASE(fortnite_instruments_have_priority_over_others)
+BOOST_AUTO_TEST_CASE(ch_instruments_have_priority_over_fortnite)
 {
     SightRead::Detail::MidiTrack note_track {
         {{0, {part_event("PART GUITAR")}},
@@ -1224,7 +1224,7 @@ BOOST_AUTO_TEST_CASE(fortnite_instruments_have_priority_over_others)
          {960, {SightRead::Detail::MidiEvent {0x80, {97, 0}}}}}};
     const SightRead::Detail::Midi midi {192, {note_track}};
     const std::vector<SightRead::Instrument> expected_instruments {
-        SightRead::Instrument::FortniteGuitar};
+        SightRead::Instrument::Guitar};
 
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
     const auto instruments = song.instruments();
@@ -1249,7 +1249,10 @@ BOOST_AUTO_TEST_CASE(fortnite_instrument_notes_are_separated)
          {960, {SightRead::Detail::MidiEvent {0x80, {97, 0}}}}}};
     const SightRead::Detail::Midi midi {192, {note_track}};
 
-    const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
+    const auto song
+        = SightRead::Detail::MidiConverter({})
+              .permit_instruments({SightRead::Instrument::FortniteGuitar})
+              .convert(midi);
 
     BOOST_CHECK_EQUAL(song.track(SightRead::Instrument::FortniteGuitar,
                                  SightRead::Difficulty::Expert)
