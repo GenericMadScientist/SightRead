@@ -1232,11 +1232,11 @@ BOOST_AUTO_TEST_CASE(ch_instruments_have_priority_over_fortnite)
     BOOST_CHECK_EQUAL_COLLECTIONS(instruments.cbegin(), instruments.cend(),
                                   expected_instruments.cbegin(),
                                   expected_instruments.cend());
-    BOOST_CHECK_EQUAL(song.track(SightRead::Instrument::FortniteGuitar,
-                                 SightRead::Difficulty::Expert)
-                          .notes()[0]
-                          .colours(),
-                      1 << SightRead::FIVE_FRET_RED);
+    BOOST_CHECK_EQUAL(
+        song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
+            .notes()[0]
+            .colours(),
+        1 << SightRead::FIVE_FRET_RED);
 }
 
 BOOST_AUTO_TEST_CASE(fortnite_instrument_notes_are_separated)
