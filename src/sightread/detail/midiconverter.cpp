@@ -1156,13 +1156,13 @@ SightRead::Detail::MidiConverter::midi_section_instrument(
     const std::map<std::string, std::vector<SightRead::Instrument>>
         INSTRUMENTS {
             {"PART GUITAR",
-             {SightRead::Instrument::FortniteGuitar,
-              SightRead::Instrument::Guitar}},
+             {SightRead::Instrument::Guitar,
+              SightRead::Instrument::FortniteGuitar}},
             {"T1 GEMS", {SightRead::Instrument::Guitar}},
             {"PART GUITAR COOP", {SightRead::Instrument::GuitarCoop}},
             {"PART BASS",
-             {SightRead::Instrument::FortniteBass,
-              SightRead::Instrument::Bass}},
+             {SightRead::Instrument::Bass,
+              SightRead::Instrument::FortniteBass}},
             {"PART RHYTHM", {SightRead::Instrument::Rhythm}},
             {"PART KEYS", {SightRead::Instrument::Keys}},
             {"PART GUITAR GHL", {SightRead::Instrument::GHLGuitar}},
@@ -1170,8 +1170,8 @@ SightRead::Detail::MidiConverter::midi_section_instrument(
             {"PART RHYTHM GHL", {SightRead::Instrument::GHLRhythm}},
             {"PART GUITAR COOP GHL", {SightRead::Instrument::GHLGuitarCoop}},
             {"PART DRUMS",
-             {SightRead::Instrument::FortniteDrums,
-              SightRead::Instrument::Drums}},
+             {SightRead::Instrument::Drums,
+              SightRead::Instrument::FortniteDrums}},
             {"PART VOCALS", {SightRead::Instrument::FortniteVocals}},
             {"PLASTIC GUITAR", {SightRead::Instrument::FortniteProGuitar}},
             {"PLASTIC BASS", {SightRead::Instrument::FortniteProBass}}};
