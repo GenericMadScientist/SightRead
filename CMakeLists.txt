@@ -4,7 +4,7 @@ cmake_policy(SET CMP0091 NEW)
 
 project(
     sightread
-    VERSION 0.2.1
+    VERSION 0.4.0
     DESCRIPTION "A library to read .mid and .chart files for GH/RB-style games"
     LANGUAGES CXX)
 
