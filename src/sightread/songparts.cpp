@@ -97,6 +97,11 @@ void SightRead::Note::merge_non_opens_into_open()
     }
 }
 
+void SightRead::Note::disable_cymbals()
+{
+    flags = static_cast<NoteFlags>(flags & ~FLAGS_CYMBAL);
+}
+
 void SightRead::Note::disable_dynamics()
 {
     flags = static_cast<NoteFlags>(flags & ~(FLAGS_GHOST | FLAGS_ACCENT));
@@ -326,6 +331,13 @@ void SightRead::NoteTrack::generate_drum_fills(
         m_drum_fills.push_back(
             DrumFill {fill_start, measure_ticks - fill_start});
         m += FILL_GAP;
+    }
+}
+
+void SightRead::NoteTrack::disable_cymbals()
+{
+    for (auto& n : m_notes) {
+        n.disable_cymbals();
     }
 }
 

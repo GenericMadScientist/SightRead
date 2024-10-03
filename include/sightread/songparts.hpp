@@ -97,6 +97,7 @@ public:
 
     [[nodiscard]] int colours() const;
     void merge_non_opens_into_open();
+    void disable_cymbals();
     void disable_dynamics();
     [[nodiscard]] bool is_kick_note() const;
     [[nodiscard]] bool
@@ -219,6 +220,7 @@ public:
               TrackType track_type, std::shared_ptr<SongGlobalData> global_data,
               SightRead::Tick max_hopo_gap = SightRead::Tick {65});
     void generate_drum_fills(const SightRead::TempoMap& tempo_map);
+    void disable_cymbals();
     void disable_dynamics();
     [[nodiscard]] const std::vector<Note>& notes() const { return m_notes; }
     [[nodiscard]] const std::vector<StarPower>& sp_phrases() const

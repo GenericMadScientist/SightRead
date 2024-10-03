@@ -540,6 +540,24 @@ BOOST_AUTO_TEST_CASE(hmx_gh_snapping)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_CASE(disable_cymbals_is_correct)
+{
+    const std::vector<SightRead::Note> notes {
+        make_drum_note(0, SightRead::DRUM_YELLOW),
+        make_drum_note(192, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)};
+    SightRead::NoteTrack track {notes,
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.disable_cymbals();
+
+    const std::vector<SightRead::Note> new_notes {
+        make_drum_note(0, SightRead::DRUM_YELLOW),
+        make_drum_note(192, SightRead::DRUM_YELLOW)};
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
+                                  new_notes.cbegin(), new_notes.cend());
+}
+
 BOOST_AUTO_TEST_CASE(disable_dynamics_is_correct)
 {
     const std::vector<SightRead::Note> notes {
