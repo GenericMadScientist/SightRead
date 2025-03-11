@@ -155,6 +155,20 @@ BOOST_AUTO_TEST_CASE(speedup_returns_correct_tempo_map)
                                   expected_tses.cbegin(), expected_tses.cend());
 }
 
+BOOST_AUTO_TEST_CASE(speedup_updates_time_conversion_correctly)
+{
+    const SightRead::TempoMap tempo_map {
+        {{SightRead::Tick {0}, 4, 4}},
+        {{SightRead::Tick {0}, 120000}, {SightRead::Tick {192}, 240000}},
+        {},
+        192};
+
+    const auto speedup = tempo_map.speedup(150);
+
+    BOOST_CHECK_CLOSE(speedup.to_beats(SightRead::Second {0.5}).value(), 2.0,
+                      0.0001);
+}
+
 BOOST_AUTO_TEST_CASE(speedup_doesnt_overflow)
 {
     const SightRead::TempoMap tempo_map {

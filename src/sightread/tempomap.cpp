@@ -104,9 +104,9 @@ SightRead::TempoMap SightRead::TempoMap::speedup(int speed) const
         bpm.bpm = (bpm.bpm * speed) / DEFAULT_SPEED;
     }
 
-    const auto speed_ratio = static_cast<double>(speed) / DEFAULT_SPEED;
+    const auto timestamp_factor = DEFAULT_SPEED / static_cast<double>(speed);
     for (auto& timestamp : speedup.m_beat_timestamps) {
-        timestamp.time *= speed_ratio;
+        timestamp.time *= timestamp_factor;
     }
     speedup.m_last_bpm = (speedup.m_last_bpm * speed) / DEFAULT_SPEED;
 
