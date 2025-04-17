@@ -1,6 +1,7 @@
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.30.0)
 
 cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0167 NEW)
 
 project(
     sightread
