@@ -116,9 +116,9 @@ std::vector<QbTimeSignature> qb_timesigs(const SightRead::Detail::QbMidi& midi,
     for (const auto& value : raw_timesigs) {
         const auto array = std::any_cast<std::vector<std::any>>(value);
         assert(array.size() == 3);
-        values.emplace_back(std::any_cast<std::uint32_t>(array[0]),
-                            std::any_cast<std::uint32_t>(array[1]),
-                            std::any_cast<std::uint32_t>(array[2]));
+        values.push_back({std::any_cast<std::uint32_t>(array[0]),
+                          std::any_cast<std::uint32_t>(array[1]),
+                          std::any_cast<std::uint32_t>(array[2])});
     }
 
     return values;
