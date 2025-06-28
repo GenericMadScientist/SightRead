@@ -2,8 +2,11 @@
 #include <array>
 #include <cassert>
 #include <climits>
+#include <unordered_map>
 
 #include "sightread/detail/qbmidiconverter.hpp"
+
+#include <iostream>
 
 namespace {
 constexpr int RESOLUTION = 1920;
@@ -71,6 +74,7 @@ find_item_by_id(const std::vector<SightRead::Detail::QbItem>& items,
                 std::string_view suffix, std::uint32_t prefix_crc)
 {
     const auto crc = crc32(suffix, prefix_crc);
+
     for (const auto& item : items) {
         if (item.props.id == crc) {
             return item;
@@ -79,12 +83,6 @@ find_item_by_id(const std::vector<SightRead::Detail::QbItem>& items,
 
     throw SightRead::ParseError("Unable to find item by id");
 }
-
-struct QbTimeSignature {
-    std::uint32_t time_ms;
-    std::uint32_t numerator;
-    std::uint32_t denominator;
-};
 
 std::vector<std::uint32_t> fretbars_ms(const SightRead::Detail::QbMidi& midi,
                                        std::uint32_t short_name_crc)
@@ -102,6 +100,45 @@ std::vector<std::uint32_t> fretbars_ms(const SightRead::Detail::QbMidi& midi,
 
     return values;
 }
+
+struct QbNoteEvent {
+    std::uint32_t position;
+    std::uint32_t length;
+    std::uint32_t flags;
+};
+
+std::vector<QbNoteEvent> note_events(const SightRead::Detail::QbMidi& midi,
+                                     std::uint32_t short_name_crc,
+                                     SightRead::Difficulty difficulty)
+{
+    const std::unordered_map<SightRead::Difficulty, std::string> diff_names {
+        {SightRead::Difficulty::Easy, "easy"},
+        {SightRead::Difficulty::Medium, "medium"},
+        {SightRead::Difficulty::Hard, "hard"},
+        {SightRead::Difficulty::Expert, "expert"}};
+
+    const auto suffix = std::string("_song_") + diff_names.at(difficulty);
+    const auto notes_item = find_item_by_id(midi.items, suffix, short_name_crc);
+    const auto raw_notes
+        = std::any_cast<std::vector<std::any>>(notes_item.data);
+    assert((raw_notes.size() % 3) == 0);
+
+    std::vector<QbNoteEvent> values;
+    values.reserve(raw_notes.size() / 3);
+    for (auto i = 0U; i < raw_notes.size(); i += 3U) {
+        values.push_back({std::any_cast<std::uint32_t>(raw_notes[i]),
+                          std::any_cast<std::uint32_t>(raw_notes[i + 1]),
+                          std::any_cast<std::uint32_t>(raw_notes[i + 2])});
+    }
+
+    return values;
+}
+
+struct QbTimeSignature {
+    std::uint32_t time_ms;
+    std::uint32_t numerator;
+    std::uint32_t denominator;
+};
 
 std::vector<QbTimeSignature> qb_timesigs(const SightRead::Detail::QbMidi& midi,
                                          std::uint32_t short_name_crc)
@@ -125,9 +162,7 @@ std::vector<QbTimeSignature> qb_timesigs(const SightRead::Detail::QbMidi& midi,
 }
 
 struct QbTimeData {
-    std::vector<std::uint32_t> fretbars;
-    std::vector<QbTimeSignature> timesigs;
-
+private:
     [[nodiscard]] double ms_to_beats(std::uint32_t ms) const
     {
         const auto it
@@ -140,6 +175,15 @@ struct QbTimeData {
         return static_cast<double>(after_index)
             - static_cast<double>(beat_after - ms)
             / static_cast<double>(beat_after - beat_before);
+    }
+
+public:
+    std::vector<std::uint32_t> fretbars;
+    std::vector<QbTimeSignature> timesigs;
+
+    [[nodiscard]] SightRead::Tick ms_to_ticks(std::uint32_t ms) const
+    {
+        return SightRead::Tick {static_cast<int>(RESOLUTION * ms_to_beats(ms))};
     }
 };
 
@@ -164,14 +208,44 @@ SightRead::TempoMap tempo_map(const QbTimeData& time_data)
 
     std::vector<SightRead::TimeSignature> time_sigs;
     for (const auto& time_sig : time_data.timesigs) {
-        const auto beats = time_data.ms_to_beats(time_sig.time_ms);
-        const auto position
-            = SightRead::Tick {static_cast<int>(RESOLUTION * beats)};
+        const auto position = time_data.ms_to_ticks(time_sig.time_ms);
         time_sigs.push_back({position, static_cast<int>(time_sig.numerator),
                              static_cast<int>(time_sig.denominator)});
     }
 
     return {std::move(time_sigs), std::move(bpms), {}, RESOLUTION};
+}
+
+std::optional<SightRead::NoteTrack>
+note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
+           SightRead::Difficulty difficulty,
+           std::shared_ptr<SightRead::SongGlobalData> global_data,
+           const QbTimeData& timedata)
+{
+    const auto events = note_events(midi, short_name_crc, difficulty);
+    if (events.empty()) {
+        return {};
+    }
+
+    std::vector<SightRead::Note> notes;
+    notes.reserve(events.size());
+    for (const auto& event : events) {
+        SightRead::Note note;
+        note.position = timedata.ms_to_ticks(event.position);
+        const auto end_position
+            = timedata.ms_to_ticks(event.position + event.length);
+        const auto length = end_position - note.position;
+
+        for (auto i = 0; i < 5; ++i) {
+            if ((event.flags & (1 << i)) != 0) {
+                note.lengths[i] = length;
+            }
+        }
+
+        notes.push_back(note);
+    }
+
+    return {{notes, {}, SightRead::TrackType::FiveFret, global_data}};
 }
 }
 
@@ -183,11 +257,24 @@ SightRead::Detail::QbMidiConverter::QbMidiConverter(std::string_view short_name)
 SightRead::Song SightRead::Detail::QbMidiConverter::convert(
     const SightRead::Detail::QbMidi& midi) const
 {
+    constexpr std::array<SightRead::Difficulty, 4> DIFFICULTIES {
+        SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
+        SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
+
     const auto timedata = time_data(midi, m_short_name_crc);
 
     SightRead::Song song;
     song.global_data().resolution(RESOLUTION);
     song.global_data().tempo_map(tempo_map(timedata));
 
-    return {};
+    for (const auto diff : DIFFICULTIES) {
+        auto track = note_track(midi, m_short_name_crc, diff,
+                                song.global_data_ptr(), timedata);
+        if (track.has_value()) {
+            song.add_note_track(SightRead::Instrument::Guitar, diff,
+                                std::move(*track));
+        }
+    }
+
+    return song;
 }
