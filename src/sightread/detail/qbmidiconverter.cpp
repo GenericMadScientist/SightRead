@@ -161,6 +161,40 @@ std::vector<QbTimeSignature> qb_timesigs(const SightRead::Detail::QbMidi& midi,
     return values;
 }
 
+struct QbSpEvent {
+    std::uint32_t position;
+    std::uint32_t length;
+    std::uint32_t note_count;
+};
+
+std::vector<QbSpEvent> sp_events(const SightRead::Detail::QbMidi& midi,
+                                 std::uint32_t short_name_crc,
+                                 SightRead::Difficulty difficulty)
+{
+    const std::unordered_map<SightRead::Difficulty, std::string> diff_names {
+        {SightRead::Difficulty::Easy, "easy"},
+        {SightRead::Difficulty::Medium, "medium"},
+        {SightRead::Difficulty::Hard, "hard"},
+        {SightRead::Difficulty::Expert, "expert"}};
+
+    const auto suffix = std::string("_") + diff_names.at(difficulty) + "_star";
+    const auto sps_item = find_item_by_id(midi.items, suffix, short_name_crc);
+    const auto raw_phrases
+        = std::any_cast<std::vector<std::any>>(sps_item.data);
+
+    std::vector<QbSpEvent> values;
+    values.reserve(raw_phrases.size());
+    for (const auto& value : raw_phrases) {
+        const auto array = std::any_cast<std::vector<std::any>>(value);
+        assert(array.size() == 3);
+        values.push_back({std::any_cast<std::uint32_t>(array[0]),
+                          std::any_cast<std::uint32_t>(array[1]),
+                          std::any_cast<std::uint32_t>(array[2])});
+    }
+
+    return values;
+}
+
 struct QbTimeData {
 private:
     [[nodiscard]] double ms_to_beats(std::uint32_t ms) const
@@ -229,6 +263,8 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
         return {};
     }
 
+    const auto phrase_events = sp_events(midi, short_name_crc, difficulty);
+
     std::vector<SightRead::Note> notes;
     notes.reserve(events.size());
     for (const auto& event : events) {
@@ -250,10 +286,17 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
         notes.push_back(note);
     }
 
-    return {{std::move(notes),
-             {},
-             SightRead::TrackType::FiveFret,
-             std::move(global_data)}};
+    std::vector<SightRead::StarPower> sp_phrases;
+    sp_phrases.reserve(phrase_events.size());
+    for (const auto& event : phrase_events) {
+        const auto position = timedata.ms_to_ticks(event.position);
+        const auto end_position
+            = timedata.ms_to_ticks(event.position + event.length);
+        sp_phrases.push_back({position, end_position - position});
+    }
+
+    return {{std::move(notes), std::move(sp_phrases),
+             SightRead::TrackType::FiveFret, std::move(global_data)}};
 }
 }
 
