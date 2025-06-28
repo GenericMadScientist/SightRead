@@ -56,7 +56,8 @@ add_library(sightread
     src/sightread/detail/midi.cpp
     src/sightread/detail/midiconverter.cpp
     src/sightread/detail/parserutil.cpp
-    src/sightread/detail/qbmidi.cpp)
+    src/sightread/detail/qbmidi.cpp
+    src/sightread/detail/qbmidiconverter.cpp)
 
 target_include_directories(sightread PUBLIC include PRIVATE src)
 set_cpp_standard(sightread)
@@ -93,7 +94,8 @@ if(SIGHTREAD_BUILD_TESTS)
         src/sightread/detail/midi.cpp
         src/sightread/detail/midiconverter.cpp
         src/sightread/detail/parserutil.cpp
-        src/sightread/detail/qbmidi.cpp)
+        src/sightread/detail/qbmidi.cpp
+        src/sightread/detail/qbmidiconverter.cpp)
 
     target_include_directories(sightread_tests PRIVATE include src tests/sightread)
     target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
