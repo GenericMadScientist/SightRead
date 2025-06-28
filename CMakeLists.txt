@@ -29,7 +29,6 @@ function(add_warnings target)
             ${target} PRIVATE
             /W4
             /WX
-            -Wcovered-switch-default
             -Wimplicit-int-float-conversion
             -Wmissing-noreturn
             -Wnewline-eof

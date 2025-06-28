@@ -199,6 +199,7 @@ private:
         case SightRead::Detail::QbItemType::Float:
         case SightRead::Detail::QbItemType::Pointer:
         case SightRead::Detail::QbItemType::QbKey:
+        case SightRead::Detail::QbItemType::String:
         case SightRead::Detail::QbItemType::WideString:
         default:
             throw SightRead::ParseError(
@@ -250,6 +251,7 @@ private:
         case SightRead::Detail::QbItemType::Integer:
         case SightRead::Detail::QbItemType::Pointer:
         case SightRead::Detail::QbItemType::QbKey:
+        case SightRead::Detail::QbItemType::String:
         case SightRead::Detail::QbItemType::Struct:
         case SightRead::Detail::QbItemType::StructFlag:
         case SightRead::Detail::QbItemType::WideString:
