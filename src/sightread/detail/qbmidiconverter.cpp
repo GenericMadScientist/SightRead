@@ -158,8 +158,8 @@ SightRead::TempoMap tempo_map(const QbTimeData& time_data)
     for (auto i = 0U; i + 1 < time_data.fretbars.size(); ++i) {
         const auto time_diff
             = time_data.fretbars[i + 1] - time_data.fretbars[i];
-        bpms.emplace_back(SightRead::Tick {RESOLUTION * static_cast<int>(i)},
-                          MICROS_IN_MINUTE / time_diff);
+        bpms.push_back({SightRead::Tick {RESOLUTION * static_cast<int>(i)},
+                        MICROS_IN_MINUTE / time_diff});
     }
 
     std::vector<SightRead::TimeSignature> time_sigs;
@@ -167,8 +167,8 @@ SightRead::TempoMap tempo_map(const QbTimeData& time_data)
         const auto beats = time_data.ms_to_beats(time_sig.time_ms);
         const auto position
             = SightRead::Tick {static_cast<int>(RESOLUTION * beats)};
-        time_sigs.emplace_back(position, time_sig.numerator,
-                               time_sig.denominator);
+        time_sigs.push_back({position, static_cast<int>(time_sig.numerator),
+                             static_cast<int>(time_sig.denominator)});
     }
 
     return {std::move(time_sigs), std::move(bpms), {}, RESOLUTION};
