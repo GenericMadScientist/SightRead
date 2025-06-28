@@ -1,53 +1,15 @@
-#include <bit>
-#include <climits>
-
+#include "sightread/detail/utils.hpp"
 #include "sightread/songparts.hpp"
 
 #include "qbmidi.hpp"
 
 namespace {
-[[noreturn]] void throw_on_insufficient_bytes()
-{
-    throw SightRead::ParseError("insufficient bytes");
-}
-
-// Read a four byte big endian number from the specified offset.
-std::uint32_t read_four_byte_be(std::span<const std::uint8_t> span,
-                                std::size_t offset)
-{
-    if (span.size() < offset + 4) {
-        throw_on_insufficient_bytes();
-    }
-    return span[offset] << (3 * CHAR_BIT) | span[offset + 1] << (2 * CHAR_BIT)
-        | span[offset + 2] << CHAR_BIT | span[offset + 3];
-}
-
-std::uint32_t read_four_byte_le(std::span<const std::uint8_t> span,
-                                std::size_t offset)
-{
-    if (span.size() < offset + 4) {
-        throw_on_insufficient_bytes();
-    }
-    return span[offset] | span[offset + 1] << (1 * CHAR_BIT)
-        | span[offset + 2] << (2 * CHAR_BIT)
-        | span[offset + 3] << (3 * CHAR_BIT);
-}
-
-std::uint16_t read_two_byte_le(std::span<const std::uint8_t> span,
-                               std::size_t offset)
-{
-    if (span.size() < offset + 2) {
-        throw_on_insufficient_bytes();
-    }
-    return span[offset] | span[offset + 1] << CHAR_BIT;
-}
-
 SightRead::Detail::QbHeader read_qb_header(std::span<const std::uint8_t>& data)
 {
     constexpr auto HEADER_SIZE = 28;
 
-    const auto flags = read_four_byte_be(data, 0);
-    const auto file_size = read_four_byte_be(data, 4);
+    const auto flags = read_four_byte_be<std::uint32_t>(data, 0);
+    const auto file_size = read_four_byte_be<std::uint32_t>(data, 4);
     data = data.subspan(HEADER_SIZE);
     return {flags, file_size};
 }
@@ -55,7 +17,7 @@ SightRead::Detail::QbHeader read_qb_header(std::span<const std::uint8_t>& data)
 SightRead::Detail::QbItemInfo
 read_qb_item_info(std::span<const std::uint8_t>& data)
 {
-    const auto info = read_four_byte_le(data, 0);
+    const auto info = read_four_byte_le<std::uint32_t>(data, 0);
     const auto flags = static_cast<std::uint8_t>(info >> 8);
     const auto type = static_cast<SightRead::Detail::QbItemType>(info >> 16);
     data = data.subspan(4);
@@ -69,13 +31,14 @@ read_qb_shared_props(std::span<const std::uint8_t>& data,
     constexpr auto PROPS_SIZE = 16;
     constexpr auto PROPS_VALUE_OFFSET = 8;
 
-    const auto id = read_four_byte_be(data, 0);
-    const auto qb_name = read_four_byte_be(data, 4);
+    const auto id = read_four_byte_be<std::uint32_t>(data, 0);
+    const auto qb_name = read_four_byte_be<std::uint32_t>(data, 4);
 
     SightRead::Detail::QbSharedProps props {id, qb_name, {}};
     switch (type) {
     case SightRead::Detail::QbItemType::Array:
-        props.value = read_four_byte_be(data, PROPS_VALUE_OFFSET);
+        props.value
+            = read_four_byte_be<std::uint32_t>(data, PROPS_VALUE_OFFSET);
         break;
     case SightRead::Detail::QbItemType::Float:
     case SightRead::Detail::QbItemType::Integer:
@@ -96,7 +59,7 @@ read_qb_shared_props(std::span<const std::uint8_t>& data,
 SightRead::Detail::QbStructInfo
 read_qb_struct_info(std::span<const std::uint8_t>& data)
 {
-    const auto info = read_four_byte_le(data, 0);
+    const auto info = read_four_byte_le<std::uint32_t>(data, 0);
     const auto flags = static_cast<std::uint8_t>(info >> 8);
     auto info_byte = flags;
     const auto info_byte_2 = static_cast<std::uint8_t>(info >> 16);
@@ -114,12 +77,12 @@ std::any read_qb_simple_value(std::span<const std::uint8_t>& data,
 {
     switch (type) {
     case SightRead::Detail::QbItemType::Integer: {
-        const auto value = static_cast<int>(read_four_byte_be(data, 0));
+        const auto value = read_four_byte_be<std::int32_t>(data, 0);
         data = data.subspan(4);
         return value;
     }
     case SightRead::Detail::QbItemType::Float: {
-        const auto value = std::bit_cast<float>(read_four_byte_be(data, 0));
+        const auto value = read_four_byte_be<float>(data, 0);
         data = data.subspan(4);
         return value;
     }
@@ -127,7 +90,7 @@ std::any read_qb_simple_value(std::span<const std::uint8_t>& data,
     case SightRead::Detail::QbItemType::QbKey:
     case SightRead::Detail::QbItemType::Struct:
     case SightRead::Detail::QbItemType::WideString: {
-        const auto value = read_four_byte_be(data, 0);
+        const auto value = read_four_byte_be<std::uint32_t>(data, 0);
         data = data.subspan(4);
         return value;
     }
@@ -143,10 +106,10 @@ SightRead::Detail::QbStructProps
 read_qb_struct_props(std::span<const std::uint8_t>& data,
                      SightRead::Detail::QbItemType type)
 {
-    const auto id = read_four_byte_be(data, 0);
+    const auto id = read_four_byte_be<std::uint32_t>(data, 0);
     data = data.subspan(4);
     const auto value = read_qb_simple_value(data, type);
-    const auto next_item = read_four_byte_be(data, 0);
+    const auto next_item = read_four_byte_be<std::uint32_t>(data, 0);
     data = data.subspan(4);
     return {id, value, next_item};
 }
@@ -172,8 +135,8 @@ SightRead::Detail::QbStructData
 read_qb_struct_data(std::span<const std::uint8_t>& data,
                     std::uint32_t file_size)
 {
-    const auto header_marker = read_four_byte_be(data, 0);
-    const auto item_offset = read_four_byte_be(data, 4);
+    const auto header_marker = read_four_byte_be<std::uint32_t>(data, 0);
+    const auto item_offset = read_four_byte_be<std::uint32_t>(data, 4);
     std::vector<SightRead::Detail::QbStructItem> items;
     auto next_item = item_offset;
 
@@ -190,7 +153,7 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
                                          std::uint32_t file_size)
 {
     const auto first_item = read_qb_item_info(data);
-    const auto item_count = read_four_byte_be(data, 0);
+    const auto item_count = read_four_byte_be<std::uint32_t>(data, 0);
     const auto array_byte_size = 4 * item_count;
     data = data.subspan(4);
     std::vector<std::any> array;
@@ -202,25 +165,24 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
         break;
     case SightRead::Detail::QbItemType::Integer: {
         if (item_count > 1) {
-            const auto list_start = read_four_byte_be(data, 0);
+            const auto list_start = read_four_byte_be<std::uint32_t>(data, 0);
             data = data.subspan(list_start + data.size() - file_size);
         }
         for (auto i = 0U; i < array_byte_size; i += 4) {
-            array.emplace_back(
-                static_cast<std::int32_t>(read_four_byte_be(data, i)));
+            array.emplace_back(read_four_byte_be<std::int32_t>(data, i));
         }
         data = data.subspan(array_byte_size);
         break;
     }
     case SightRead::Detail::QbItemType::Struct: {
-        const auto list_start = read_four_byte_be(data, 0);
+        const auto list_start = read_four_byte_be<std::uint32_t>(data, 0);
         data = data.subspan(list_start + data.size() - file_size);
         std::vector<std::uint32_t> start_list;
         if (item_count == 1) {
             start_list.push_back(list_start);
         } else {
             for (auto i = 0U; i < array_byte_size; i += 4) {
-                start_list.push_back(read_four_byte_be(data, i));
+                start_list.push_back(read_four_byte_be<std::uint32_t>(data, i));
             }
             data = data.subspan(array_byte_size);
         }
@@ -233,14 +195,14 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
         break;
     }
     case SightRead::Detail::QbItemType::Array: {
-        const auto list_start = read_four_byte_be(data, 0);
+        const auto list_start = read_four_byte_be<std::uint32_t>(data, 0);
         data = data.subspan(list_start + data.size() - file_size);
         std::vector<std::uint32_t> start_list;
         if (item_count == 1) {
             start_list.push_back(list_start);
         } else {
             for (auto i = 0U; i < array_byte_size; i += 4) {
-                start_list.push_back(read_four_byte_be(data, i));
+                start_list.push_back(read_four_byte_be<std::uint32_t>(data, i));
             }
             data = data.subspan(array_byte_size);
         }
@@ -270,7 +232,7 @@ std::wstring read_qb_widestring(std::span<const std::uint8_t>& data)
     std::wstring value;
 
     while (true) {
-        const auto character = read_two_byte_le(data, 0);
+        const auto character = read_two_byte_le<std::uint16_t>(data, 0);
         data = data.subspan(2);
         if (character == 0) {
             return value;

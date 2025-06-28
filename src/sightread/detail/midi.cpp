@@ -1,46 +1,11 @@
-#include <climits>
-#include <cstddef>
 #include <utility>
 
+#include "sightread/detail/utils.hpp"
 #include "sightread/songparts.hpp"
 
 #include "midi.hpp"
 
 namespace {
-[[noreturn]] void throw_on_insufficient_bytes()
-{
-    throw SightRead::ParseError("insufficient bytes");
-}
-
-std::uint8_t pop_front(std::span<const std::uint8_t>& data)
-{
-    if (data.empty()) {
-        throw_on_insufficient_bytes();
-    }
-    const auto value = data.front();
-    data = data.subspan(1);
-    return value;
-}
-
-// Read a two byte big endian number from the specified offset.
-int read_two_byte_be(std::span<const std::uint8_t> span, std::size_t offset)
-{
-    if (span.size() < offset + 2) {
-        throw_on_insufficient_bytes();
-    }
-    return span[offset] << CHAR_BIT | span[offset + 1];
-}
-
-// Read a four byte big endian number from the specified offset.
-int read_four_byte_be(std::span<const std::uint8_t> span, std::size_t offset)
-{
-    if (span.size() < offset + 4) {
-        throw_on_insufficient_bytes();
-    }
-    return span[offset] << (3 * CHAR_BIT) | span[offset + 1] << (2 * CHAR_BIT)
-        | span[offset + 2] << CHAR_BIT | span[offset + 3];
-}
-
 struct MidiHeader {
     int ticks_per_quarter_note;
     int num_of_tracks;
@@ -64,8 +29,9 @@ MidiHeader read_midi_header(std::span<const std::uint8_t>& data)
                     MAGIC_NUMBER.cbegin())) {
         throw SightRead::ParseError("Invalid MIDI file");
     }
-    const auto num_of_tracks = read_two_byte_be(data, TRACK_COUNT_OFFSET);
-    const auto division = read_two_byte_be(data, TICKS_OFFSET);
+    const auto num_of_tracks
+        = read_two_byte_be<std::int16_t>(data, TRACK_COUNT_OFFSET);
+    const auto division = read_two_byte_be<std::int16_t>(data, TICKS_OFFSET);
     if ((division & DIVISION_NEGATIVE_SMPTE_MASK) != 0) {
         throw SightRead::ParseError("Only ticks per quarter-note is supported");
     }
@@ -169,10 +135,10 @@ read_midi_track(std::span<const std::uint8_t>& data)
     constexpr int TRACK_HEADER_MAGIC_NUMBER = 0x4D54726B;
     constexpr int TRACK_HEADER_SIZE = 8;
 
-    if (read_four_byte_be(data, 0) != TRACK_HEADER_MAGIC_NUMBER) {
+    if (read_four_byte_be<std::int32_t>(data, 0) != TRACK_HEADER_MAGIC_NUMBER) {
         throw SightRead::ParseError("Invalid MIDI file");
     }
-    const auto track_size = read_four_byte_be(data, 4);
+    const auto track_size = read_four_byte_be<std::int32_t>(data, 4);
     data = data.subspan(TRACK_HEADER_SIZE);
     auto absolute_time = 0;
     const auto final_span_size
