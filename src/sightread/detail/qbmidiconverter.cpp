@@ -93,7 +93,7 @@ std::vector<std::uint32_t> fretbars_ms(const SightRead::Detail::QbMidi& midi,
 
     std::vector<std::uint32_t> values;
     values.reserve(raw_fretbars.size());
-    for (const auto value : raw_fretbars) {
+    for (const auto& value : raw_fretbars) {
         values.push_back(std::any_cast<std::uint32_t>(value));
     }
 
@@ -110,7 +110,7 @@ std::vector<QbTimeSignature> qb_timesigs(const SightRead::Detail::QbMidi& midi,
 
     std::vector<QbTimeSignature> values;
     values.reserve(raw_timesigs.size());
-    for (const auto value : raw_timesigs) {
+    for (const auto& value : raw_timesigs) {
         const auto array = std::any_cast<std::vector<std::any>>(value);
         assert(array.size() == 3);
         values.emplace_back(std::any_cast<std::uint32_t>(array[0]),
