@@ -13,15 +13,15 @@ struct QbHeader {
 };
 
 enum class QbItemType : std::uint8_t {
-    StructFlag = 0,
-    Integer = 1,
-    Float = 2,
-    String = 3,
-    WideString = 4,
-    Struct = 10,
-    Array = 12,
-    QbKey = 13,
-    Pointer = 26
+    Array,
+    Float,
+    Integer,
+    Pointer,
+    QbKey,
+    String,
+    Struct,
+    StructFlag,
+    WideString
 };
 
 struct QbItemInfo {
