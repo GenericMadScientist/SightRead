@@ -16,6 +16,7 @@ enum class QbItemType : std::uint8_t {
     StructFlag = 0,
     Integer = 1,
     Float = 2,
+    String = 3,
     WideString = 4,
     Struct = 10,
     Array = 12,
@@ -68,7 +69,9 @@ struct QbStructData {
     std::vector<QbStructItem> items;
 };
 
-QbMidi parse_qb(std::span<const std::uint8_t> data);
+enum class Endianness { LittleEndian, BigEndian };
+
+QbMidi parse_qb(std::span<const std::uint8_t> data, Endianness endianness);
 }
 
 #endif
