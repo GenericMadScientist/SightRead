@@ -53,12 +53,13 @@ constexpr std::array<std::uint32_t, 256> crc_table {
     0x54DE5729, 0x23D967BF, 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,
     0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D};
 
-std::uint32_t crc32(std::string_view key, std::uint32_t initial_crc = ~0)
+std::uint32_t crc32(std::string_view key, std::uint32_t initial_crc = ~0U)
 {
     std::uint32_t crc = initial_crc;
 
     for (const auto character : key) {
-        const auto table_key = static_cast<std::uint8_t>(crc ^ character);
+        const auto table_key
+            = (crc ^ static_cast<std::uint32_t>(character)) & 0xFF;
         crc = crc_table.at(table_key) ^ (crc >> CHAR_BIT);
     }
 
