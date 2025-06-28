@@ -222,6 +222,8 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
            std::shared_ptr<SightRead::SongGlobalData> global_data,
            const QbTimeData& timedata)
 {
+    constexpr auto NUMBER_OF_FRETS = 5U;
+
     const auto events = note_events(midi, short_name_crc, difficulty);
     if (events.empty()) {
         return {};
@@ -236,16 +238,19 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
             = timedata.ms_to_ticks(event.position + event.length);
         const auto length = end_position - note.position;
 
-        for (auto i = 0; i < 5; ++i) {
+        for (auto i = 0U; i < NUMBER_OF_FRETS; ++i) {
             if ((event.flags & (1 << i)) != 0) {
-                note.lengths[i] = length;
+                note.lengths.at(i) = length;
             }
         }
 
         notes.push_back(note);
     }
 
-    return {{notes, {}, SightRead::TrackType::FiveFret, global_data}};
+    return {{std::move(notes),
+             {},
+             SightRead::TrackType::FiveFret,
+             std::move(global_data)}};
 }
 }
 
