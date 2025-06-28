@@ -14,6 +14,11 @@ public:
         : std::runtime_error {what}
     {
     }
+
+    explicit ParseError(const std::string& what)
+        : std::runtime_error {what}
+    {
+    }
 };
 
 struct TimeSignature {
