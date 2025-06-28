@@ -182,6 +182,7 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
 {
     const auto first_item = read_qb_item_info(data);
     const auto item_count = read_four_byte_be(data, 0);
+    const auto array_byte_size = 4 * item_count;
     data = data.subspan(4);
     std::vector<std::any> array;
     array.reserve(item_count);
@@ -195,11 +196,11 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
             const auto list_start = read_four_byte_be(data, 0);
             data = data.subspan(list_start + data.size() - file_size);
         }
-        for (auto i = 0U; i < item_count; ++i) {
+        for (auto i = 0U; i < array_byte_size; i += 4) {
             array.emplace_back(
-                static_cast<std::int32_t>(read_four_byte_be(data, 4U * i)));
+                static_cast<std::int32_t>(read_four_byte_be(data, i)));
         }
-        data = data.subspan(4U * item_count);
+        data = data.subspan(array_byte_size);
         break;
     }
     case SightRead::Detail::QbItemType::Struct: {
@@ -209,10 +210,10 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
         if (item_count == 1) {
             start_list.push_back(list_start);
         } else {
-            for (auto i = 0U; i < item_count; ++i) {
-                start_list.push_back(read_four_byte_be(data, 4U * i));
+            for (auto i = 0U; i < array_byte_size; i += 4) {
+                start_list.push_back(read_four_byte_be(data, i));
             }
-            data = data.subspan(4 * item_count);
+            data = data.subspan(array_byte_size);
         }
 
         for (auto start : start_list) {
@@ -229,10 +230,10 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
         if (item_count == 1) {
             start_list.push_back(list_start);
         } else {
-            for (auto i = 0U; i < item_count; ++i) {
-                start_list.push_back(read_four_byte_be(data, 4U * i));
+            for (auto i = 0U; i < array_byte_size; i += 4) {
+                start_list.push_back(read_four_byte_be(data, i));
             }
-            data = data.subspan(4U * item_count);
+            data = data.subspan(array_byte_size);
         }
 
         for (auto start : start_list) {
