@@ -270,13 +270,14 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
     notes.reserve(events.size());
     for (const auto& event : events) {
         SightRead::Note note;
+        auto ms_length = event.length;
+        if (ms_length <= sustain_threshold) {
+            ms_length = 0;
+        }
         note.position = timedata.ms_to_ticks(event.position);
         const auto end_position
-            = timedata.ms_to_ticks(event.position + event.length);
-        auto length = end_position - note.position;
-        if (length <= sustain_threshold) {
-            length = 0;
-        }
+            = timedata.ms_to_ticks(event.position + ms_length);
+        const auto length = end_position - note.position;
 
         for (auto i = 0U; i < NUMBER_OF_FRETS; ++i) {
             if ((event.flags & (1 << i)) != 0) {
