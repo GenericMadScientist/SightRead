@@ -6,6 +6,35 @@
 #include "qbmidi.hpp"
 
 namespace {
+[[nodiscard]] SightRead::Detail::QbItemType qb_item_type(std::uint8_t byte)
+{
+    const std::unordered_map<int, SightRead::Detail::QbItemType>
+        qb_type_mapping {{0, SightRead::Detail::QbItemType::StructFlag},
+                         {1, SightRead::Detail::QbItemType::Integer},
+                         {2, SightRead::Detail::QbItemType::Float},
+                         {3, SightRead::Detail::QbItemType::String},
+                         {4, SightRead::Detail::QbItemType::WideString},
+                         {10, SightRead::Detail::QbItemType::Struct},
+                         {12, SightRead::Detail::QbItemType::Array},
+                         {13, SightRead::Detail::QbItemType::QbKey},
+                         {26, SightRead::Detail::QbItemType::Pointer}};
+
+    return qb_type_mapping.at(byte);
+}
+
+[[nodiscard]] SightRead::Detail::QbItemType ps2_qb_item_type(std::uint8_t byte)
+{
+    const std::unordered_map<int, SightRead::Detail::QbItemType>
+        ps2_qb_mapping {{3, SightRead::Detail::QbItemType::Integer},
+                        {5, SightRead::Detail::QbItemType::Float},
+                        {7, SightRead::Detail::QbItemType::String},
+                        {21, SightRead::Detail::QbItemType::Struct},
+                        {27, SightRead::Detail::QbItemType::QbKey},
+                        {53, SightRead::Detail::QbItemType::Pointer}};
+
+    return ps2_qb_mapping.at(byte);
+}
+
 class QbReader {
 private:
     SightRead::Detail::Endianness m_endianness;
@@ -99,38 +128,13 @@ private:
     char read_char() { return static_cast<char>(pop_front(m_remaining_data)); }
 
     [[nodiscard]] SightRead::Detail::QbItemType
-    qb_item_type(std::uint8_t byte) const
-    {
-        const std::unordered_map<int, SightRead::Detail::QbItemType>
-            qb_type_mapping {{0, SightRead::Detail::QbItemType::StructFlag},
-                             {1, SightRead::Detail::QbItemType::Integer},
-                             {2, SightRead::Detail::QbItemType::Float},
-                             {3, SightRead::Detail::QbItemType::String},
-                             {4, SightRead::Detail::QbItemType::WideString},
-                             {10, SightRead::Detail::QbItemType::Struct},
-                             {12, SightRead::Detail::QbItemType::Array},
-                             {13, SightRead::Detail::QbItemType::QbKey},
-                             {26, SightRead::Detail::QbItemType::Pointer}};
-
-        return qb_type_mapping.at(byte);
-    }
-
-    [[nodiscard]] SightRead::Detail::QbItemType
     struct_item_type(std::uint8_t byte) const
     {
-        if (m_endianness == SightRead::Detail::Endianness::BigEndian) {
-            return qb_item_type(byte);
+        if (m_endianness == SightRead::Detail::Endianness::LittleEndian) {
+            return ps2_qb_item_type(byte);
         }
 
-        const std::unordered_map<int, SightRead::Detail::QbItemType>
-            ps2_qb_mapping {{3, SightRead::Detail::QbItemType::Integer},
-                            {5, SightRead::Detail::QbItemType::Float},
-                            {7, SightRead::Detail::QbItemType::String},
-                            {21, SightRead::Detail::QbItemType::Struct},
-                            {27, SightRead::Detail::QbItemType::QbKey},
-                            {53, SightRead::Detail::QbItemType::Pointer}};
-
-        return ps2_qb_mapping.at(byte);
+        return qb_item_type(byte);
     }
 
     std::vector<std::any> read_array_node()
