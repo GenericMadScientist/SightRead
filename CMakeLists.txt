@@ -48,6 +48,7 @@ endfunction()
 add_library(sightread
     src/sightread/chartparser.cpp
     src/sightread/midiparser.cpp
+    src/sightread/qbmidiparser.cpp
     src/sightread/song.cpp
     src/sightread/songparts.cpp
     src/sightread/tempomap.cpp
@@ -93,9 +94,7 @@ if(SIGHTREAD_BUILD_TESTS)
         src/sightread/detail/chartconverter.cpp
         src/sightread/detail/midi.cpp
         src/sightread/detail/midiconverter.cpp
-        src/sightread/detail/parserutil.cpp
-        src/sightread/detail/qbmidi.cpp
-        src/sightread/detail/qbmidiconverter.cpp)
+        src/sightread/detail/parserutil.cpp)
 
     target_include_directories(sightread_tests PRIVATE include src tests/sightread)
     target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
