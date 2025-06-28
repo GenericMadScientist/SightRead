@@ -77,8 +77,15 @@ read_qb_shared_props(std::span<const std::uint8_t>& data,
     case SightRead::Detail::QbItemType::Array:
         props.value = read_four_byte_be(data, PROPS_VALUE_OFFSET);
         break;
+    case SightRead::Detail::QbItemType::Float:
+    case SightRead::Detail::QbItemType::Integer:
+    case SightRead::Detail::QbItemType::Pointer:
+    case SightRead::Detail::QbItemType::QbKey:
+    case SightRead::Detail::QbItemType::Struct:
+    case SightRead::Detail::QbItemType::StructFlag:
+    case SightRead::Detail::QbItemType::WideString:
     default:
-        throw SightRead::ParseError("Unknown type "
+        throw SightRead::ParseError("Unexpected type for QbSharedProps, "
                                     + std::to_string(static_cast<int>(type)));
     }
 
@@ -124,6 +131,8 @@ std::any read_qb_simple_value(std::span<const std::uint8_t>& data,
         data = data.subspan(4);
         return value;
     }
+    case SightRead::Detail::QbItemType::Array:
+    case SightRead::Detail::QbItemType::StructFlag:
     default:
         throw SightRead::ParseError("Need to read simple "
                                     + std::to_string(static_cast<int>(type)));
@@ -243,9 +252,13 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
 
         break;
     }
+    case SightRead::Detail::QbItemType::Float:
+    case SightRead::Detail::QbItemType::Pointer:
+    case SightRead::Detail::QbItemType::QbKey:
+    case SightRead::Detail::QbItemType::WideString:
     default:
         throw SightRead::ParseError(
-            "Unknown type "
+            "Unexpected type for array element, "
             + std::to_string(static_cast<int>(first_item.type)));
     }
 
@@ -289,8 +302,9 @@ std::any read_qb_value(std::span<const std::uint8_t>& data,
     case SightRead::Detail::QbItemType::WideString:
         value = read_qb_widestring(data);
         break;
+    case SightRead::Detail::QbItemType::StructFlag:
     default:
-        throw SightRead::ParseError("Unknown type "
+        throw SightRead::ParseError("Unexpected type for Qb value, "
                                     + std::to_string(static_cast<int>(type)));
     }
 
