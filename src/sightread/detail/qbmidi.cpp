@@ -44,9 +44,11 @@ std::uint16_t read_two_byte_le(std::span<const std::uint8_t> span,
 
 SightRead::Detail::QbHeader read_qb_header(std::span<const std::uint8_t>& data)
 {
+    constexpr auto HEADER_SIZE = 28;
+
     const auto flags = read_four_byte_be(data, 0);
     const auto file_size = read_four_byte_be(data, 4);
-    data = data.subspan(28);
+    data = data.subspan(HEADER_SIZE);
     return {flags, file_size};
 }
 
@@ -64,20 +66,23 @@ SightRead::Detail::QbSharedProps
 read_qb_shared_props(std::span<const std::uint8_t>& data,
                      SightRead::Detail::QbItemType type)
 {
+    constexpr auto PROPS_SIZE = 16;
+    constexpr auto PROPS_VALUE_OFFSET = 8;
+
     const auto id = read_four_byte_be(data, 0);
     const auto qb_name = read_four_byte_be(data, 4);
 
     SightRead::Detail::QbSharedProps props {id, qb_name, {}};
     switch (type) {
     case SightRead::Detail::QbItemType::Array:
-        props.value = read_four_byte_be(data, 8);
+        props.value = read_four_byte_be(data, PROPS_VALUE_OFFSET);
         break;
     default:
         throw SightRead::ParseError("Unknown type "
                                     + std::to_string(static_cast<int>(type)));
     }
 
-    data = data.subspan(16);
+    data = data.subspan(PROPS_SIZE);
     return props;
 }
 
@@ -191,10 +196,10 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
             data = data.subspan(list_start + data.size() - file_size);
         }
         for (auto i = 0U; i < item_count; ++i) {
-            array.push_back(
-                static_cast<std::int32_t>(read_four_byte_be(data, 4 * i)));
+            array.emplace_back(
+                static_cast<std::int32_t>(read_four_byte_be(data, 4U * i)));
         }
-        data = data.subspan(4 * item_count);
+        data = data.subspan(4U * item_count);
         break;
     }
     case SightRead::Detail::QbItemType::Struct: {
@@ -205,14 +210,14 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
             start_list.push_back(list_start);
         } else {
             for (auto i = 0U; i < item_count; ++i) {
-                start_list.push_back(read_four_byte_be(data, 4 * i));
+                start_list.push_back(read_four_byte_be(data, 4U * i));
             }
             data = data.subspan(4 * item_count);
         }
 
         for (auto start : start_list) {
             data = data.subspan(data.size() - file_size + start);
-            array.push_back(read_qb_struct_data(data, file_size));
+            array.emplace_back(read_qb_struct_data(data, file_size));
         }
 
         break;
@@ -225,14 +230,14 @@ std::vector<std::any> read_qb_array_node(std::span<const std::uint8_t>& data,
             start_list.push_back(list_start);
         } else {
             for (auto i = 0U; i < item_count; ++i) {
-                start_list.push_back(read_four_byte_be(data, 4 * i));
+                start_list.push_back(read_four_byte_be(data, 4U * i));
             }
-            data = data.subspan(4 * item_count);
+            data = data.subspan(4U * item_count);
         }
 
         for (auto start : start_list) {
             data = data.subspan(data.size() - file_size + start);
-            array.push_back(read_qb_array_node(data, file_size));
+            array.emplace_back(read_qb_array_node(data, file_size));
         }
 
         break;
