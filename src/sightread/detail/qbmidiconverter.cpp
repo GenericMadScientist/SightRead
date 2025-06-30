@@ -197,27 +197,91 @@ std::vector<QbSpEvent> sp_events(const SightRead::Detail::QbMidi& midi,
 
 struct QbTimeData {
 private:
+    std::vector<double> m_fretbars_beats;
+    std::vector<std::uint32_t> m_fretbars_ms;
+    std::vector<QbTimeSignature> m_timesigs;
+
     [[nodiscard]] double ms_to_beats(std::uint32_t ms) const
     {
-        const auto it
-            = std::upper_bound(fretbars.cbegin(), fretbars.cend(), ms);
-        assert(it != fretbars.cbegin());
-        assert(it != fretbars.cend());
+        const auto it = std::upper_bound(m_fretbars_ms.cbegin(),
+                                         m_fretbars_ms.cend(), ms);
+        assert(it != m_fretbars_ms.cbegin());
+        assert(it != m_fretbars_ms.cend());
         const auto beat_after = *it;
         const auto beat_before = *std::prev(it);
-        const auto after_index = std::distance(fretbars.cbegin(), it);
+        const auto after_index = std::distance(m_fretbars_ms.cbegin(), it);
+        const auto after_beat = m_fretbars_beats.at(after_index);
         return static_cast<double>(after_index)
             - static_cast<double>(beat_after - ms)
+            * (after_beat - m_fretbars_beats.at(after_index - 1))
             / static_cast<double>(beat_after - beat_before);
     }
 
 public:
-    std::vector<std::uint32_t> fretbars;
-    std::vector<QbTimeSignature> timesigs;
+    QbTimeData(std::vector<std::uint32_t> fretbars,
+               std::vector<QbTimeSignature> timesigs)
+        : m_fretbars_ms {std::move(fretbars)}
+        , m_timesigs {std::move(timesigs)}
+    {
+        assert(!m_fretbars_ms.empty());
+        m_fretbars_beats.reserve(m_fretbars_ms.size());
+        m_fretbars_beats.emplace_back(0.0);
+
+        auto beat_position = 0.0;
+        auto timesig_denominator = 4U;
+        auto timesig_iter = m_timesigs.cbegin();
+        auto fretbar_iter = m_fretbars_ms.cbegin();
+
+        while (fretbar_iter < std::prev(m_fretbars_ms.cend())) {
+            if (timesig_iter != m_timesigs.cend()
+                && timesig_iter->time_ms >= *fretbar_iter) {
+                timesig_denominator = timesig_iter->denominator;
+                ++timesig_iter;
+                continue;
+            }
+
+            beat_position += 4.0 / timesig_denominator;
+            m_fretbars_beats.emplace_back();
+            ++fretbar_iter;
+        }
+    }
+
+    [[nodiscard]] std::vector<SightRead::BPM> bpms() const
+    {
+        constexpr auto MICROS_IN_MINUTE = 60 * 1000 * 1000;
+
+        std::vector<SightRead::BPM> bpms;
+        bpms.reserve(m_fretbars_ms.size() - 1);
+        for (auto i = 0U; i + 1 < m_fretbars_ms.size(); ++i) {
+            const auto time_diff = m_fretbars_ms[i + 1] - m_fretbars_ms[i];
+            bpms.push_back({SightRead::Tick {RESOLUTION * static_cast<int>(i)},
+                            MICROS_IN_MINUTE / time_diff});
+        }
+
+        return bpms;
+    }
 
     [[nodiscard]] SightRead::Tick ms_to_ticks(std::uint32_t ms) const
     {
         return SightRead::Tick {static_cast<int>(RESOLUTION * ms_to_beats(ms))};
+    }
+
+    [[nodiscard]] std::uint32_t sustain_threshold() const
+    {
+        return m_fretbars_ms.at(1) / 2;
+    }
+
+    [[nodiscard]] std::vector<SightRead::TimeSignature> time_sigs() const
+    {
+        std::vector<SightRead::TimeSignature> time_sigs;
+        time_sigs.reserve(m_timesigs.size());
+        for (const auto& time_sig : m_timesigs) {
+            const auto position = ms_to_ticks(time_sig.time_ms);
+            time_sigs.push_back({position, static_cast<int>(time_sig.numerator),
+                                 static_cast<int>(time_sig.denominator)});
+        }
+
+        return time_sigs;
     }
 };
 
@@ -230,24 +294,7 @@ QbTimeData time_data(const SightRead::Detail::QbMidi& midi,
 
 SightRead::TempoMap tempo_map(const QbTimeData& time_data)
 {
-    constexpr auto MICROS_IN_MINUTE = 60 * 1000 * 1000;
-
-    std::vector<SightRead::BPM> bpms;
-    for (auto i = 0U; i + 1 < time_data.fretbars.size(); ++i) {
-        const auto time_diff
-            = time_data.fretbars[i + 1] - time_data.fretbars[i];
-        bpms.push_back({SightRead::Tick {RESOLUTION * static_cast<int>(i)},
-                        MICROS_IN_MINUTE / time_diff});
-    }
-
-    std::vector<SightRead::TimeSignature> time_sigs;
-    for (const auto& time_sig : time_data.timesigs) {
-        const auto position = time_data.ms_to_ticks(time_sig.time_ms);
-        time_sigs.push_back({position, static_cast<int>(time_sig.numerator),
-                             static_cast<int>(time_sig.denominator)});
-    }
-
-    return {std::move(time_sigs), std::move(bpms), {}, RESOLUTION};
+    return {time_data.time_sigs(), time_data.bpms(), {}, RESOLUTION};
 }
 
 std::optional<SightRead::NoteTrack>
@@ -265,7 +312,7 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
 
     const auto phrase_events = sp_events(midi, short_name_crc, difficulty);
 
-    const auto sustain_threshold = timedata.fretbars.at(1) / 2;
+    const auto sustain_threshold = timedata.sustain_threshold();
     std::vector<SightRead::Note> notes;
     notes.reserve(events.size());
     for (const auto& event : events) {
