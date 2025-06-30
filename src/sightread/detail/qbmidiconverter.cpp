@@ -241,7 +241,7 @@ public:
             }
 
             beat_position += 4.0 / timesig_denominator;
-            m_fretbars_beats.emplace_back();
+            m_fretbars_beats.emplace_back(beat_position);
             ++fretbar_iter;
         }
     }
