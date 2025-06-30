@@ -258,8 +258,13 @@ public:
         bpms.reserve(m_fretbars_ms.size() - 1);
         for (auto i = 0U; i + 1 < m_fretbars_ms.size(); ++i) {
             const auto time_diff = m_fretbars_ms[i + 1] - m_fretbars_ms[i];
-            bpms.push_back({SightRead::Tick {RESOLUTION * static_cast<int>(i)},
-                            MICROS_IN_MINUTE / time_diff});
+            const auto tick_pos
+                = static_cast<int>(RESOLUTION * m_fretbars_beats[i]);
+            const auto beat_diff
+                = m_fretbars_beats[i + 1] - m_fretbars_beats[i];
+            bpms.push_back(
+                {SightRead::Tick {tick_pos},
+                 static_cast<int>(MICROS_IN_MINUTE * beat_diff / time_diff)});
         }
 
         return bpms;
