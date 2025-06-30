@@ -6,8 +6,6 @@
 
 #include "sightread/detail/qbmidiconverter.hpp"
 
-#include <iostream>
-
 namespace {
 constexpr int RESOLUTION = 1920;
 
@@ -238,7 +236,7 @@ public:
 
         while (fretbar_iter < std::prev(m_fretbars_ms.cend())) {
             if (timesig_iter != m_timesigs.cend()
-                && timesig_iter->time_ms >= *fretbar_iter) {
+                && timesig_iter->time_ms <= *fretbar_iter) {
                 timesig_denominator = timesig_iter->denominator;
                 ++timesig_iter;
                 continue;
