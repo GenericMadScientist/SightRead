@@ -225,6 +225,8 @@ public:
         : m_fretbars_ms {std::move(fretbars)}
         , m_timesigs {std::move(timesigs)}
     {
+        constexpr auto DEFAULT_TIME_SIG_DENOMINATOR = 4.0;
+
         assert(!m_fretbars_ms.empty());
         m_fretbars_beats.reserve(m_fretbars_ms.size());
         m_fretbars_beats.emplace_back(0.0);
@@ -242,7 +244,7 @@ public:
                 continue;
             }
 
-            beat_position += 4.0 / timesig_denominator;
+            beat_position += DEFAULT_TIME_SIG_DENOMINATOR / timesig_denominator;
             m_fretbars_beats.emplace_back(beat_position);
             ++fretbar_iter;
         }
