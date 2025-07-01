@@ -210,7 +210,7 @@ private:
         const auto after_index = std::distance(m_fretbars_ms.cbegin(), it);
         const auto after_beat
             = m_fretbars_beats.at(static_cast<std::size_t>(after_index));
-        return static_cast<double>(after_index)
+        return after_beat
             - static_cast<double>(beat_after - ms)
             * (after_beat
                - m_fretbars_beats.at(static_cast<std::size_t>(after_index - 1)))
