@@ -9,6 +9,7 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
     : m_od_beats {std::move(od_beats)}
     , m_resolution {resolution}
 {
+    constexpr double DEFAULT_TIMESIG_DENOM = 4.0;
     constexpr double MS_PER_MINUTE = 60000.0;
 
     if (resolution <= 0) {
@@ -81,7 +82,7 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
         m_measure_timestamps.push_back(
             {SightRead::Measure(last_measure), beat});
         last_beat_rate = (ts.numerator * DEFAULT_BEAT_RATE) / ts.denominator;
-        last_fretbar_rate = ts.denominator / 4.0;
+        last_fretbar_rate = ts.denominator / DEFAULT_TIMESIG_DENOM;
         last_tick = ts.position;
     }
 
