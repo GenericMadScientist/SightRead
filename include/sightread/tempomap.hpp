@@ -47,6 +47,11 @@ private:
         SightRead::Second time;
     };
 
+    struct FretbarTimestamp {
+        SightRead::Fretbar fretbar;
+        SightRead::Beat beat;
+    };
+
     struct MeasureTimestamp {
         SightRead::Measure measure;
         SightRead::Beat beat;
@@ -59,6 +64,7 @@ private:
 
     static constexpr double DEFAULT_BEAT_RATE = 4.0;
     static constexpr std::int64_t DEFAULT_BPM = 120000;
+    static constexpr double DEFAULT_FRETBAR_RATE = 1.0;
     static constexpr int DEFAULT_RESOLUTION = 192;
 
     std::vector<TimeSignature> m_time_sigs;
@@ -68,6 +74,9 @@ private:
 
     std::vector<BeatTimestamp> m_beat_timestamps;
     std::int64_t m_last_bpm;
+
+    std::vector<FretbarTimestamp> m_fretbar_timestamps;
+    double m_last_fretbar_rate;
 
     std::vector<MeasureTimestamp> m_measure_timestamps;
     double m_last_beat_rate;
@@ -91,6 +100,7 @@ public:
     // Return the TempoMap for a speedup of speed% (normal speed is 100).
     [[nodiscard]] TempoMap speedup(int speed) const;
 
+    [[nodiscard]] SightRead::Beat to_beats(SightRead::Fretbar fretbars) const;
     [[nodiscard]] SightRead::Beat to_beats(SightRead::Measure measures) const;
     [[nodiscard]] SightRead::Beat to_beats(SightRead::OdBeat od_beats) const;
     [[nodiscard]] SightRead::Beat to_beats(SightRead::Second seconds) const;

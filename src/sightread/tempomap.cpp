@@ -67,19 +67,26 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
 
     last_tick = SightRead::Tick {0};
     auto last_beat_rate = DEFAULT_BEAT_RATE;
+    auto last_fretbar_rate = DEFAULT_FRETBAR_RATE;
+    auto last_fretbar = 0.0;
     auto last_measure = 0.0;
 
     for (const auto& ts : m_time_sigs) {
-        last_measure
-            += to_beats(ts.position - last_tick).value() / last_beat_rate;
+        const auto beat_increment = to_beats(ts.position - last_tick).value();
+        last_fretbar += beat_increment * last_fretbar_rate;
+        last_measure += beat_increment / last_beat_rate;
         const auto beat = to_beats(ts.position);
+        m_fretbar_timestamps.push_back(
+            {SightRead::Fretbar(last_fretbar), beat});
         m_measure_timestamps.push_back(
             {SightRead::Measure(last_measure), beat});
         last_beat_rate = (ts.numerator * DEFAULT_BEAT_RATE) / ts.denominator;
+        last_fretbar_rate = ts.denominator / 4.0;
         last_tick = ts.position;
     }
 
     m_last_beat_rate = last_beat_rate;
+    m_last_fretbar_rate = last_fretbar_rate;
 
     if (!m_od_beats.empty()) {
         for (auto i = 0U; i < m_od_beats.size(); ++i) {
@@ -111,6 +118,26 @@ SightRead::TempoMap SightRead::TempoMap::speedup(int speed) const
     speedup.m_last_bpm = (speedup.m_last_bpm * speed) / DEFAULT_SPEED;
 
     return speedup;
+}
+
+SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Fretbar fretbars) const
+{
+    const auto pos = std::lower_bound(
+        m_fretbar_timestamps.cbegin(), m_fretbar_timestamps.cend(), fretbars,
+        [](const auto& x, const auto& y) { return x.fretbar < y; });
+    if (pos == m_fretbar_timestamps.cend()) {
+        const auto& back = m_fretbar_timestamps.back();
+        return back.beat
+            + (fretbars - back.fretbar).to_beat(m_last_fretbar_rate);
+    }
+    if (pos == m_fretbar_timestamps.cbegin()) {
+        return pos->beat
+            - (pos->fretbar - fretbars).to_beat(DEFAULT_FRETBAR_RATE);
+    }
+    const auto prev = pos - 1;
+    return prev->beat
+        + (pos->beat - prev->beat)
+        * ((fretbars - prev->fretbar) / (pos->fretbar - prev->fretbar));
 }
 
 SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Measure measures) const

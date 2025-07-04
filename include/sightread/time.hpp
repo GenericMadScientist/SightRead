@@ -118,6 +118,74 @@ public:
     }
 };
 
+class Fretbar {
+private:
+    double m_value;
+
+public:
+    explicit Fretbar(double value)
+        : m_value {value}
+    {
+    }
+    [[nodiscard]] double value() const { return m_value; }
+    [[nodiscard]] Beat to_beat(double fretbar_rate) const
+    {
+        return Beat(m_value / fretbar_rate);
+    }
+
+    std::partial_ordering operator<=>(const Fretbar& rhs) const
+    {
+        return m_value <=> rhs.m_value;
+    }
+
+    Fretbar& operator+=(const Fretbar& rhs)
+    {
+        m_value += rhs.m_value;
+        return *this;
+    }
+
+    Fretbar& operator-=(const Fretbar& rhs)
+    {
+        m_value -= rhs.m_value;
+        return *this;
+    }
+
+    Fretbar& operator*=(double rhs)
+    {
+        m_value *= rhs;
+        return *this;
+    }
+
+    friend Fretbar operator+(Fretbar lhs, const Fretbar& rhs)
+    {
+        lhs += rhs;
+        return lhs;
+    }
+
+    friend Fretbar operator-(Fretbar lhs, const Fretbar& rhs)
+    {
+        lhs -= rhs;
+        return lhs;
+    }
+
+    friend Fretbar operator*(Fretbar lhs, double rhs)
+    {
+        lhs *= rhs;
+        return lhs;
+    }
+
+    friend double operator/(const Fretbar& lhs, const Fretbar& rhs)
+    {
+        return lhs.m_value / rhs.m_value;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Fretbar& fretbars)
+    {
+        os << fretbars.value() << "fb";
+        return os;
+    }
+};
+
 class Measure {
 private:
     double m_value;
