@@ -324,3 +324,21 @@ BOOST_AUTO_TEST_CASE(fretbars_to_beats_conversion_works_correctly)
             beats.at(i), 0.0001);
     }
 }
+
+BOOST_AUTO_TEST_CASE(beats_to_fretbars_conversion_works_correctly)
+{
+    SightRead::TempoMap tempo_map {{{SightRead::Tick {0}, 5, 4},
+                                    {SightRead::Tick {1000}, 4, 8},
+                                    {SightRead::Tick {1200}, 4, 16}},
+                                   {},
+                                   {},
+                                   200};
+    constexpr std::array beats {-1.0, 0.0, 3.0, 5.5, 6.5};
+    constexpr std::array fretbars {-1.0, 0.0, 3.0, 6.0, 9.0};
+
+    for (auto i = 0U; i < fretbars.size(); ++i) {
+        BOOST_CHECK_CLOSE(
+            tempo_map.to_fretbars(SightRead::Beat(beats.at(i))).value(),
+            fretbars.at(i), 0.0001);
+    }
+}

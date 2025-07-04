@@ -6,6 +6,7 @@
 #include <ostream>
 
 namespace SightRead {
+class Fretbar;
 class Measure;
 class Second;
 
@@ -62,8 +63,9 @@ public:
     {
     }
     [[nodiscard]] double value() const { return m_value; }
-    [[nodiscard]] Second to_second(std::int64_t bpm) const;
+    [[nodiscard]] Fretbar to_fretbar(double fretbar_rate) const;
     [[nodiscard]] Measure to_measure(double beat_rate) const;
+    [[nodiscard]] Second to_second(std::int64_t bpm) const;
 
     std::partial_ordering operator<=>(const Beat& rhs) const
     {
@@ -384,6 +386,11 @@ public:
         return os;
     }
 };
+
+inline Fretbar Beat::to_fretbar(double fretbar_rate) const
+{
+    return Fretbar(m_value * fretbar_rate);
+}
 
 inline Measure Beat::to_measure(double beat_rate) const
 {

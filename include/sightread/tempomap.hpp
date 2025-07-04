@@ -110,6 +110,9 @@ public:
                                 / static_cast<double>(m_resolution)};
     }
 
+    [[nodiscard]] SightRead::Fretbar to_fretbars(SightRead::Beat beats) const;
+    [[nodiscard]] SightRead::Fretbar to_fretbars(SightRead::Tick ticks) const;
+
     [[nodiscard]] SightRead::Measure to_measures(SightRead::Beat beats) const;
     [[nodiscard]] SightRead::Measure
     to_measures(SightRead::Second seconds) const;

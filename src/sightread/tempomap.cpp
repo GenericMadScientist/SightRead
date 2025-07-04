@@ -196,6 +196,31 @@ SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Second seconds) const
         * ((seconds - prev->time) / (pos->time - prev->time));
 }
 
+SightRead::Fretbar SightRead::TempoMap::to_fretbars(SightRead::Beat beats) const
+{
+    const auto pos = std::lower_bound(
+        m_fretbar_timestamps.cbegin(), m_fretbar_timestamps.cend(), beats,
+        [](const auto& x, const auto& y) { return x.beat < y; });
+    if (pos == m_fretbar_timestamps.cend()) {
+        const auto& back = m_fretbar_timestamps.back();
+        return back.fretbar
+            + (beats - back.beat).to_fretbar(m_last_fretbar_rate);
+    }
+    if (pos == m_fretbar_timestamps.cbegin()) {
+        return pos->fretbar
+            - (pos->beat - beats).to_fretbar(DEFAULT_FRETBAR_RATE);
+    }
+    const auto prev = pos - 1;
+    return prev->fretbar
+        + (pos->fretbar - prev->fretbar)
+        * ((beats - prev->beat) / (pos->beat - prev->beat));
+}
+
+SightRead::Fretbar SightRead::TempoMap::to_fretbars(SightRead::Tick ticks) const
+{
+    return to_fretbars(to_beats(ticks));
+}
+
 SightRead::Measure SightRead::TempoMap::to_measures(SightRead::Beat beats) const
 {
     const auto pos = std::lower_bound(
