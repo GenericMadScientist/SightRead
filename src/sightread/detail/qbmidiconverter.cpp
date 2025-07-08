@@ -4,6 +4,8 @@
 #include <climits>
 #include <unordered_map>
 
+#include <boost/locale.hpp>
+
 #include "sightread/detail/qbmidiconverter.hpp"
 
 namespace {
@@ -54,7 +56,13 @@ constexpr std::array<std::uint32_t, 256> crc_table {
     0x54DE5729, 0x23D967BF, 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,
     0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D};
 
-std::uint32_t crc32(std::string_view key, std::uint32_t initial_crc = ~0U)
+const std::unordered_map<std::uint32_t, std::string> section_names {
+    {0x62DFAD1F, "They're Hammer Ons"},
+    {0x725FA5CC, "You Rock!!!"},
+    {0x8DF19873, "Fast Solo A"}};
+
+constexpr std::uint32_t crc32(std::string_view key,
+                              std::uint32_t initial_crc = ~0U)
 {
     std::uint32_t crc = initial_crc;
 
@@ -357,6 +365,67 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
     return {{std::move(notes), sp_phrases, SightRead::TrackType::FiveFret,
              std::move(global_data)}};
 }
+
+SightRead::PracticeSection
+section_from_struct(const SightRead::Detail::QbStructData& section_struct,
+                    const QbTimeData& timedata)
+{
+    constexpr auto MARKER_CRC = crc32("marker");
+    constexpr auto TIME_CRC = crc32("time");
+
+    std::string name;
+    SightRead::Tick time {0};
+
+    for (const auto& item : section_struct.items) {
+        if (item.props.id == MARKER_CRC) {
+            switch (item.info.type) {
+            case SightRead::Detail::QbItemType::Pointer: {
+                const auto pointer = std::any_cast<std::uint32_t>(item.data);
+                const auto section_iter = section_names.find(pointer);
+                if (section_iter == section_names.end()) {
+                    name = "???";
+                } else {
+                    name = section_iter->second;
+                }
+                break;
+            }
+            case SightRead::Detail::QbItemType::WideString:
+                name = boost::locale::conv::from_utf(
+                    std::any_cast<std::wstring>(item.data), "Latin1");
+                break;
+            default:
+                throw SightRead::ParseError("Unexpected section name type");
+            }
+        } else if (item.props.id == TIME_CRC) {
+            const auto time_ms = std::any_cast<std::int32_t>(item.props.value);
+            time = timedata.ms_to_ticks(time_ms);
+        } else {
+            throw SightRead::ParseError("Unexpected marker struct item");
+        }
+    }
+
+    return {std::move(name), time};
+}
+
+std::vector<SightRead::PracticeSection>
+practice_sections(const SightRead::Detail::QbMidi& midi,
+                  std::uint32_t short_name_crc, const QbTimeData& timedata)
+{
+    const auto markers_item
+        = find_item_by_id(midi.items, "_markers", short_name_crc);
+    const auto raw_markers
+        = std::any_cast<std::vector<std::any>>(markers_item.data);
+
+    std::vector<SightRead::PracticeSection> sections;
+    sections.reserve(raw_markers.size());
+    for (const auto& value : raw_markers) {
+        const auto section_struct
+            = std::any_cast<SightRead::Detail::QbStructData>(value);
+        sections.push_back(section_from_struct(section_struct, timedata));
+    }
+
+    return sections;
+}
 }
 
 SightRead::Detail::QbMidiConverter::QbMidiConverter(std::string_view short_name)
@@ -376,6 +445,8 @@ SightRead::Song SightRead::Detail::QbMidiConverter::convert(
     SightRead::Song song;
     song.global_data().resolution(RESOLUTION);
     song.global_data().tempo_map(tempo_map(timedata));
+    song.global_data().practice_sections(
+        practice_sections(midi, m_short_name_crc, timedata));
 
     for (const auto diff : DIFFICULTIES) {
         auto track = note_track(midi, m_short_name_crc, diff,

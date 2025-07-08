@@ -4,8 +4,8 @@ SightRead is a library for reading .chart and .mid files for GH/RB-style games.
 
 ## Requirements
 
-The main library requires no external libraries, only a C++20 compiler.
-Boost.Test is needed if you want to build the tests.
+The main library requires Boost.Locale and a C++20 compiler. Boost.Test is
+needed if you want to build the tests.
 
 ## Crash Course
 

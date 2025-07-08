@@ -45,6 +45,8 @@ function(add_warnings target)
     endif()
 endfunction()
 
+find_package(Boost 1.77 REQUIRED COMPONENTS locale OPTIONAL_COMPONENTS unit_test_framework)
+
 add_library(sightread
     src/sightread/chartparser.cpp
     src/sightread/midiparser.cpp
@@ -61,6 +63,8 @@ add_library(sightread
     src/sightread/detail/qbmidiconverter.cpp)
 
 target_include_directories(sightread PUBLIC include PRIVATE src)
+target_link_directories(sightread PRIVATE ${Boost_LIBRARY_DIRS})
+target_link_libraries(sightread PRIVATE Boost::locale)
 set_cpp_standard(sightread)
 
 option(SIGHTREAD_ENABLE_WARNINGS "Build SightRead with warnings" OFF)
@@ -72,8 +76,6 @@ endif()
 option(SIGHTREAD_BUILD_TESTS "Build SightRead tests" OFF)
 
 if(SIGHTREAD_BUILD_TESTS)
-    find_package(Boost 1.77 REQUIRED COMPONENTS unit_test_framework)
-
     enable_testing()
     add_executable(
         sightread_tests
@@ -98,7 +100,7 @@ if(SIGHTREAD_BUILD_TESTS)
 
     target_include_directories(sightread_tests PRIVATE include src tests/sightread)
     target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
-    target_link_libraries(sightread_tests PRIVATE Boost::unit_test_framework)
+    target_link_libraries(sightread_tests PRIVATE Boost::locale Boost::unit_test_framework)
     add_test(NAME sightread_tests COMMAND sightread_tests)
     set_cpp_standard(sightread_tests)
     add_warnings(sightread_tests)

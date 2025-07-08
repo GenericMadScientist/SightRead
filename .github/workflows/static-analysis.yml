@@ -14,7 +14,7 @@ jobs:
           wget -O "$HOME/boost_1_86_0.tar.bz2" https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.bz2
           tar --bzip2 -xf "$HOME/boost_1_86_0.tar.bz2" -C "$HOME"
           cd "$HOME/boost_1_86_0"
-          ./bootstrap.sh --with-libraries=test --prefix=.
+          ./bootstrap.sh --with-libraries=locale,test --prefix=.
           ./b2 toolset=gcc-14 install > /dev/null
 
       - name: Application files
