@@ -64,3 +64,4 @@ right now the interface should be treated as very unstable.
 * FireFox2000000, for Moonscraper was useful to understand CH's parsing
 behaviour back when I first made CHOpt.
 * Matref for the name.
+* AddyMills for a lot of information on parsing .qb.mid files.
