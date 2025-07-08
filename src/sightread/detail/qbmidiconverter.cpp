@@ -393,6 +393,13 @@ section_from_struct(const SightRead::Detail::QbStructData& section_struct,
                 name = boost::locale::conv::from_utf(
                     std::any_cast<std::wstring>(item.data), "Latin1");
                 break;
+            case SightRead::Detail::QbItemType::Array:
+            case SightRead::Detail::QbItemType::Float:
+            case SightRead::Detail::QbItemType::Integer:
+            case SightRead::Detail::QbItemType::QbKey:
+            case SightRead::Detail::QbItemType::String:
+            case SightRead::Detail::QbItemType::Struct:
+            case SightRead::Detail::QbItemType::StructFlag:
             default:
                 throw SightRead::ParseError("Unexpected section name type");
             }
