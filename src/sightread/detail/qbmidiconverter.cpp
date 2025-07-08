@@ -56,11 +56,6 @@ constexpr std::array<std::uint32_t, 256> crc_table {
     0x54DE5729, 0x23D967BF, 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,
     0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D};
 
-const std::unordered_map<std::uint32_t, std::string> section_names {
-    {0x62DFAD1F, "They're Hammer Ons"},
-    {0x725FA5CC, "You Rock!!!"},
-    {0x8DF19873, "Fast Solo A"}};
-
 constexpr std::uint32_t crc32(std::string_view key,
                               std::uint32_t initial_crc = ~0U)
 {
@@ -73,6 +68,21 @@ constexpr std::uint32_t crc32(std::string_view key,
     }
 
     return crc;
+}
+
+std::string section_name_from_pointer(std::uint32_t pointer)
+{
+    const std::unordered_map<std::uint32_t, std::string> section_names {
+        {0x62DFAD1F, "They're Hammer Ons"},
+        {0x725FA5CC, "You Rock!!!"},
+        {0x8DF19873, "Fast Solo A"}};
+
+    const auto iter = section_names.find(pointer);
+    if (iter == section_names.end()) {
+        return "???";
+    }
+
+    return iter->second;
 }
 
 SightRead::Detail::QbItem
@@ -381,12 +391,7 @@ section_from_struct(const SightRead::Detail::QbStructData& section_struct,
             switch (item.info.type) {
             case SightRead::Detail::QbItemType::Pointer: {
                 const auto pointer = std::any_cast<std::uint32_t>(item.data);
-                const auto section_iter = section_names.find(pointer);
-                if (section_iter == section_names.end()) {
-                    name = "???";
-                } else {
-                    name = section_iter->second;
-                }
+                name = section_name_from_pointer(pointer);
                 break;
             }
             case SightRead::Detail::QbItemType::WideString:
@@ -405,7 +410,7 @@ section_from_struct(const SightRead::Detail::QbStructData& section_struct,
             }
         } else if (item.props.id == TIME_CRC) {
             const auto time_ms = std::any_cast<std::int32_t>(item.props.value);
-            time = timedata.ms_to_ticks(time_ms);
+            time = timedata.ms_to_ticks(static_cast<std::uint32_t>(time_ms));
         } else {
             throw SightRead::ParseError("Unexpected marker struct item");
         }
