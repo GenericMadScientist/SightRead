@@ -3246,6 +3246,7 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
     notes.reserve(events.size());
     for (const auto& event : events) {
         SightRead::Note note;
+        note.flags = SightRead::FLAGS_FIVE_FRET_GUITAR;
         auto ms_length = event.length;
         if (ms_length <= sustain_threshold) {
             ms_length = 0;
@@ -3261,7 +3262,8 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
             }
         }
         if ((event.flags & (1 << NUMBER_OF_FRETS)) != 0) {
-            note.flags = SightRead::NoteFlags::FLAGS_FORCE_FLIP;
+            note.flags = static_cast<SightRead::NoteFlags>(
+                note.flags | SightRead::FLAGS_FORCE_FLIP);
         }
 
         notes.push_back(note);
