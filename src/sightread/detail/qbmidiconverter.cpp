@@ -3233,6 +3233,7 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
            const QbTimeData& timedata)
 {
     constexpr auto NUMBER_OF_FRETS = 5U;
+    constexpr auto FRET_MASK = (1 << NUMBER_OF_FRETS) - 1;
 
     const auto events = note_events(midi, short_name_crc, difficulty);
     if (events.empty()) {
@@ -3245,6 +3246,10 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
     std::vector<SightRead::Note> notes;
     notes.reserve(events.size());
     for (const auto& event : events) {
+        if ((event.flags & FRET_MASK) == 0) {
+            continue;
+        }
+
         SightRead::Note note;
         note.flags = SightRead::FLAGS_FIVE_FRET_GUITAR;
         auto ms_length = event.length;
