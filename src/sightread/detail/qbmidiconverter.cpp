@@ -3351,8 +3351,12 @@ practice_sections(const SightRead::Detail::QbMidi& midi,
 }
 }
 
-SightRead::Detail::QbMidiConverter::QbMidiConverter(std::string_view short_name)
-    : m_short_name_crc {crc32(short_name)}
+SightRead::Detail::QbMidiConverter::QbMidiConverter(
+    SightRead::Metadata metadata, std::string_view short_name)
+    : m_song_name {std::move(metadata.name)}
+    , m_artist {std::move(metadata.artist)}
+    , m_charter {std::move(metadata.charter)}
+    , m_short_name_crc {crc32(short_name)}
 {
 }
 
@@ -3367,6 +3371,9 @@ SightRead::Song SightRead::Detail::QbMidiConverter::convert(
 
     SightRead::Song song;
     song.global_data().resolution(RESOLUTION);
+    song.global_data().name(m_song_name);
+    song.global_data().artist(m_artist);
+    song.global_data().charter(m_charter);
     song.global_data().tempo_map(tempo_map(timedata));
     song.global_data().practice_sections(
         practice_sections(midi, m_short_name_crc, timedata));
