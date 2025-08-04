@@ -3326,10 +3326,12 @@ section_from_struct(const SightRead::Detail::QbStructData& section_struct,
             }
         } else if (item.props.id == TIME_CRC) {
             const auto time_ms = std::any_cast<std::int32_t>(item.props.value);
-            if (time_ms > timedata.last_fretbar()) {
+            const auto unsigned_time_ms = static_cast<std::uint32_t>(time_ms);
+            if (unsigned_time_ms > timedata.last_fretbar()) {
                 return {};
             }
-            time = timedata.ms_to_ticks(static_cast<std::uint32_t>(time_ms));
+            time = timedata.ms_to_ticks(
+                static_cast<std::uint32_t>(unsigned_time_ms));
         } else {
             throw SightRead::ParseError("Unexpected marker struct item");
         }
