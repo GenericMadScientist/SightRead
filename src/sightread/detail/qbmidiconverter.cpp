@@ -9,7 +9,7 @@
 #include "sightread/detail/qbmidiconverter.hpp"
 
 namespace {
-constexpr int RESOLUTION = 1920;
+constexpr int RESOLUTION = 19200;
 
 constexpr std::array<std::uint32_t, 256> crc_table {
     0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F,
