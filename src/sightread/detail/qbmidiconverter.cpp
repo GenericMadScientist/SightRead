@@ -3212,6 +3212,11 @@ public:
 
         return time_sigs;
     }
+
+    [[nodiscard]] std::uint32_t last_fretbar() const
+    {
+        return m_fretbars_ms.back();
+    }
 };
 
 QbTimeData time_data(const SightRead::Detail::QbMidi& midi,
@@ -3287,7 +3292,7 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
              std::move(global_data)}};
 }
 
-SightRead::PracticeSection
+std::optional<SightRead::PracticeSection>
 section_from_struct(const SightRead::Detail::QbStructData& section_struct,
                     const QbTimeData& timedata)
 {
@@ -3321,13 +3326,16 @@ section_from_struct(const SightRead::Detail::QbStructData& section_struct,
             }
         } else if (item.props.id == TIME_CRC) {
             const auto time_ms = std::any_cast<std::int32_t>(item.props.value);
+            if (time_ms > timedata.last_fretbar()) {
+                return {};
+            }
             time = timedata.ms_to_ticks(static_cast<std::uint32_t>(time_ms));
         } else {
             throw SightRead::ParseError("Unexpected marker struct item");
         }
     }
 
-    return {std::move(name), time};
+    return SightRead::PracticeSection {std::move(name), time};
 }
 
 std::vector<SightRead::PracticeSection>
@@ -3344,7 +3352,10 @@ practice_sections(const SightRead::Detail::QbMidi& midi,
     for (const auto& value : raw_markers) {
         const auto section_struct
             = std::any_cast<SightRead::Detail::QbStructData>(value);
-        sections.push_back(section_from_struct(section_struct, timedata));
+        const auto section = section_from_struct(section_struct, timedata);
+        if (section.has_value()) {
+            sections.push_back(*section);
+        }
     }
 
     return sections;
