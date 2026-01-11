@@ -45,7 +45,7 @@ function(add_warnings target)
     endif()
 endfunction()
 
-find_package(Boost 1.77 REQUIRED COMPONENTS locale OPTIONAL_COMPONENTS unit_test_framework)
+find_package(Boost 1.82 REQUIRED COMPONENTS locale OPTIONAL_COMPONENTS unit_test_framework)
 
 add_library(sightread
     src/sightread/chartparser.cpp
