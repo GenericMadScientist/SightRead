@@ -109,6 +109,12 @@ struct StarPower {
     SightRead::Tick length;
 };
 
+// A Solo spans [start, end), i.e. notes at time end aren't included. CH and
+// YARG are inconsistent on how solos work between .chart and .mid: for .chart
+// they are treated as closed intervals, while for .mid they are treated as
+// half-open intervals. To provide a more uniform interface, SightRead adjusts
+// .chart solos by adding 1 tick to the end time so both file types end up with
+// half-open intervals.
 struct Solo {
     SightRead::Tick start;
     SightRead::Tick end;

@@ -423,8 +423,8 @@ BOOST_AUTO_TEST_CASE(expected_solos_are_read_properly)
         "ExpertSingle", {{100, 0, 0}, {300, 0, 0}, {400, 0, 0}}, {},
         {{0, "solo"}, {200, "soloend"}, {300, "solo"}, {400, "soloend"}});
     std::vector<SightRead::Solo> required_solos {
-        {SightRead::Tick {0}, SightRead::Tick {200}, 100},
-        {SightRead::Tick {300}, SightRead::Tick {400}, 200}};
+        {SightRead::Tick {0}, SightRead::Tick {201}, 100},
+        {SightRead::Tick {300}, SightRead::Tick {401}, 200}};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto parsed_solos
@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE(chords_are_not_counted_double)
         = section_string("ExpertSingle", {{100, 0, 0}, {100, 1, 0}}, {},
                          {{0, "solo"}, {200, "soloend"}});
     std::vector<SightRead::Solo> required_solos {
-        {SightRead::Tick {0}, SightRead::Tick {200}, 100}};
+        {SightRead::Tick {0}, SightRead::Tick {201}, 100}};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto parsed_solos
@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE(repeated_solo_starts_and_ends_dont_matter)
         "ExpertSingle", {{100, 0, 0}}, {},
         {{0, "solo"}, {100, "solo"}, {200, "soloend"}, {300, "soloend"}});
     std::vector<SightRead::Solo> required_solos {
-        {SightRead::Tick {0}, SightRead::Tick {200}, 100}};
+        {SightRead::Tick {0}, SightRead::Tick {201}, 100}};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto parsed_solos
@@ -493,7 +493,7 @@ BOOST_AUTO_TEST_CASE(solo_markers_are_sorted)
     const auto chart_file = section_string("ExpertSingle", {{192, 0, 0}}, {},
                                            {{384, "soloend"}, {0, "solo"}});
     std::vector<SightRead::Solo> required_solos {
-        {SightRead::Tick {0}, SightRead::Tick {384}, 100}};
+        {SightRead::Tick {0}, SightRead::Tick {385}, 100}};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto parsed_solos

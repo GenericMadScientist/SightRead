@@ -51,10 +51,13 @@ SightRead::Detail::form_solo_vector(const std::vector<int>& solo_on_events,
     for (auto [start, end] :
          combine_solo_events(solo_on_events, solo_off_events)) {
         std::set<SightRead::Tick> positions_in_solo;
+        auto solo_struct_end = end;
+        if (!is_midi) {
+            solo_struct_end += SightRead::Tick {1};
+        }
         auto note_count = 0;
         for (const auto& note : notes) {
-            if ((note.position >= start && note.position < end)
-                || (note.position == end && !is_midi)) {
+            if (note.position >= start && note.position < solo_struct_end) {
                 positions_in_solo.insert(note.position);
                 ++note_count;
             }
@@ -65,7 +68,7 @@ SightRead::Detail::form_solo_vector(const std::vector<int>& solo_on_events,
         if (track_type != SightRead::TrackType::Drums) {
             note_count = static_cast<int>(positions_in_solo.size());
         }
-        solos.push_back({start, end, SOLO_NOTE_VALUE * note_count});
+        solos.push_back({start, solo_struct_end, SOLO_NOTE_VALUE * note_count});
     }
 
     return solos;
