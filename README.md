@@ -40,9 +40,8 @@ can convert between any two with suitable chaining. I'll clean that up at some
 point.
 
 Worth noting, right now `SightRead::NoteTrack` pretty much contains just what is
-needed for CHOpt. In particular, section names are currently absent. However,
-HOPO/tap status is present on notes. This has not been thoroughly tested though
-so for the time being, caveat emptor!
+needed for CHOpt. However, HOPO/tap status is present on notes. This has not
+been thoroughly tested though so for the time being, caveat emptor!
 
 Lastly, no writing. Serialisation is out of scope for SightRead.
 
