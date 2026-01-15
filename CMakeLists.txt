@@ -86,6 +86,7 @@ if(SIGHTREAD_BUILD_TESTS)
         tests/sightread/tempomap_unittest.cpp
         tests/sightread/time_unittest.cpp
         tests/sightread/detail/chart_unittest.cpp
+        tests/sightread/detail/intervalset_unittest.cpp
         tests/sightread/detail/midi_unittest.cpp
         tests/sightread/detail/midiconverter_unittest.cpp
         src/sightread/chartparser.cpp
