@@ -195,7 +195,7 @@ bool has_enable_chart_dynamics(const SightRead::Detail::MidiTrack& midi_track)
         != midi_track.events.cend();
 }
 
-bool is_open_event_sysex(const SightRead::Detail::SysexEvent& event)
+bool is_open_sysex_event(const SightRead::Detail::SysexEvent& event)
 {
     constexpr std::array<std::tuple<std::size_t, int>, 6> REQUIRED_BYTES {
         std::tuple {0, 0x50}, {1, 0x53}, {2, 0}, {3, 0}, {5, 1}, {7, 0xF7}};
@@ -400,6 +400,10 @@ public:
         open_on_events;
     std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
         open_off_events;
+    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+        tap_on_sysex_events;
+    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+        tap_off_sysex_events;
     std::vector<std::tuple<int, int>> yellow_tom_on_events;
     std::vector<std::tuple<int, int>> yellow_tom_off_events;
     std::vector<std::tuple<int, int>> blue_tom_on_events;
@@ -430,23 +434,53 @@ public:
     InstrumentMidiTrack() = default;
 };
 
+bool is_tap_sysex_event(const SightRead::Detail::SysexEvent& event)
+{
+    constexpr std::array<std::tuple<std::size_t, int>, 6> REQUIRED_BYTES {
+        std::tuple {0, 0x50}, {1, 0x53}, {2, 0}, {3, 0}, {5, 4}, {7, 0xF7}};
+    constexpr std::array<std::tuple<std::size_t, int>, 2> UPPER_BOUNDS {
+        std::tuple {4, 3}, {6, 1}};
+    constexpr int SYSEX_DATA_SIZE = 8;
+
+    if (event.data.size() != SYSEX_DATA_SIZE) {
+        return false;
+    }
+    if (std::any_of(REQUIRED_BYTES.cbegin(), REQUIRED_BYTES.cend(),
+                    [&](const auto& pair) {
+                        return event.data[std::get<0>(pair)]
+                            != std::get<1>(pair);
+                    })) {
+        return false;
+    }
+    return std::all_of(
+        UPPER_BOUNDS.cbegin(), UPPER_BOUNDS.cend(), [&](const auto& pair) {
+            return event.data[std::get<0>(pair)] <= std::get<1>(pair);
+        });
+}
+
 void add_sysex_event(InstrumentMidiTrack& track,
                      const SightRead::Detail::SysexEvent& event, int time,
                      int rank)
 {
-    constexpr std::array<SightRead::Difficulty, 4> OPEN_EVENT_DIFFS {
+    constexpr std::array<SightRead::Difficulty, 4> EVENT_DIFFS {
         SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
         SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
     constexpr int SYSEX_ON_INDEX = 6;
 
-    if (!is_open_event_sysex(event)) {
-        return;
-    }
-    const auto diff = OPEN_EVENT_DIFFS.at(event.data[4]);
-    if (event.data[SYSEX_ON_INDEX] == 0) {
-        track.open_off_events[diff].emplace_back(time, rank);
-    } else {
-        track.open_on_events[diff].emplace_back(time, rank);
+    if (is_open_sysex_event(event)) {
+        const auto diff = EVENT_DIFFS.at(event.data[4]);
+        if (event.data[SYSEX_ON_INDEX] == 0) {
+            track.open_off_events[diff].emplace_back(time, rank);
+        } else {
+            track.open_on_events[diff].emplace_back(time, rank);
+        }
+    } else if (is_tap_sysex_event(event)) {
+        const auto diff = EVENT_DIFFS.at(event.data[4]);
+        if (event.data[SYSEX_ON_INDEX] == 0) {
+            track.tap_off_sysex_events[diff].emplace_back(time, rank);
+        } else {
+            track.tap_on_sysex_events[diff].emplace_back(time, rank);
+        }
     }
 }
 
@@ -687,18 +721,18 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
     return event_track;
 }
 
-std::map<SightRead::Difficulty, std::vector<SightRead::Note>>
-notes_from_event_track(
+void apply_forcing(
+    std::map<SightRead::Difficulty, std::vector<SightRead::Note>>& notes,
     const InstrumentMidiTrack& event_track,
-    const std::map<SightRead::Difficulty, IntervalSet>& open_events,
-    SightRead::TrackType track_type)
+    const std::map<SightRead::Difficulty, IntervalSet>& tap_events)
 {
     constexpr std::array DIFFICULTIES {
         SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
         SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
 
-    const IntervalSet tap_events {combine_note_on_off_events(
+    const IntervalSet tap_note_events {combine_note_on_off_events(
         event_track.tap_on_events, event_track.tap_off_events)};
+
     std::map<SightRead::Difficulty, IntervalSet> force_hopo_events;
     std::map<SightRead::Difficulty, IntervalSet> force_strum_events;
     for (auto d : DIFFICULTIES) {
@@ -713,6 +747,38 @@ notes_from_event_track(
                 event_track.force_strum_off_events.at(d)));
     }
 
+    for (auto& [diff, note_array] : notes) {
+        for (auto& note : note_array) {
+            const auto pos = note.position.value();
+            if (tap_note_events.contains(pos)) {
+                note.flags = static_cast<SightRead::NoteFlags>(
+                    note.flags | SightRead::FLAGS_TAP);
+            }
+            const auto tap_events_iter = tap_events.find(diff);
+            if (tap_events_iter != tap_events.cend()
+                && tap_events_iter->second.contains(pos)) {
+                note.flags = static_cast<SightRead::NoteFlags>(
+                    note.flags | SightRead::FLAGS_TAP);
+            }
+            if (force_hopo_events.at(diff).contains(pos)) {
+                note.flags = static_cast<SightRead::NoteFlags>(
+                    note.flags | SightRead::FLAGS_FORCE_HOPO);
+            }
+            if (force_strum_events.at(diff).contains(pos)) {
+                note.flags = static_cast<SightRead::NoteFlags>(
+                    note.flags | SightRead::FLAGS_FORCE_STRUM);
+            }
+        }
+    }
+}
+
+std::map<SightRead::Difficulty, std::vector<SightRead::Note>>
+notes_from_event_track(
+    const InstrumentMidiTrack& event_track,
+    const std::map<SightRead::Difficulty, IntervalSet>& open_events,
+    const std::map<SightRead::Difficulty, IntervalSet>& tap_events,
+    SightRead::TrackType track_type)
+{
     std::map<SightRead::Difficulty, std::vector<SightRead::Note>> notes;
     for (const auto& [key, note_ons] : event_track.note_on_events) {
         const auto& [diff, colour, flags] = key;
@@ -736,21 +802,12 @@ notes_from_event_track(
             note.lengths.at(static_cast<unsigned int>(note_colour))
                 = SightRead::Tick {note_length};
             note.flags = flags_from_track_type(track_type);
-            if (tap_events.contains(pos)
-                && track_type != SightRead::TrackType::Drums) {
-                note.flags = static_cast<SightRead::NoteFlags>(
-                    note.flags | SightRead::FLAGS_TAP);
-            }
-            if (force_hopo_events.at(diff).contains(pos)) {
-                note.flags = static_cast<SightRead::NoteFlags>(
-                    note.flags | SightRead::FLAGS_FORCE_HOPO);
-            }
-            if (force_strum_events.at(diff).contains(pos)) {
-                note.flags = static_cast<SightRead::NoteFlags>(
-                    note.flags | SightRead::FLAGS_FORCE_STRUM);
-            }
             notes[diff].push_back(note);
         }
+    }
+
+    if (track_type != SightRead::TrackType::Drums) {
+        apply_forcing(notes, event_track, tap_events);
     }
 
     return notes;
@@ -764,7 +821,7 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
     const auto event_track
         = read_instrument_midi_track(midi_track, SightRead::TrackType::SixFret);
 
-    const auto notes = notes_from_event_track(event_track, {},
+    const auto notes = notes_from_event_track(event_track, {}, {},
                                               SightRead::TrackType::SixFret);
 
     std::vector<SightRead::StarPower> sp_phrases;
@@ -1009,7 +1066,7 @@ fortnite_note_tracks_from_midi(
     const auto bre = read_bre(midi_track);
 
     const auto notes = notes_from_event_track(
-        event_track, {}, SightRead::TrackType::FortniteFestival);
+        event_track, {}, {}, SightRead::TrackType::FortniteFestival);
 
     std::vector<SightRead::StarPower> sp_phrases;
     for (const auto& [start, end] : combine_note_on_off_events(
@@ -1066,8 +1123,17 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
                             combine_note_on_off_events(open_ons, open_offs));
     }
 
-    const auto notes = notes_from_event_track(event_track, open_events,
-                                              SightRead::TrackType::FiveFret);
+    std::map<SightRead::Difficulty, IntervalSet> tap_events;
+    for (const auto& [diff, tap_ons] : event_track.tap_on_sysex_events) {
+        if (!event_track.tap_off_sysex_events.contains(diff)) {
+            throw SightRead::ParseError("No tap Note Off events");
+        }
+        const auto& tap_offs = event_track.tap_off_sysex_events.at(diff);
+        tap_events.emplace(diff, combine_note_on_off_events(tap_ons, tap_offs));
+    }
+
+    const auto notes = notes_from_event_track(
+        event_track, open_events, tap_events, SightRead::TrackType::FiveFret);
 
     std::vector<SightRead::StarPower> sp_phrases;
     for (const auto& [start, end] : combine_note_on_off_events(

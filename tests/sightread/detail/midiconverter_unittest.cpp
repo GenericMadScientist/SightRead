@@ -456,6 +456,28 @@ BOOST_AUTO_TEST_CASE(open_notes_are_read_correctly)
         1 << SightRead::FIVE_FRET_OPEN);
 }
 
+BOOST_AUTO_TEST_CASE(tap_notes_are_read_correctly)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{0, {part_event("PART GUITAR")}},
+         {768, {SightRead::Detail::MidiEvent {0x90, {96, 64}}}},
+         {768,
+          {SightRead::Detail::SysexEvent {{0x50, 0x53, 0, 0, 3, 4, 1, 0xF7}}}},
+         {770,
+          {SightRead::Detail::SysexEvent {{0x50, 0x53, 0, 0, 3, 4, 0, 0xF7}}}},
+         {960, {SightRead::Detail::MidiEvent {0x90, {96, 0}}}}}};
+    const SightRead::Detail::Midi midi {192, {note_track}};
+
+    const auto song = guitar_only_converter().convert(midi);
+    const auto flags = song.track(SightRead::Instrument::Guitar,
+                                  SightRead::Difficulty::Expert)
+                           .notes()[0]
+                           .flags;
+
+    BOOST_CHECK_EQUAL(flags & SightRead::NoteFlags::FLAGS_TAP,
+                      SightRead::NoteFlags::FLAGS_TAP);
+}
+
 BOOST_AUTO_TEST_CASE(parseerror_thrown_if_open_note_ons_have_no_note_offs)
 {
     SightRead::Detail::MidiTrack note_track {
