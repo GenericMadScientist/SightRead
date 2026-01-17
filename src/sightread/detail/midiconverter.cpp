@@ -438,48 +438,68 @@ bool is_tap_sysex_event(const SightRead::Detail::SysexEvent& event)
 {
     constexpr std::array<std::tuple<std::size_t, int>, 6> REQUIRED_BYTES {
         std::tuple {0, 0x50}, {1, 0x53}, {2, 0}, {3, 0}, {5, 4}, {7, 0xF7}};
-    constexpr std::array<std::tuple<std::size_t, int>, 2> UPPER_BOUNDS {
-        std::tuple {4, 3}, {6, 1}};
     constexpr int SYSEX_DATA_SIZE = 8;
+    constexpr int DIFF_INDEX = 4;
+    constexpr int PS_EVENT_VALUE_INDEX = 6;
+    constexpr int ALL_DIFFICULTIES = 0xFF;
 
     if (event.data.size() != SYSEX_DATA_SIZE) {
         return false;
     }
-    if (std::any_of(REQUIRED_BYTES.cbegin(), REQUIRED_BYTES.cend(),
-                    [&](const auto& pair) {
-                        return event.data[std::get<0>(pair)]
-                            != std::get<1>(pair);
-                    })) {
+    if (event.data[DIFF_INDEX] > 3
+        && event.data[DIFF_INDEX] != ALL_DIFFICULTIES) {
+        return false;
+    }
+    if (event.data[PS_EVENT_VALUE_INDEX] > 1) {
         return false;
     }
     return std::all_of(
-        UPPER_BOUNDS.cbegin(), UPPER_BOUNDS.cend(), [&](const auto& pair) {
-            return event.data[std::get<0>(pair)] <= std::get<1>(pair);
+        REQUIRED_BYTES.cbegin(), REQUIRED_BYTES.cend(), [&](const auto& pair) {
+            return event.data[std::get<0>(pair)] == std::get<1>(pair);
         });
+}
+
+std::set<SightRead::Difficulty> difficulties_from_sysex_diff(std::uint8_t diff)
+{
+    constexpr int ALL_DIFFICULTIES = 0xFF;
+
+    switch (diff) {
+    case 0:
+        return {SightRead::Difficulty::Easy};
+    case 1:
+        return {SightRead::Difficulty::Medium};
+    case 2:
+        return {SightRead::Difficulty::Hard};
+    case 3:
+        return {SightRead::Difficulty::Expert};
+    case ALL_DIFFICULTIES:
+        return {SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
+                SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
+    default:
+        return {};
+    }
 }
 
 void add_sysex_event(InstrumentMidiTrack& track,
                      const SightRead::Detail::SysexEvent& event, int time,
                      int rank)
 {
-    constexpr std::array<SightRead::Difficulty, 4> EVENT_DIFFS {
-        SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
-        SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
     constexpr int SYSEX_ON_INDEX = 6;
+    const auto diffs = difficulties_from_sysex_diff(event.data[4]);
 
-    if (is_open_sysex_event(event)) {
-        const auto diff = EVENT_DIFFS.at(event.data[4]);
-        if (event.data[SYSEX_ON_INDEX] == 0) {
-            track.open_off_events[diff].emplace_back(time, rank);
-        } else {
-            track.open_on_events[diff].emplace_back(time, rank);
-        }
-    } else if (is_tap_sysex_event(event)) {
-        const auto diff = EVENT_DIFFS.at(event.data[4]);
-        if (event.data[SYSEX_ON_INDEX] == 0) {
-            track.tap_off_sysex_events[diff].emplace_back(time, rank);
-        } else {
-            track.tap_on_sysex_events[diff].emplace_back(time, rank);
+    for (auto diff : diffs) {
+        if (is_open_sysex_event(event)) {
+            if (event.data[SYSEX_ON_INDEX] == 0) {
+                track.open_off_events[diff].emplace_back(time, rank);
+            } else {
+                track.open_on_events[diff].emplace_back(time, rank);
+            }
+        } else if (is_tap_sysex_event(event)) {
+            if (event.data[SYSEX_ON_INDEX] == 0) {
+                track.tap_off_sysex_events[diff].emplace_back(time, rank);
+            } else {
+                track.tap_on_sysex_events[diff].emplace_back(time, rank);
+            }
         }
     }
 }
