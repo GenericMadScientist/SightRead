@@ -31,9 +31,9 @@ read_first_midi_track(const SightRead::Detail::MidiTrack& track, int resolution)
             }
             const auto us_per_quarter = meta_event->data[0] << 16
                 | meta_event->data[1] << 8 | meta_event->data[2];
-            const auto bpm = 60000000000 / us_per_quarter;
+            const auto millibeats_per_minute = 60000000000.0 / us_per_quarter;
             tempos.push_back(
-                {SightRead::Tick {event.time}, static_cast<int>(bpm)});
+                {SightRead::Tick {event.time}, millibeats_per_minute});
             break;
         }
         case TIME_SIG_ID:

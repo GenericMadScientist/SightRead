@@ -29,8 +29,11 @@ struct TimeSignature {
 
 struct BPM {
     SightRead::Tick position;
-    // Larger int type is needed to handle speedups.
-    std::int64_t bpm;
+    // We go with millibeats per minute so we can perfectly represent BPMs from
+    // .chart files.
+    double millibeats_per_minute;
+
+    double bpm() const { return millibeats_per_minute / 1000.0; }
 };
 
 // Invariants:
@@ -63,7 +66,7 @@ private:
     };
 
     static constexpr double DEFAULT_BEAT_RATE = 4.0;
-    static constexpr std::int64_t DEFAULT_BPM = 120000;
+    static constexpr double DEFAULT_MILLIBEATS_PER_MINUTE = 120000.0;
     static constexpr double DEFAULT_FRETBAR_RATE = 1.0;
     static constexpr int DEFAULT_RESOLUTION = 192;
 
@@ -73,7 +76,7 @@ private:
     int m_resolution;
 
     std::vector<BeatTimestamp> m_beat_timestamps;
-    std::int64_t m_last_bpm;
+    double m_last_bpm;
 
     std::vector<FretbarTimestamp> m_fretbar_timestamps;
     double m_last_fretbar_rate;

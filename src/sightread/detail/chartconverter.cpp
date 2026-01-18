@@ -26,7 +26,8 @@ tempo_map_from_section(const SightRead::Detail::ChartSection& section,
     std::vector<SightRead::BPM> bpms;
     bpms.reserve(section.bpm_events.size());
     for (const auto& bpm : section.bpm_events) {
-        bpms.push_back({SightRead::Tick {bpm.position}, bpm.bpm});
+        bpms.push_back(
+            {SightRead::Tick {bpm.position}, static_cast<double>(bpm.bpm)});
     }
     std::vector<SightRead::TimeSignature> tses;
     for (const auto& ts : section.ts_events) {

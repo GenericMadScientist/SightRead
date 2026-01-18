@@ -145,7 +145,8 @@ BOOST_AUTO_TEST_CASE(tempo_map_affected_by_speedup)
     song.speedup(200);
     const auto& tempo_map = song.global_data().tempo_map();
 
-    BOOST_CHECK_EQUAL(tempo_map.bpms().front().bpm, 240000);
+    BOOST_CHECK_CLOSE(tempo_map.bpms().front().millibeats_per_minute, 240000.0,
+                      0.001);
 }
 
 BOOST_AUTO_TEST_CASE(throws_on_negative_speeds)

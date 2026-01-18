@@ -46,12 +46,15 @@ make_drum_note(int position, SightRead::DrumNotes colour = SightRead::DRUM_RED,
 namespace SightRead {
 inline bool operator==(const BPM& lhs, const BPM& rhs)
 {
-    return std::tie(lhs.position, lhs.bpm) == std::tie(rhs.position, rhs.bpm);
+    return lhs.position == rhs.position
+        && std::abs(lhs.millibeats_per_minute - rhs.millibeats_per_minute)
+        < 0.01;
 }
 
 inline std::ostream& operator<<(std::ostream& stream, const BPM& bpm)
 {
-    stream << "{Pos " << bpm.position << ", BPM " << bpm.bpm << '}';
+    stream << "{Pos " << bpm.position << ", BPM " << bpm.millibeats_per_minute
+           << '}';
     return stream;
 }
 

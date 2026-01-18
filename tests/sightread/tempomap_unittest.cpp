@@ -5,6 +5,13 @@
 #include "sightread/tempomap.hpp"
 #include "testhelpers.hpp"
 
+BOOST_AUTO_TEST_CASE(bpm_method_on_bpm_struct_returns_correct_value)
+{
+    SightRead::BPM bpm {SightRead::Tick {0}, 120000.0};
+
+    BOOST_CHECK_CLOSE(bpm.bpm(), 120.0, 0.001);
+}
+
 BOOST_AUTO_TEST_SUITE(sync_track_ctor_maintains_invariants)
 
 BOOST_AUTO_TEST_CASE(bpms_are_sorted_by_position)

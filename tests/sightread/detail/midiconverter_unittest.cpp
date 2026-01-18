@@ -129,6 +129,25 @@ BOOST_AUTO_TEST_CASE(too_short_time_sig_events_cause_an_exception)
                       SightRead::ParseError);
 }
 
+// This is to catch imprecision caused by SightRead previously using integers
+// for BPM * 1000 internally, like .chart files do. This isn't generally a huge
+// loss but still needless. If a 500,002 us/quarter note MIDI tempo is
+// represented this way as 119.999 BPM, over 10 minutes this causes a loss of
+// precision of around 2.6 ms.
+BOOST_AUTO_TEST_CASE(loss_of_precision_reading_bpms_is_negligible)
+{
+    SightRead::Detail::MidiTrack tempo_track {
+        {{0, {SightRead::Detail::MetaEvent {0x51, {7, 0xA1, 0x22}}}}}};
+    const SightRead::Detail::Midi midi {480, {tempo_track}};
+
+    const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
+    const auto& tempo_map = song.global_data().tempo_map();
+
+    BOOST_CHECK_CLOSE(
+        tempo_map.to_seconds(SightRead::Tick {1200 * 480}).value(), 600.0024,
+        0.000001);
+}
+
 BOOST_AUTO_TEST_CASE(song_name_is_not_read_from_midi)
 {
     SightRead::Detail::MidiTrack name_track {

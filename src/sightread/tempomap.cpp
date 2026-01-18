@@ -17,7 +17,7 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
     }
 
     for (const auto& bpm : bpms) {
-        if (bpm.bpm <= 0) {
+        if (bpm.millibeats_per_minute <= 0.0) {
             throw ParseError("BPMs must be positive");
         }
     }
@@ -30,7 +30,7 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
     std::stable_sort(
         bpms.begin(), bpms.end(),
         [](const auto& x, const auto& y) { return x.position < y.position; });
-    BPM prev_bpm {SightRead::Tick {0}, DEFAULT_BPM};
+    BPM prev_bpm {SightRead::Tick {0}, DEFAULT_MILLIBEATS_PER_MINUTE};
     for (auto p = bpms.cbegin(); p < bpms.cend(); ++p) {
         if (p->position != prev_bpm.position) {
             m_bpms.push_back(prev_bpm);
@@ -52,15 +52,15 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
     m_time_sigs.push_back(prev_ts);
 
     SightRead::Tick last_tick {0};
-    auto last_bpm = DEFAULT_BPM;
+    auto last_bpm = DEFAULT_MILLIBEATS_PER_MINUTE;
     auto last_time = 0.0;
 
     for (const auto& bpm : m_bpms) {
         last_time += to_beats(bpm.position - last_tick).value()
-            * (MS_PER_MINUTE / static_cast<double>(last_bpm));
+            * (MS_PER_MINUTE / last_bpm);
         const auto beat = to_beats(bpm.position);
         m_beat_timestamps.push_back({beat, SightRead::Second(last_time)});
-        last_bpm = bpm.bpm;
+        last_bpm = bpm.millibeats_per_minute;
         last_tick = bpm.position;
     }
 
@@ -109,7 +109,8 @@ SightRead::TempoMap SightRead::TempoMap::speedup(int speed) const
 
     SightRead::TempoMap speedup {m_time_sigs, m_bpms, m_od_beats, m_resolution};
     for (auto& bpm : speedup.m_bpms) {
-        bpm.bpm = (bpm.bpm * speed) / DEFAULT_SPEED;
+        bpm.millibeats_per_minute
+            = (bpm.millibeats_per_minute * speed) / DEFAULT_SPEED;
     }
 
     const auto timestamp_factor = DEFAULT_SPEED / static_cast<double>(speed);
@@ -188,7 +189,8 @@ SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Second seconds) const
         return back.beat + (seconds - back.time).to_beat(m_last_bpm);
     }
     if (pos == m_beat_timestamps.cbegin()) {
-        return pos->beat - (pos->time - seconds).to_beat(DEFAULT_BPM);
+        return pos->beat
+            - (pos->time - seconds).to_beat(DEFAULT_MILLIBEATS_PER_MINUTE);
     }
     const auto prev = pos - 1;
     return prev->beat
@@ -277,7 +279,8 @@ SightRead::Second SightRead::TempoMap::to_seconds(SightRead::Beat beats) const
         return back.time + (beats - back.beat).to_second(m_last_bpm);
     }
     if (pos == m_beat_timestamps.cbegin()) {
-        return pos->time - (pos->beat - beats).to_second(DEFAULT_BPM);
+        return pos->time
+            - (pos->beat - beats).to_second(DEFAULT_MILLIBEATS_PER_MINUTE);
     }
     const auto prev = pos - 1;
     return prev->time

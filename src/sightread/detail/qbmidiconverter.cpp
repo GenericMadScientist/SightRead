@@ -3172,7 +3172,7 @@ public:
 
     [[nodiscard]] std::vector<SightRead::BPM> bpms() const
     {
-        constexpr auto MICROS_IN_MINUTE = 60 * 1000 * 1000;
+        constexpr double MICROS_IN_MINUTE = 60 * 1000 * 1000;
 
         std::vector<SightRead::BPM> bpms;
         bpms.reserve(m_fretbars_ms.size() - 1);
@@ -3182,9 +3182,8 @@ public:
                 = static_cast<int>(RESOLUTION * m_fretbars_beats[i]);
             const auto beat_diff
                 = m_fretbars_beats[i + 1] - m_fretbars_beats[i];
-            bpms.push_back(
-                {SightRead::Tick {tick_pos},
-                 static_cast<int>(MICROS_IN_MINUTE * beat_diff / time_diff)});
+            bpms.push_back({SightRead::Tick {tick_pos},
+                            MICROS_IN_MINUTE * beat_diff / time_diff});
         }
 
         return bpms;
