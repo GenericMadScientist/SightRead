@@ -624,6 +624,26 @@ BOOST_AUTO_TEST_CASE(does_not_do_it_on_same_note)
     BOOST_CHECK_EQUAL(notes[1].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
+BOOST_AUTO_TEST_CASE(note_after_chord_not_automatically_hopo_with_shared_lane)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{0, {part_event("PART GUITAR")}},
+         {0, {SightRead::Detail::MidiEvent {0x90, {96, 64}}}},
+         {0, {SightRead::Detail::MidiEvent {0x90, {97, 64}}}},
+         {1, {SightRead::Detail::MidiEvent {0x80, {96, 0}}}},
+         {1, {SightRead::Detail::MidiEvent {0x80, {97, 0}}}},
+         {161, {SightRead::Detail::MidiEvent {0x90, {96, 64}}}},
+         {162, {SightRead::Detail::MidiEvent {0x80, {96, 0}}}}}};
+    const SightRead::Detail::Midi midi {480, {note_track}};
+
+    const auto song = guitar_only_converter().convert(midi);
+    const auto notes = song.track(SightRead::Instrument::Guitar,
+                                  SightRead::Difficulty::Expert)
+                           .notes();
+
+    BOOST_CHECK_EQUAL(notes[1].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+}
+
 BOOST_AUTO_TEST_CASE(forcing_is_handled_correctly)
 {
     SightRead::Detail::MidiTrack note_track {

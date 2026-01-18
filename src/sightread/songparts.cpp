@@ -188,6 +188,8 @@ void SightRead::NoteTrack::add_hopos(SightRead::Tick max_hopo_gap)
             const auto note_gap = m_notes[i].position - m_notes[i - 1].position;
             if (!is_chord(m_notes[i])
                 && m_notes[i].colours() != m_notes[i - 1].colours()
+                && (((m_notes[i].colours() & m_notes[i - 1].colours()) == 0)
+                    || !m_global_data->is_from_midi())
                 && note_gap <= max_hopo_gap) {
                 is_hopo = !is_hopo;
             }
