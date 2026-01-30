@@ -3123,8 +3123,7 @@ private:
 
     [[nodiscard]] double ms_to_beats(std::uint32_t ms) const
     {
-        const auto it = std::upper_bound(m_fretbars_ms.cbegin(),
-                                         m_fretbars_ms.cend(), ms);
+        const auto it = std::ranges::upper_bound(m_fretbars_ms, ms);
         assert(it != m_fretbars_ms.cbegin());
         assert(it != m_fretbars_ms.cend());
         const auto beat_after = *it;

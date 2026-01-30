@@ -138,7 +138,7 @@ void SightRead::NoteTrack::compute_base_score_ticks()
                 constituent_lengths.push_back(length);
             }
         }
-        std::sort(constituent_lengths.begin(), constituent_lengths.end());
+        std::ranges::sort(constituent_lengths);
         if (constituent_lengths.front() == constituent_lengths.back()) {
             total_ticks += constituent_lengths.front();
         } else {
@@ -217,10 +217,8 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes,
         throw std::runtime_error("Non-null global data required");
     }
 
-    std::stable_sort(notes.begin(), notes.end(),
-                     [](const auto& lhs, const auto& rhs) {
-                         return lhs.position < rhs.position;
-                     });
+    std::ranges::stable_sort(notes, {},
+                             [](const auto& x) { return x.position; });
 
     if (!notes.empty()) {
         auto prev_note = notes.cbegin();
@@ -244,8 +242,8 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes,
         sp_ends.push_back(phrase.position + phrase.length);
     }
 
-    std::sort(sp_starts.begin(), sp_starts.end());
-    std::sort(sp_ends.begin(), sp_ends.end());
+    std::ranges::sort(sp_starts);
+    std::ranges::sort(sp_ends);
 
     std::vector<StarPower> new_sp_phrases;
     new_sp_phrases.reserve(sp_phrases.size());
@@ -259,11 +257,10 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes,
     }
 
     for (const auto& phrase : new_sp_phrases) {
-        const auto first_note = std::lower_bound(
-            m_notes.cbegin(), m_notes.cend(), phrase.position,
-            [](const auto& lhs, const auto& rhs) {
-                return lhs.position < rhs;
-            });
+        const auto first_note = std::ranges::lower_bound(
+            m_notes, phrase.position,
+            [](const auto& x, const auto& y) { return x < y; },
+            [](const auto& x) { return x.position; });
         if ((first_note != m_notes.cend())
             && (first_note->position < (phrase.position + phrase.length))) {
             m_sp_phrases.push_back(phrase);
@@ -381,9 +378,7 @@ SightRead::NoteTrack::solos(const SightRead::DrumSettings& drum_settings) const
 
 void SightRead::NoteTrack::solos(std::vector<Solo> solos)
 {
-    std::stable_sort(
-        solos.begin(), solos.end(),
-        [](const auto& lhs, const auto& rhs) { return lhs.start < rhs.start; });
+    std::ranges::stable_sort(solos, {}, [](const auto& x) { return x.start; });
     m_solos = std::move(solos);
 }
 

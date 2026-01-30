@@ -27,9 +27,8 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
         }
     }
 
-    std::stable_sort(
-        bpms.begin(), bpms.end(),
-        [](const auto& x, const auto& y) { return x.position < y.position; });
+    std::ranges::stable_sort(bpms, {},
+                             [](const auto& x) { return x.position; });
     BPM prev_bpm {SightRead::Tick {0}, DEFAULT_MILLIBEATS_PER_MINUTE};
     for (auto p = bpms.cbegin(); p < bpms.cend(); ++p) {
         if (p->position != prev_bpm.position) {
@@ -39,9 +38,8 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
     }
     m_bpms.push_back(prev_bpm);
 
-    std::stable_sort(
-        time_sigs.begin(), time_sigs.end(),
-        [](const auto& x, const auto& y) { return x.position < y.position; });
+    std::ranges::stable_sort(time_sigs, {},
+                             [](const auto& x) { return x.position; });
     TimeSignature prev_ts {SightRead::Tick {0}, 4, 4};
     for (auto p = time_sigs.cbegin(); p < time_sigs.cend(); ++p) {
         if (p->position != prev_ts.position) {
@@ -124,9 +122,10 @@ SightRead::TempoMap SightRead::TempoMap::speedup(int speed) const
 
 SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Fretbar fretbars) const
 {
-    const auto pos = std::lower_bound(
-        m_fretbar_timestamps.cbegin(), m_fretbar_timestamps.cend(), fretbars,
-        [](const auto& x, const auto& y) { return x.fretbar < y; });
+    const auto pos = std::ranges::lower_bound(
+        m_fretbar_timestamps, fretbars,
+        [](const auto& x, const auto& y) { return x < y; },
+        [](const auto& x) { return x.fretbar; });
     if (pos == m_fretbar_timestamps.cend()) {
         const auto& back = m_fretbar_timestamps.back();
         return back.beat
@@ -144,9 +143,10 @@ SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Fretbar fretbars) const
 
 SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Measure measures) const
 {
-    const auto pos = std::lower_bound(
-        m_measure_timestamps.cbegin(), m_measure_timestamps.cend(), measures,
-        [](const auto& x, const auto& y) { return x.measure < y; });
+    const auto pos = std::ranges::lower_bound(
+        m_measure_timestamps, measures,
+        [](const auto& x, const auto& y) { return x < y; },
+        [](const auto& x) { return x.measure; });
     if (pos == m_measure_timestamps.cend()) {
         const auto& back = m_measure_timestamps.back();
         return back.beat + (measures - back.measure).to_beat(m_last_beat_rate);
@@ -162,9 +162,10 @@ SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Measure measures) const
 
 SightRead::Beat SightRead::TempoMap::to_beats(SightRead::OdBeat od_beats) const
 {
-    const auto pos = std::lower_bound(
-        m_od_beat_timestamps.cbegin(), m_od_beat_timestamps.cend(), od_beats,
-        [](const auto& x, const auto& y) { return x.od_beat < y; });
+    const auto pos = std::ranges::lower_bound(
+        m_od_beat_timestamps, od_beats,
+        [](const auto& x, const auto& y) { return x < y; },
+        [](const auto& x) { return x.od_beat; });
     if (pos == m_od_beat_timestamps.cend()) {
         const auto& back = m_od_beat_timestamps.back();
         return back.beat
@@ -181,9 +182,10 @@ SightRead::Beat SightRead::TempoMap::to_beats(SightRead::OdBeat od_beats) const
 
 SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Second seconds) const
 {
-    const auto pos = std::lower_bound(
-        m_beat_timestamps.cbegin(), m_beat_timestamps.cend(), seconds,
-        [](const auto& x, const auto& y) { return x.time < y; });
+    const auto pos = std::ranges::lower_bound(
+        m_beat_timestamps, seconds,
+        [](const auto& x, const auto& y) { return x < y; },
+        [](const auto& x) { return x.time; });
     if (pos == m_beat_timestamps.cend()) {
         const auto& back = m_beat_timestamps.back();
         return back.beat + (seconds - back.time).to_beat(m_last_bpm);
@@ -200,9 +202,10 @@ SightRead::Beat SightRead::TempoMap::to_beats(SightRead::Second seconds) const
 
 SightRead::Fretbar SightRead::TempoMap::to_fretbars(SightRead::Beat beats) const
 {
-    const auto pos = std::lower_bound(
-        m_fretbar_timestamps.cbegin(), m_fretbar_timestamps.cend(), beats,
-        [](const auto& x, const auto& y) { return x.beat < y; });
+    const auto pos = std::ranges::lower_bound(
+        m_fretbar_timestamps, beats,
+        [](const auto& x, const auto& y) { return x < y; },
+        [](const auto& x) { return x.beat; });
     if (pos == m_fretbar_timestamps.cend()) {
         const auto& back = m_fretbar_timestamps.back();
         return back.fretbar
@@ -225,9 +228,10 @@ SightRead::Fretbar SightRead::TempoMap::to_fretbars(SightRead::Tick ticks) const
 
 SightRead::Measure SightRead::TempoMap::to_measures(SightRead::Beat beats) const
 {
-    const auto pos = std::lower_bound(
-        m_measure_timestamps.cbegin(), m_measure_timestamps.cend(), beats,
-        [](const auto& x, const auto& y) { return x.beat < y; });
+    const auto pos = std::ranges::lower_bound(
+        m_measure_timestamps, beats,
+        [](const auto& x, const auto& y) { return x < y; },
+        [](const auto& x) { return x.beat; });
     if (pos == m_measure_timestamps.cend()) {
         const auto& back = m_measure_timestamps.back();
         return back.measure + (beats - back.beat).to_measure(m_last_beat_rate);
@@ -249,9 +253,10 @@ SightRead::TempoMap::to_measures(SightRead::Second seconds) const
 
 SightRead::OdBeat SightRead::TempoMap::to_od_beats(SightRead::Beat beats) const
 {
-    const auto pos = std::lower_bound(
-        m_od_beat_timestamps.cbegin(), m_od_beat_timestamps.cend(), beats,
-        [](const auto& x, const auto& y) { return x.beat < y; });
+    const auto pos = std::ranges::lower_bound(
+        m_od_beat_timestamps, beats,
+        [](const auto& x, const auto& y) { return x < y; },
+        [](const auto& x) { return x.beat; });
     if (pos == m_od_beat_timestamps.cend()) {
         const auto& back = m_od_beat_timestamps.back();
         return back.od_beat
@@ -271,9 +276,10 @@ SightRead::OdBeat SightRead::TempoMap::to_od_beats(SightRead::Beat beats) const
 
 SightRead::Second SightRead::TempoMap::to_seconds(SightRead::Beat beats) const
 {
-    const auto pos = std::lower_bound(
-        m_beat_timestamps.cbegin(), m_beat_timestamps.cend(), beats,
-        [](const auto& x, const auto& y) { return x.beat < y; });
+    const auto pos = std::ranges::lower_bound(
+        m_beat_timestamps, beats,
+        [](const auto& x, const auto& y) { return x < y; },
+        [](const auto& x) { return x.beat; });
     if (pos == m_beat_timestamps.cend()) {
         const auto& back = m_beat_timestamps.back();
         return back.time + (beats - back.beat).to_second(m_last_bpm);

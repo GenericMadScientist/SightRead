@@ -25,7 +25,7 @@ std::vector<SightRead::Instrument> SightRead::Song::instruments() const
 
     std::vector<SightRead::Instrument> instruments {instrument_set.cbegin(),
                                                     instrument_set.cend()};
-    std::sort(instruments.begin(), instruments.end());
+    std::ranges::sort(instruments);
     return instruments;
 }
 
@@ -38,7 +38,7 @@ SightRead::Song::difficulties(SightRead::Instrument instrument) const
             difficulties.push_back(std::get<1>(key));
         }
     }
-    std::sort(difficulties.begin(), difficulties.end());
+    std::ranges::sort(difficulties);
     return difficulties;
 }
 
@@ -47,11 +47,11 @@ SightRead::Song::track(SightRead::Instrument instrument,
                        SightRead::Difficulty difficulty) const
 {
     const auto insts = instruments();
-    if (std::find(insts.cbegin(), insts.cend(), instrument) == insts.cend()) {
+    if (std::ranges::find(insts, instrument) == std::ranges::end(insts)) {
         throw std::invalid_argument("Chosen instrument not present in song");
     }
     const auto diffs = difficulties(instrument);
-    if (std::find(diffs.cbegin(), diffs.cend(), difficulty) == diffs.cend()) {
+    if (std::ranges::find(diffs, difficulty) == std::ranges::end(diffs)) {
         throw std::invalid_argument(
             "Difficulty not available for chosen instrument");
     }

@@ -160,15 +160,14 @@ bool is_five_lane_green_note(const SightRead::Detail::TimedEvent& event)
         return false;
     }
     const auto key = midi_event->data[0];
-    return std::find(GREEN_LANE_KEYS.cbegin(), GREEN_LANE_KEYS.cend(), key)
-        != GREEN_LANE_KEYS.cend();
+    return std::ranges::find(GREEN_LANE_KEYS, key)
+        != std::ranges::end(GREEN_LANE_KEYS);
 }
 
 bool has_five_lane_green_notes(const SightRead::Detail::MidiTrack& midi_track)
 {
-    return std::find_if(midi_track.events.cbegin(), midi_track.events.cend(),
-                        is_five_lane_green_note)
-        != midi_track.events.cend();
+    return std::ranges::find_if(midi_track.events, is_five_lane_green_note)
+        != std::ranges::end(midi_track.events);
 }
 
 bool is_enable_chart_dynamics(const SightRead::Detail::TimedEvent& event)
@@ -184,15 +183,13 @@ bool is_enable_chart_dynamics(const SightRead::Detail::TimedEvent& event)
     if (meta_event->type != 1) {
         return false;
     }
-    return std::equal(meta_event->data.cbegin(), meta_event->data.cend(),
-                      ENABLE_DYNAMICS.cbegin(), ENABLE_DYNAMICS.cend());
+    return std::ranges::equal(meta_event->data, ENABLE_DYNAMICS);
 }
 
 bool has_enable_chart_dynamics(const SightRead::Detail::MidiTrack& midi_track)
 {
-    return std::find_if(midi_track.events.cbegin(), midi_track.events.cend(),
-                        is_enable_chart_dynamics)
-        != midi_track.events.cend();
+    return std::ranges::find_if(midi_track.events, is_enable_chart_dynamics)
+        != std::ranges::end(midi_track.events);
 }
 
 bool is_open_sysex_event(const SightRead::Detail::SysexEvent& event)
@@ -206,17 +203,14 @@ bool is_open_sysex_event(const SightRead::Detail::SysexEvent& event)
     if (event.data.size() != SYSEX_DATA_SIZE) {
         return false;
     }
-    if (std::any_of(REQUIRED_BYTES.cbegin(), REQUIRED_BYTES.cend(),
-                    [&](const auto& pair) {
-                        return event.data[std::get<0>(pair)]
-                            != std::get<1>(pair);
-                    })) {
+    if (std::ranges::any_of(REQUIRED_BYTES, [&](const auto& pair) {
+            return event.data[std::get<0>(pair)] != std::get<1>(pair);
+        })) {
         return false;
     }
-    return std::all_of(
-        UPPER_BOUNDS.cbegin(), UPPER_BOUNDS.cend(), [&](const auto& pair) {
-            return event.data[std::get<0>(pair)] <= std::get<1>(pair);
-        });
+    return std::ranges::all_of(UPPER_BOUNDS, [&](const auto& pair) {
+        return event.data[std::get<0>(pair)] <= std::get<1>(pair);
+    });
 }
 
 std::optional<SightRead::Difficulty>
@@ -453,10 +447,9 @@ bool is_tap_sysex_event(const SightRead::Detail::SysexEvent& event)
     if (event.data[PS_EVENT_VALUE_INDEX] > 1) {
         return false;
     }
-    return std::all_of(
-        REQUIRED_BYTES.cbegin(), REQUIRED_BYTES.cend(), [&](const auto& pair) {
-            return event.data[std::get<0>(pair)] == std::get<1>(pair);
-        });
+    return std::ranges::all_of(REQUIRED_BYTES, [&](const auto& pair) {
+        return event.data[std::get<0>(pair)] == std::get<1>(pair);
+    });
 }
 
 std::set<SightRead::Difficulty> difficulties_from_sysex_diff(std::uint8_t diff)
@@ -547,8 +540,8 @@ bool force_hopo_key(std::uint8_t key, SightRead::TrackType track_type)
     if (track_type == SightRead::TrackType::Drums) {
         return false;
     }
-    return std::find(FORCE_HOPO_KEYS.cbegin(), FORCE_HOPO_KEYS.cend(), key)
-        != FORCE_HOPO_KEYS.cend();
+    return std::ranges::find(FORCE_HOPO_KEYS, key)
+        != std::ranges::end(FORCE_HOPO_KEYS);
 }
 
 bool force_strum_key(std::uint8_t key, SightRead::TrackType track_type)
@@ -557,8 +550,8 @@ bool force_strum_key(std::uint8_t key, SightRead::TrackType track_type)
     if (track_type == SightRead::TrackType::Drums) {
         return false;
     }
-    return std::find(FORCE_STRUM_KEYS.cbegin(), FORCE_STRUM_KEYS.cend(), key)
-        != FORCE_STRUM_KEYS.cend();
+    return std::ranges::find(FORCE_STRUM_KEYS, key)
+        != std::ranges::end(FORCE_STRUM_KEYS);
 }
 
 void add_note_off_event(InstrumentMidiTrack& track,

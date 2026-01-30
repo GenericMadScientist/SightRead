@@ -9,9 +9,8 @@ bool SightRead::Detail::is_six_fret_instrument(SightRead::Instrument instrument)
     constexpr std::array SIX_FRET_INSTRUMENTS {
         SightRead::Instrument::GHLGuitar, SightRead::Instrument::GHLBass,
         SightRead::Instrument::GHLRhythm, SightRead::Instrument::GHLGuitarCoop};
-    return std::find(SIX_FRET_INSTRUMENTS.cbegin(), SIX_FRET_INSTRUMENTS.cend(),
-                     instrument)
-        != SIX_FRET_INSTRUMENTS.cend();
+    return std::ranges::find(SIX_FRET_INSTRUMENTS, instrument)
+        != std::ranges::end(SIX_FRET_INSTRUMENTS);
 }
 
 std::vector<std::tuple<SightRead::Tick, SightRead::Tick>>
