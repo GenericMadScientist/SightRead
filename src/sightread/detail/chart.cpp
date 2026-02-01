@@ -46,7 +46,8 @@ std::optional<int> string_view_to_int(std::string_view input)
 {
     int result = 0;
     const char* last = input.data() + input.size();
-    auto [p, ec] = std::from_chars(input.data(), last, result);
+    // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage)
+    const auto [p, ec] = std::from_chars(input.data(), last, result);
     if ((ec != std::errc()) || (p != last)) {
         return std::nullopt;
     }
