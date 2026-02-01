@@ -251,7 +251,8 @@ BOOST_AUTO_TEST_CASE(ini_values_are_used_for_converting_from_chart_files)
     const auto header = header_string({});
     const auto guitar_track = section_string("ExpertSingle", {{768, 0, 0}});
     const auto chart_file = header + '\n' + guitar_track;
-    const SightRead::Metadata metadata {"TestName", "GMS", "NotGMS"};
+    const SightRead::Metadata metadata {
+        .name = "TestName", .artist = "GMS", .charter = "NotGMS"};
 
     const auto song = SightRead::ChartParser(metadata).parse(chart_file);
 
@@ -737,7 +738,8 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_from_chart)
 {
     const auto chart_file
         = section_string("ExpertDrums", {{192, 1, 0}}, {{192, 64, 1}});
-    const SightRead::DrumFill fill {SightRead::Tick {192}, SightRead::Tick {1}};
+    const SightRead::DrumFill fill {.position = SightRead::Tick {192},
+                                    .length = SightRead::Tick {1}};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,
@@ -752,8 +754,8 @@ BOOST_AUTO_TEST_CASE(disco_flips_are_read_from_chart)
     const auto chart_file
         = section_string("ExpertDrums", {{192, 1, 0}}, {},
                          {{100, "mix_3_drums0d"}, {105, "mix_3_drums0"}});
-    const SightRead::DiscoFlip flip {SightRead::Tick {100},
-                                     SightRead::Tick {5}};
+    const SightRead::DiscoFlip flip {.position = SightRead::Tick {100},
+                                     .length = SightRead::Tick {5}};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,
@@ -942,8 +944,9 @@ BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
 
     const auto song
         = SightRead::ChartParser({})
-              .hopo_threshold({SightRead::HopoThresholdType::HopoFrequency,
-                               SightRead::Tick {96}})
+              .hopo_threshold({.threshold_type
+                               = SightRead::HopoThresholdType::HopoFrequency,
+                               .hopo_frequency = SightRead::Tick {96}})
               .parse(chart_file);
     const auto notes = song.track(SightRead::Instrument::Guitar,
                                   SightRead::Difficulty::Expert)

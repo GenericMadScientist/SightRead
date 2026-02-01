@@ -36,7 +36,7 @@ MidiHeader read_midi_header(std::span<const std::uint8_t>& data)
         throw SightRead::ParseError("Only ticks per quarter-note is supported");
     }
     data = data.subspan(FIRST_TRACK_OFFSET);
-    return {division, num_of_tracks};
+    return {.ticks_per_quarter_note = division, .num_of_tracks = num_of_tracks};
 }
 
 int read_variable_length_num(std::span<const std::uint8_t>& data)
@@ -110,7 +110,7 @@ read_midi_event(std::span<const std::uint8_t>& data, int prev_status_byte)
         event_data[1] = pop_front(data);
     }
 
-    return {event_type, event_data};
+    return {.status = event_type, .data = event_data};
 }
 
 SightRead::Detail::SysexEvent
@@ -148,7 +148,8 @@ read_midi_track(std::span<const std::uint8_t>& data)
     while (data.size() != final_span_size) {
         const auto delta_time = read_variable_length_num(data);
         absolute_time += delta_time;
-        SightRead::Detail::TimedEvent event {absolute_time, {}};
+        SightRead::Detail::TimedEvent event {.time = absolute_time,
+                                             .event = {}};
         if (data.empty()) {
             throw_on_insufficient_bytes();
         }
@@ -178,6 +179,7 @@ SightRead::Detail::parse_midi(std::span<const std::uint8_t> data)
     for (auto i = 0; i < header.num_of_tracks && !data.empty(); ++i) {
         tracks.push_back(read_midi_track(data));
     }
-    return SightRead::Detail::Midi {header.ticks_per_quarter_note,
-                                    std::move(tracks)};
+    return SightRead::Detail::Midi {.ticks_per_quarter_note
+                                    = header.ticks_per_quarter_note,
+                                    .tracks = std::move(tracks)};
 }

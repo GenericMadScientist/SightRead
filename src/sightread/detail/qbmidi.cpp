@@ -217,7 +217,7 @@ private:
         const auto flags = read_uint32();
         const auto file_size = read_uint32();
         advance_bytes(REST_OF_HEADER_SIZE);
-        return {flags, file_size};
+        return {.flags = flags, .file_size = file_size};
     }
 
     SightRead::Detail::QbItem read_item()
@@ -225,7 +225,7 @@ private:
         const auto info = read_item_info();
         const auto shared_props = read_shared_props(info.type);
         const auto data_value = read_value(info.type, shared_props.value);
-        return {info, shared_props, data_value};
+        return {.info = info, .props = shared_props, .data = data_value};
     }
 
     SightRead::Detail::QbItemInfo read_item_info()
@@ -233,7 +233,7 @@ private:
         const auto info = read_le_uint32();
         const auto flags = static_cast<std::uint8_t>(info >> 8);
         const auto type = qb_item_type((info >> 16) & 0x7F);
-        return {flags, type};
+        return {.flags = flags, .type = type};
     }
 
     SightRead::Detail::QbSharedProps
@@ -242,7 +242,8 @@ private:
         const auto id = read_uint32();
         const auto qb_name = read_uint32();
 
-        SightRead::Detail::QbSharedProps props {id, qb_name, {}};
+        SightRead::Detail::QbSharedProps props {
+            .id = id, .qb_name = qb_name, .value = {}};
         switch (type) {
         case SightRead::Detail::QbItemType::Array:
             props.value = read_uint32();
@@ -313,7 +314,9 @@ private:
             next_item = items.back().props.next_item;
         }
 
-        return {header_marker, item_offset, std::move(items)};
+        return {.header_marker = header_marker,
+                .item_offset = item_offset,
+                .items = std::move(items)};
     }
 
     SightRead::Detail::QbStructInfo read_struct_info()
@@ -326,7 +329,7 @@ private:
             info_byte = info_byte_2;
         }
         const auto type = struct_item_type(info_byte & 0x7F);
-        return {flags, type};
+        return {.flags = flags, .type = type};
     }
 
     SightRead::Detail::QbStructItem read_struct_item()
@@ -335,7 +338,7 @@ private:
         const auto props = read_struct_props(info.type);
         const auto data_value = read_value(info.type, props.value);
 
-        return {info, props, data_value};
+        return {.info = info, .props = props, .data = data_value};
     }
 
     SightRead::Detail::QbStructProps
@@ -344,7 +347,7 @@ private:
         const auto id = read_uint32();
         const auto value = read_simple_value(type);
         const auto next_item = read_uint32();
-        return {id, value, next_item};
+        return {.id = id, .value = value, .next_item = next_item};
     }
 
     std::any read_value(SightRead::Detail::QbItemType type,
@@ -414,7 +417,7 @@ public:
             items.push_back(read_item());
         }
 
-        return {header, items};
+        return {.header = header, .items = items};
     }
 };
 }

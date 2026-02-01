@@ -1046,7 +1046,7 @@ read_bre(const SightRead::Detail::MidiTrack& midi_track)
         if (event_type == NOTE_OFF_ID
             || (event_type == NOTE_ON_ID && midi_event->data[1] == 0)) {
             const SightRead::Tick bre_end {event.time};
-            return {{bre_start, bre_end}};
+            return {{.start = bre_start, .end = bre_end}};
         }
         if (event_type == NOTE_ON_ID) {
             bre_start = SightRead::Tick {event.time};
@@ -1189,8 +1189,9 @@ SightRead::Detail::MidiConverter::MidiConverter(SightRead::Metadata metadata)
     : m_song_name {std::move(metadata.name)}
     , m_artist {std::move(metadata.artist)}
     , m_charter {std::move(metadata.charter)}
-    , m_hopo_threshold {SightRead::HopoThresholdType::Resolution,
-                        SightRead::Tick {0}}
+    , m_hopo_threshold {.threshold_type
+                        = SightRead::HopoThresholdType::Resolution,
+                        .hopo_frequency = SightRead::Tick {0}}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
 {

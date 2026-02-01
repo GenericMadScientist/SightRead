@@ -16,8 +16,9 @@ std::string_view remove_utf8_bom(std::string_view data)
 
 SightRead::ChartParser::ChartParser(SightRead::Metadata metadata)
     : m_metadata {std::move(metadata)}
-    , m_hopo_threshold {SightRead::HopoThresholdType::Resolution,
-                        SightRead::Tick {0}}
+    , m_hopo_threshold {.threshold_type
+                        = SightRead::HopoThresholdType::Resolution,
+                        .hopo_frequency = SightRead::Tick {0}}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
 {

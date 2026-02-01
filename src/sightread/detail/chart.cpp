@@ -87,7 +87,7 @@ convert_line_to_note(int position,
     if (!fret.has_value() || !length.has_value()) {
         throw SightRead::ParseError("Bad note event");
     }
-    return {position, *fret, *length};
+    return {.position = position, .fret = *fret, .length = *length};
 }
 
 SightRead::Detail::SpecialEvent
@@ -104,7 +104,7 @@ convert_line_to_special(int position,
     if (!sp_key.has_value() || !length.has_value()) {
         throw SightRead::ParseError("Bad SP event");
     }
-    return {position, *sp_key, *length};
+    return {.position = position, .key = *sp_key, .length = *length};
 }
 
 SightRead::Detail::BpmEvent
@@ -118,7 +118,7 @@ convert_line_to_bpm(int position,
     if (!bpm.has_value()) {
         throw SightRead::ParseError("Bad BPM event");
     }
-    return {position, *bpm};
+    return {.position = position, .bpm = *bpm};
 }
 
 SightRead::Detail::TimeSigEvent
@@ -138,7 +138,7 @@ convert_line_to_timesig(int position,
     if (!numer.has_value() || !denom.has_value()) {
         throw SightRead::ParseError("Bad TS event");
     }
-    return {position, *numer, *denom};
+    return {.position = position, .numerator = *numer, .denominator = *denom};
 }
 
 SightRead::Detail::Event

@@ -7,7 +7,8 @@
 
 BOOST_AUTO_TEST_CASE(bpm_method_on_bpm_struct_returns_correct_value)
 {
-    SightRead::BPM bpm {SightRead::Tick {0}, 120000.0};
+    SightRead::BPM bpm {.position = SightRead::Tick {0},
+                        .millibeats_per_minute = 120000.0};
 
     BOOST_CHECK_CLOSE(bpm.bpm(), 120.0, 0.001);
 }

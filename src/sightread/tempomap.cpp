@@ -29,7 +29,8 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
 
     std::ranges::stable_sort(bpms, {},
                              [](const auto& x) { return x.position; });
-    BPM prev_bpm {SightRead::Tick {0}, DEFAULT_MILLIBEATS_PER_MINUTE};
+    BPM prev_bpm {.position = SightRead::Tick {0},
+                  .millibeats_per_minute = DEFAULT_MILLIBEATS_PER_MINUTE};
     for (auto p = bpms.cbegin(); p < bpms.cend(); ++p) {
         if (p->position != prev_bpm.position) {
             m_bpms.push_back(prev_bpm);
@@ -40,7 +41,8 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
 
     std::ranges::stable_sort(time_sigs, {},
                              [](const auto& x) { return x.position; });
-    TimeSignature prev_ts {SightRead::Tick {0}, 4, 4};
+    TimeSignature prev_ts {
+        .position = SightRead::Tick {0}, .numerator = 4, .denominator = 4};
     for (auto p = time_sigs.cbegin(); p < time_sigs.cend(); ++p) {
         if (p->position != prev_ts.position) {
             m_time_sigs.push_back(prev_ts);

@@ -411,13 +411,13 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
     std::vector<SightRead::StarPower> sp;
     for (const auto& phrase : section.special_events) {
         if (phrase.key == 2) {
-            sp.push_back(
-                SightRead::StarPower {SightRead::Tick {phrase.position},
-                                      SightRead::Tick {phrase.length}});
+            sp.push_back(SightRead::StarPower {
+                .position = SightRead::Tick {phrase.position},
+                .length = SightRead::Tick {phrase.length}});
         } else if (phrase.key == DRUM_FILL_KEY) {
-            fills.push_back(
-                SightRead::DrumFill {SightRead::Tick {phrase.position},
-                                     SightRead::Tick {phrase.length}});
+            fills.push_back(SightRead::DrumFill {
+                .position = SightRead::Tick {phrase.position},
+                .length = SightRead::Tick {phrase.length}});
         }
     }
     if (track_type != SightRead::TrackType::Drums) {
@@ -506,8 +506,9 @@ SightRead::Detail::ChartConverter::ChartConverter(SightRead::Metadata metadata)
     : m_song_name {std::move(metadata.name)}
     , m_artist {std::move(metadata.artist)}
     , m_charter {std::move(metadata.charter)}
-    , m_hopo_threshold {SightRead::HopoThresholdType::Resolution,
-                        SightRead::Tick {0}}
+    , m_hopo_threshold {.threshold_type
+                        = SightRead::HopoThresholdType::Resolution,
+                        .hopo_frequency = SightRead::Tick {0}}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
 {

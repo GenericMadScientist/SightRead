@@ -3335,7 +3335,7 @@ section_from_struct(const SightRead::Detail::QbStructData& section_struct,
         }
     }
 
-    return SightRead::PracticeSection {std::move(name), time};
+    return SightRead::PracticeSection {.name = std::move(name), .start = time};
 }
 
 std::vector<SightRead::PracticeSection>
