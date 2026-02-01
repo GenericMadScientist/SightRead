@@ -15,7 +15,7 @@ std::ostream& operator<<(std::ostream& stream, const MetaEvent& event)
 {
     stream << "{Type " << event.type << ", Data {";
     for (auto i = 0U; i < event.data.size(); ++i) {
-        stream << event.data.at(i);
+        stream << static_cast<unsigned int>(event.data.at(i));
         if (i + 1 != event.data.size()) {
             stream << ", ";
         }
@@ -32,7 +32,8 @@ bool operator==(const MidiEvent& lhs, const MidiEvent& rhs)
 std::ostream& operator<<(std::ostream& stream, const MidiEvent& event)
 {
     stream << "{Status " << event.status << ", Data {";
-    stream << event.data.at(0) << ", " << event.data.at(1) << "}}";
+    stream << static_cast<unsigned int>(event.data.at(0)) << ", "
+           << static_cast<unsigned int>(event.data.at(1)) << "}}";
     return stream;
 }
 
@@ -45,7 +46,7 @@ std::ostream& operator<<(std::ostream& stream, const SysexEvent& event)
 {
     stream << "{Data {";
     for (auto i = 0U; i < event.data.size(); ++i) {
-        stream << event.data.at(i);
+        stream << static_cast<unsigned int>(event.data.at(i));
         if (i + 1 != event.data.size()) {
             stream << ", ";
         }
