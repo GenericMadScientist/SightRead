@@ -4,6 +4,16 @@
 #include "sightread/detail/chart.hpp"
 #include "sightread/detail/chartconverter.hpp"
 
+namespace {
+std::string_view remove_utf8_bom(std::string_view data)
+{
+    if (data.starts_with("\xEF\xBB\xBF")) {
+        data.remove_prefix(3);
+    }
+    return data;
+}
+}
+
 SightRead::ChartParser::ChartParser(SightRead::Metadata metadata)
     : m_metadata {std::move(metadata)}
     , m_hopo_threshold {SightRead::HopoThresholdType::Resolution,
@@ -35,6 +45,8 @@ SightRead::ChartParser& SightRead::ChartParser::parse_solos(bool permit_solos)
 
 SightRead::Song SightRead::ChartParser::parse(std::string_view data) const
 {
+    data = remove_utf8_bom(data);
+
     const auto chart = SightRead::Detail::parse_chart(data);
 
     const auto converter = SightRead::Detail::ChartConverter(m_metadata)

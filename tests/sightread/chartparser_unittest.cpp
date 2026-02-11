@@ -124,6 +124,22 @@ BOOST_AUTO_TEST_CASE(default_is_overriden_by_specified_value)
     BOOST_CHECK_EQUAL(resolution, 200);
 }
 
+BOOST_AUTO_TEST_CASE(default_is_overriden_by_specified_value_even_with_bom)
+{
+    using namespace std::string_literals;
+
+    const auto header
+        = header_string({{"Resolution", "200"}, {"Offset", "100"}});
+    const auto guitar_track = section_string("ExpertSingle", {{768, 0, 0}});
+    const auto chart_file = "\xEF\xBB\xBF"s + header + '\n' + guitar_track;
+
+    const auto global_data
+        = SightRead::ChartParser({}).parse(chart_file).global_data();
+    const auto resolution = global_data.resolution();
+
+    BOOST_CHECK_EQUAL(resolution, 200);
+}
+
 BOOST_AUTO_TEST_CASE(bad_values_are_ignored)
 {
     const auto header = header_string({{"Resolution", "\"480\""}});
