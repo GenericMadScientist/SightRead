@@ -64,5 +64,7 @@ right now the interface should be treated as very unstable.
 * TheNathannator for [making my life easier](https://github.com/TheNathannator/GuitarGame_ChartFormats).
 * FireFox2000000, for Moonscraper was useful to understand CH's parsing
 behaviour back when I first made CHOpt.
-* Matref for the name.
+* Matref for the name and finding some bugs.
 * AddyMills for a lot of information on parsing .qb.mid files.
+* Geomitron, whose [scan-chart](https://github.com/Geomitron/scan-chart) library
+has come in useful for ferreting out bugs.
