@@ -7,17 +7,21 @@ Checks: >
   -clang-analyzer-optin.cplusplus.VirtualCall,
   concurrency-*,
   cppcoreguidelines-*,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-pro-type-vararg,
   misc-*,
   -misc-const-correctness,
   -misc-include-cleaner,
   -misc-no-recursion,
+  -misc-use-internal-linkage,
   modernize-*,
+  -modernize-use-integer-sign-comparison,
   -modernize-use-trailing-return-type,
   performance-*,
   portability-*,
   readability-*,
-  -readability-identifier-length
+  -readability-identifier-length,
+  -readability-math-missing-parentheses
 WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 FormatStyle: none
