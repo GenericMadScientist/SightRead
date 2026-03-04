@@ -49,6 +49,7 @@ find_package(Boost 1.82 REQUIRED COMPONENTS locale OPTIONAL_COMPONENTS unit_test
 
 add_library(sightread
     src/sightread/chartparser.cpp
+    src/sightread/metadata.cpp
     src/sightread/midiparser.cpp
     src/sightread/qbmidiparser.cpp
     src/sightread/song.cpp
@@ -60,7 +61,8 @@ add_library(sightread
     src/sightread/detail/midiconverter.cpp
     src/sightread/detail/parserutil.cpp
     src/sightread/detail/qbmidi.cpp
-    src/sightread/detail/qbmidiconverter.cpp)
+    src/sightread/detail/qbmidiconverter.cpp
+    src/sightread/detail/stringutil.cpp)
 
 target_include_directories(sightread PUBLIC include PRIVATE src)
 target_link_directories(sightread PRIVATE ${Boost_LIBRARY_DIRS})
@@ -81,6 +83,7 @@ if(SIGHTREAD_BUILD_TESTS)
         sightread_tests
         tests/sightread/test_main.cpp
         tests/sightread/chartparser_unittest.cpp
+        tests/sightread/metadata_unittest.cpp
         tests/sightread/song_unittest.cpp
         tests/sightread/songparts_unittest.cpp
         tests/sightread/tempomap_unittest.cpp
@@ -89,7 +92,9 @@ if(SIGHTREAD_BUILD_TESTS)
         tests/sightread/detail/intervalset_unittest.cpp
         tests/sightread/detail/midi_unittest.cpp
         tests/sightread/detail/midiconverter_unittest.cpp
+        tests/sightread/detail/stringutil_unittest.cpp
         src/sightread/chartparser.cpp
+        src/sightread/metadata.cpp
         src/sightread/song.cpp
         src/sightread/songparts.cpp
         src/sightread/tempomap.cpp
@@ -97,7 +102,8 @@ if(SIGHTREAD_BUILD_TESTS)
         src/sightread/detail/chartconverter.cpp
         src/sightread/detail/midi.cpp
         src/sightread/detail/midiconverter.cpp
-        src/sightread/detail/parserutil.cpp)
+        src/sightread/detail/parserutil.cpp
+        src/sightread/detail/stringutil.cpp)
 
     target_include_directories(sightread_tests PRIVATE include src tests/sightread)
     target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
