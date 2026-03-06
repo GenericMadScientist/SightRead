@@ -251,8 +251,10 @@ BOOST_AUTO_TEST_CASE(ini_values_are_used_for_converting_from_chart_files)
     const auto header = header_string({});
     const auto guitar_track = section_string("ExpertSingle", {{768, 0, 0}});
     const auto chart_file = header + '\n' + guitar_track;
-    const SightRead::Metadata metadata {
-        .name = "TestName", .artist = "GMS", .charter = "NotGMS"};
+    const SightRead::Metadata metadata {.name = "TestName",
+                                        .artist = "GMS",
+                                        .charter = "NotGMS",
+                                        .hopo_threshold = {}};
 
     const auto song = SightRead::ChartParser(metadata).parse(chart_file);
 
@@ -943,10 +945,13 @@ BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
         = section_string("ExpertSingle", {{0, 0, 0}, {65, 1, 0}, {131, 2, 0}});
 
     const auto song
-        = SightRead::ChartParser({})
-              .hopo_threshold({.threshold_type
-                               = SightRead::HopoThresholdType::HopoFrequency,
-                               .hopo_frequency = SightRead::Tick {96}})
+        = SightRead::ChartParser(
+              {.name = "",
+               .artist = "",
+               .charter = "",
+               .hopo_threshold
+               = {.threshold_type = SightRead::HopoThresholdType::HopoFrequency,
+                  .hopo_frequency = SightRead::Tick {96}}})
               .parse(chart_file);
     const auto notes = song.track(SightRead::Instrument::Guitar,
                                   SightRead::Difficulty::Expert)

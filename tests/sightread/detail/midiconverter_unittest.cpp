@@ -10,10 +10,14 @@ SightRead::Detail::MidiConverter drums_only_converter()
         {SightRead::Instrument::Drums});
 }
 
-SightRead::Detail::MidiConverter guitar_only_converter()
+SightRead::Detail::MidiConverter
+guitar_only_converter(SightRead::HopoThreshold hopo_threshold = {})
 {
-    return SightRead::Detail::MidiConverter({}).permit_instruments(
-        {SightRead::Instrument::Guitar});
+    return SightRead::Detail::MidiConverter({.name = "",
+                                             .artist = "",
+                                             .charter = "",
+                                             .hopo_threshold = hopo_threshold})
+        .permit_instruments({SightRead::Instrument::Guitar});
 }
 
 SightRead::Detail::MetaEvent part_event(std::string_view name)
@@ -189,8 +193,10 @@ BOOST_AUTO_TEST_CASE(ini_values_are_used_when_converting_mid_files)
 {
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {}};
-    const SightRead::Metadata metadata {
-        .name = "TestName", .artist = "GMS", .charter = "NotGMS"};
+    const SightRead::Metadata metadata {.name = "TestName",
+                                        .artist = "GMS",
+                                        .charter = "NotGMS",
+                                        .hopo_threshold = {}};
 
     const auto song = SightRead::Detail::MidiConverter(metadata).convert(midi);
 
@@ -1048,10 +1054,9 @@ BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
                                         .tracks = {note_track}};
 
     const auto song
-        = guitar_only_converter()
-              .hopo_threshold({.threshold_type
-                               = SightRead::HopoThresholdType::HopoFrequency,
-                               .hopo_frequency = SightRead::Tick {240}})
+        = guitar_only_converter(
+              {.threshold_type = SightRead::HopoThresholdType::HopoFrequency,
+               .hopo_frequency = SightRead::Tick {240}})
               .convert(midi);
     const auto notes = song.track(SightRead::Instrument::Guitar,
                                   SightRead::Difficulty::Expert)

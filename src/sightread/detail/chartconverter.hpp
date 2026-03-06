@@ -5,7 +5,6 @@
 #include <string>
 
 #include "sightread/detail/chart.hpp"
-#include "sightread/hopothreshold.hpp"
 #include "sightread/metadata.hpp"
 #include "sightread/song.hpp"
 #include "sightread/songparts.hpp"
@@ -22,11 +21,11 @@ private:
 
 public:
     explicit ChartConverter(SightRead::Metadata metadata);
-    ChartConverter& hopo_threshold(SightRead::HopoThreshold hopo_threshold);
     ChartConverter&
     permit_instruments(std::set<SightRead::Instrument> permitted_instruments);
     ChartConverter& parse_solos(bool permit_solos);
-    SightRead::Song convert(const SightRead::Detail::Chart& chart) const;
+    [[nodiscard]] SightRead::Song
+    convert(const SightRead::Detail::Chart& chart) const;
 };
 }
 

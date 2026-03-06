@@ -506,20 +506,10 @@ SightRead::Detail::ChartConverter::ChartConverter(SightRead::Metadata metadata)
     : m_song_name {std::move(metadata.name)}
     , m_artist {std::move(metadata.artist)}
     , m_charter {std::move(metadata.charter)}
-    , m_hopo_threshold {.threshold_type
-                        = SightRead::HopoThresholdType::Resolution,
-                        .hopo_frequency = SightRead::Tick {0}}
+    , m_hopo_threshold {metadata.hopo_threshold}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
 {
-}
-
-SightRead::Detail::ChartConverter&
-SightRead::Detail::ChartConverter::hopo_threshold(
-    SightRead::HopoThreshold hopo_threshold)
-{
-    m_hopo_threshold = hopo_threshold;
-    return *this;
 }
 
 SightRead::Detail::ChartConverter&

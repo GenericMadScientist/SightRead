@@ -16,19 +16,9 @@ std::string_view remove_utf8_bom(std::string_view data)
 
 SightRead::ChartParser::ChartParser(SightRead::Metadata metadata)
     : m_metadata {std::move(metadata)}
-    , m_hopo_threshold {.threshold_type
-                        = SightRead::HopoThresholdType::Resolution,
-                        .hopo_frequency = SightRead::Tick {0}}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
 {
-}
-
-SightRead::ChartParser&
-SightRead::ChartParser::hopo_threshold(SightRead::HopoThreshold hopo_threshold)
-{
-    m_hopo_threshold = hopo_threshold;
-    return *this;
 }
 
 SightRead::ChartParser& SightRead::ChartParser::permit_instruments(
@@ -51,7 +41,6 @@ SightRead::Song SightRead::ChartParser::parse(std::string_view data) const
     const auto chart = SightRead::Detail::parse_chart(data);
 
     const auto converter = SightRead::Detail::ChartConverter(m_metadata)
-                               .hopo_threshold(m_hopo_threshold)
                                .permit_instruments(m_permitted_instruments)
                                .parse_solos(m_permit_solos);
     return converter.convert(chart);
