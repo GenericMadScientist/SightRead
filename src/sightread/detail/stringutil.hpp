@@ -1,6 +1,7 @@
 #ifndef SIGHTREAD_DETAIL_STRINGUTIL_HPP
 #define SIGHTREAD_DETAIL_STRINGUTIL_HPP
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -14,6 +15,10 @@ std::string_view skip_whitespace(std::string_view input);
 
 // Convert a UTF-8 or UTF-16le string to a UTF-8 string.
 std::string to_utf8_string(std::string_view input);
+
+// Convert a string_view to an int. If there are any problems with the input,
+// this function returns std::nullopt.
+std::optional<int> string_view_to_int(std::string_view input);
 }
 
 #endif

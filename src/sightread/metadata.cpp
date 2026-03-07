@@ -1,3 +1,4 @@
+#include <array>
 #include <stdexcept>
 
 #include "sightread/detail/stringutil.hpp"
@@ -40,12 +41,45 @@ SightRead::HopoThreshold::midi_max_hopo_gap(int resolution) const
     throw std::runtime_error("Invalid threshold type");
 }
 
+void assign_value(SightRead::Metadata& metadata, std::string_view key,
+                  std::string_view value)
+{
+    if (key == "name") {
+        metadata.name = value;
+    } else if (key == "artist") {
+        metadata.artist = value;
+    } else if (key == "charter" || key == "frets") {
+        if (!value.empty()) {
+            metadata.charter = value;
+        }
+    } else if (key == "hopo_frequency") {
+        const auto int_value = string_view_to_int(value);
+        if (int_value.has_value()) {
+            metadata.hopo_threshold.threshold_type
+                = SightRead::HopoThresholdType::HopoFrequency;
+            metadata.hopo_threshold.hopo_frequency
+                = SightRead::Tick {*int_value};
+        }
+    } else if (key == "eighthnote_hopo") {
+        const auto int_value = string_view_to_int(value);
+        if (!int_value.has_value()) {
+            return;
+        }
+        if (*int_value == 0) {
+            metadata.hopo_threshold.threshold_type
+                = SightRead::HopoThresholdType::Resolution;
+        } else {
+            metadata.hopo_threshold.threshold_type
+                = SightRead::HopoThresholdType::EighthNote;
+        }
+    }
+}
+
 SightRead::Metadata parse_ini(std::string_view data)
 {
-    constexpr auto ARTIST_SIZE = 6;
-    constexpr auto CHARTER_SIZE = 7;
-    constexpr auto FRETS_SIZE = 5;
-    constexpr auto NAME_SIZE = 4;
+    constexpr std::array<std::string_view, 6> INI_KEYS {
+        "artist", "charter",        "eighthnote_hopo",
+        "frets",  "hopo_frequency", "name"};
 
     std::string u8_string = to_utf8_string(data);
     data = u8_string;
@@ -56,38 +90,16 @@ SightRead::Metadata parse_ini(std::string_view data)
     metadata.charter = "Unknown Charter";
     while (!data.empty()) {
         const auto line = break_off_newline(data);
-        if (line.starts_with("name")) {
-            auto value = skip_whitespace(line.substr(NAME_SIZE));
+        for (const auto key : INI_KEYS) {
+            if (!line.starts_with(key)) {
+                continue;
+            }
+            auto value = skip_whitespace(line.substr(key.size()));
             if (value[0] != '=') {
                 continue;
             }
             value = skip_whitespace(value.substr(1));
-            metadata.name = value;
-        } else if (line.starts_with("artist")) {
-            auto value = skip_whitespace(line.substr(ARTIST_SIZE));
-            if (value[0] != '=') {
-                continue;
-            }
-            value = skip_whitespace(value.substr(1));
-            metadata.artist = value;
-        } else if (line.starts_with("charter")) {
-            auto value = skip_whitespace(line.substr(CHARTER_SIZE));
-            if (value[0] != '=') {
-                continue;
-            }
-            value = skip_whitespace(value.substr(1));
-            if (!value.empty()) {
-                metadata.charter = value;
-            }
-        } else if (line.starts_with("frets")) {
-            auto value = skip_whitespace(line.substr(FRETS_SIZE));
-            if (value[0] != '=') {
-                continue;
-            }
-            value = skip_whitespace(value.substr(1));
-            if (!value.empty()) {
-                metadata.charter = value;
-            }
+            assign_value(metadata, key, value);
         }
     }
 

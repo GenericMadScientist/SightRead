@@ -1,6 +1,16 @@
+#include <ostream>
+
 #include <boost/test/unit_test.hpp>
 
 #include "sightread/metadata.hpp"
+
+namespace SightRead {
+inline std::ostream& operator<<(std::ostream& stream, HopoThresholdType type)
+{
+    stream << "HopoFrequencyType " << static_cast<int>(type);
+    return stream;
+}
+}
 
 BOOST_AUTO_TEST_CASE(default_ini_values_are_correct)
 {
@@ -9,6 +19,8 @@ BOOST_AUTO_TEST_CASE(default_ini_values_are_correct)
     BOOST_CHECK_EQUAL(ini_values.name, "Unknown Song");
     BOOST_CHECK_EQUAL(ini_values.artist, "Unknown Artist");
     BOOST_CHECK_EQUAL(ini_values.charter, "Unknown Charter");
+    BOOST_CHECK_EQUAL(ini_values.hopo_threshold.threshold_type,
+                      SightRead::HopoThresholdType::Resolution);
 }
 
 BOOST_AUTO_TEST_CASE(values_with_no_spaces_around_equals_are_read)
@@ -62,6 +74,37 @@ BOOST_AUTO_TEST_CASE(blank_frets_after_charter_is_ignored)
     const auto ini_values = SightRead::parse_ini(text);
 
     BOOST_CHECK_EQUAL(ini_values.charter, "Haggis");
+}
+
+BOOST_AUTO_TEST_CASE(hopo_frequency_is_read)
+{
+    const char* text = "hopo_frequency = 120";
+
+    const auto ini_values = SightRead::parse_ini(text);
+
+    BOOST_CHECK_EQUAL(ini_values.hopo_threshold.threshold_type,
+                      SightRead::HopoThresholdType::HopoFrequency);
+    BOOST_CHECK_EQUAL(ini_values.hopo_threshold.hopo_frequency.value(), 120);
+}
+
+BOOST_AUTO_TEST_CASE(eighthnote_hopo_on_is_read)
+{
+    const char* text = "eighthnote_hopo = 1";
+
+    const auto ini_values = SightRead::parse_ini(text);
+
+    BOOST_CHECK_EQUAL(ini_values.hopo_threshold.threshold_type,
+                      SightRead::HopoThresholdType::EighthNote);
+}
+
+BOOST_AUTO_TEST_CASE(eighthnote_hopo_off_is_read)
+{
+    const char* text = "eighthnote_hopo = 0";
+
+    const auto ini_values = SightRead::parse_ini(text);
+
+    BOOST_CHECK_EQUAL(ini_values.hopo_threshold.threshold_type,
+                      SightRead::HopoThresholdType::Resolution);
 }
 
 BOOST_AUTO_TEST_CASE(utf16le_inis_are_read_correctly)

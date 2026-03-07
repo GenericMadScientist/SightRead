@@ -1,57 +1,14 @@
-#include <charconv>
-#include <optional>
-
 #include "sightread/detail/chart.hpp"
+#include "sightread/detail/stringutil.hpp"
 #include "sightread/songparts.hpp"
 
 namespace {
-std::string_view skip_whitespace(std::string_view input)
-{
-    const auto first_non_ws_location = input.find_first_not_of(" \f\n\r\t\v");
-    input.remove_prefix(std::min(first_non_ws_location, input.size()));
-    return input;
-}
-
-std::string_view break_off_newline(std::string_view& input)
-{
-    if (input.empty()) {
-        throw SightRead::ParseError("No lines left");
-    }
-
-    const auto newline_location
-        = std::min(input.find('\n'), input.find("\r\n"));
-    if (newline_location == std::string_view::npos) {
-        const auto line = input;
-        input.remove_prefix(input.size());
-        return line;
-    }
-
-    const auto line = input.substr(0, newline_location);
-    input.remove_prefix(newline_location);
-    input = skip_whitespace(input);
-    return line;
-}
-
 std::string_view strip_square_brackets(std::string_view input)
 {
     if (input.empty()) {
         throw SightRead::ParseError("Header string empty");
     }
     return input.substr(1, input.size() - 2);
-}
-
-// Convert a string_view to an int. If there are any problems with the input,
-// this function returns std::nullopt.
-std::optional<int> string_view_to_int(std::string_view input)
-{
-    int result = 0;
-    const char* last = input.data() + input.size();
-    // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage)
-    const auto [p, ec] = std::from_chars(input.data(), last, result);
-    if ((ec != std::errc()) || (p != last)) {
-        return std::nullopt;
-    }
-    return result;
 }
 
 // Split input by space characters, similar to .Split(' ') in C#. Note that
@@ -83,8 +40,8 @@ convert_line_to_note(int position,
     if (split_line.size() < MAX_NORMAL_EVENT_SIZE) {
         throw SightRead::ParseError("Line incomplete");
     }
-    const auto fret = string_view_to_int(split_line[3]);
-    const auto length = string_view_to_int(split_line[4]);
+    const auto fret = SightRead::Detail::string_view_to_int(split_line[3]);
+    const auto length = SightRead::Detail::string_view_to_int(split_line[4]);
     if (!fret.has_value() || !length.has_value()) {
         throw SightRead::ParseError("Bad note event");
     }
@@ -100,8 +57,8 @@ convert_line_to_special(int position,
     if (split_line.size() < MAX_NORMAL_EVENT_SIZE) {
         throw SightRead::ParseError("Line incomplete");
     }
-    const auto sp_key = string_view_to_int(split_line[3]);
-    const auto length = string_view_to_int(split_line[4]);
+    const auto sp_key = SightRead::Detail::string_view_to_int(split_line[3]);
+    const auto length = SightRead::Detail::string_view_to_int(split_line[4]);
     if (!sp_key.has_value() || !length.has_value()) {
         throw SightRead::ParseError("Bad SP event");
     }
@@ -115,7 +72,7 @@ convert_line_to_bpm(int position,
     if (split_line.size() < 4) {
         throw SightRead::ParseError("Line incomplete");
     }
-    const auto bpm = string_view_to_int(split_line[3]);
+    const auto bpm = SightRead::Detail::string_view_to_int(split_line[3]);
     if (!bpm.has_value()) {
         throw SightRead::ParseError("Bad BPM event");
     }
@@ -131,10 +88,10 @@ convert_line_to_timesig(int position,
     if (split_line.size() < 4) {
         throw SightRead::ParseError("Line incomplete");
     }
-    const auto numer = string_view_to_int(split_line[3]);
+    const auto numer = SightRead::Detail::string_view_to_int(split_line[3]);
     std::optional<int> denom = 2;
     if (split_line.size() >= MAX_NORMAL_EVENT_SIZE) {
-        denom = string_view_to_int(split_line[4]);
+        denom = SightRead::Detail::string_view_to_int(split_line[4]);
     }
     if (!numer.has_value() || !denom.has_value()) {
         throw SightRead::ParseError("Bad TS event");
@@ -163,14 +120,15 @@ convert_line_to_event(int position,
 SightRead::Detail::ChartSection read_section(std::string_view& input)
 {
     SightRead::Detail::ChartSection section;
-    section.name = strip_square_brackets(break_off_newline(input));
+    section.name
+        = strip_square_brackets(SightRead::Detail::break_off_newline(input));
 
-    if (break_off_newline(input) != "{") {
+    if (SightRead::Detail::break_off_newline(input) != "{") {
         throw SightRead::ParseError("Section does not open with {");
     }
 
     while (true) {
-        const auto next_line = break_off_newline(input);
+        const auto next_line = SightRead::Detail::break_off_newline(input);
         if (next_line == "}") {
             break;
         }
@@ -179,7 +137,7 @@ SightRead::Detail::ChartSection read_section(std::string_view& input)
             throw SightRead::ParseError("Line incomplete");
         }
         const auto key = separated_line[0];
-        const auto key_val = string_view_to_int(key);
+        const auto key_val = SightRead::Detail::string_view_to_int(key);
         if (key_val.has_value()) {
             const auto pos = *key_val;
             if (separated_line[2] == "N") {

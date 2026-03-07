@@ -1,3 +1,5 @@
+#include <charconv>
+
 #include <boost/locale.hpp>
 
 #include "sightread/detail/stringutil.hpp"
@@ -70,5 +72,19 @@ std::string to_utf8_string(std::string_view input)
     }
     return boost::locale::conv::to_utf<char>(
         input.data(), input.data() + input.size(), "Latin1");
+}
+
+// Convert a string_view to an int. If there are any problems with the input,
+// this function returns std::nullopt.
+std::optional<int> string_view_to_int(std::string_view input)
+{
+    int result = 0;
+    const char* last = input.data() + input.size();
+    // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage)
+    const auto [p, ec] = std::from_chars(input.data(), last, result);
+    if ((ec != std::errc()) || (p != last)) {
+        return std::nullopt;
+    }
+    return result;
 }
 }
