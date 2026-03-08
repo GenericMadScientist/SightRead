@@ -15,9 +15,14 @@
 #include "sightread/time.hpp"
 
 namespace SightRead {
-enum class Difficulty { Easy = 0, Medium = 1, Hard = 2, Expert = 3 };
+enum class Difficulty : std::uint8_t {
+    Easy = 0,
+    Medium = 1,
+    Hard = 2,
+    Expert = 3
+};
 
-enum class Instrument {
+enum class Instrument : std::uint8_t {
     Guitar,
     GuitarCoop,
     Bass,
@@ -38,7 +43,12 @@ enum class Instrument {
 
 std::set<Instrument> all_instruments();
 
-enum class TrackType { FiveFret, SixFret, Drums, FortniteFestival };
+enum class TrackType : std::uint8_t {
+    FiveFret,
+    SixFret,
+    Drums,
+    FortniteFestival
+};
 
 enum NoteFlags : std::uint32_t {
     FLAGS_NONE = 0,
@@ -55,7 +65,7 @@ enum NoteFlags : std::uint32_t {
     FLAGS_FIVE_FRET_GUITAR = 1U << 31
 };
 
-enum FiveFretNotes {
+enum FiveFretNotes : std::uint8_t {
     FIVE_FRET_GREEN = 0,
     FIVE_FRET_RED = 1,
     FIVE_FRET_YELLOW = 2,
@@ -64,7 +74,7 @@ enum FiveFretNotes {
     FIVE_FRET_OPEN = 5
 };
 
-enum SixFretNotes {
+enum SixFretNotes : std::uint8_t {
     SIX_FRET_WHITE_LOW = 0,
     SIX_FRET_WHITE_MID = 1,
     SIX_FRET_WHITE_HIGH = 2,
@@ -74,7 +84,7 @@ enum SixFretNotes {
     SIX_FRET_OPEN = 6
 };
 
-enum DrumNotes {
+enum DrumNotes : std::uint8_t {
     DRUM_RED = 0,
     DRUM_YELLOW = 1,
     DRUM_BLUE = 2,
@@ -85,7 +95,7 @@ enum DrumNotes {
 
 struct Note {
 private:
-    int open_index() const;
+    [[nodiscard]] int open_index() const;
 
 public:
     SightRead::Tick position {0};
@@ -257,7 +267,7 @@ public:
     }
 
     [[nodiscard]] std::optional<BigRockEnding> bre() const { return m_bre; }
-    void bre(std::optional<BigRockEnding> bre) { m_bre = std::move(bre); }
+    void bre(std::optional<BigRockEnding> bre) { m_bre = bre; }
 
     [[nodiscard]] TrackType track_type() const { return m_track_type; }
     [[nodiscard]] const SongGlobalData& global_data() const
