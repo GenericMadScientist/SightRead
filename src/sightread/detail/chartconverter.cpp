@@ -417,7 +417,8 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
         } else if (phrase.key == DRUM_FILL_KEY) {
             fills.push_back(SightRead::DrumFill {
                 .position = SightRead::Tick {phrase.position},
-                .length = SightRead::Tick {phrase.length}});
+                .length = SightRead::Tick {phrase.length},
+                .is_coda = false});
         }
     }
     if (track_type != SightRead::TrackType::Drums) {

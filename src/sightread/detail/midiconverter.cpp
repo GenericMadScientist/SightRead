@@ -143,6 +143,34 @@ practice_sections_from_track(const SightRead::Detail::MidiTrack& track)
     return practice_sections;
 }
 
+void process_events_track(const SightRead::Detail::MidiTrack& track,
+                          SightRead::SongGlobalData& global_data,
+                          std::optional<SightRead::Tick>& coda_event_time)
+{
+    using namespace std::string_view_literals;
+
+    constexpr std::string_view coda_text = "[coda]"sv;
+
+    global_data.practice_sections(practice_sections_from_track(track));
+    coda_event_time = std::nullopt;
+
+    for (const auto& event : track.events) {
+        const auto* meta_event
+            = std::get_if<SightRead::Detail::MetaEvent>(&event.event);
+        if (meta_event == nullptr || meta_event->type != 1) {
+            continue;
+        }
+        std::span<const std::uint8_t> event_text {meta_event->data.data(),
+                                                  meta_event->data.size()};
+        if (event_text.size() != coda_text.size()
+            || !std::equal(coda_text.cbegin(), coda_text.cend(),
+                           event_text.begin())) {
+            continue;
+        }
+        coda_event_time = SightRead::Tick {event.time};
+    }
+}
+
 bool is_five_lane_green_note(const SightRead::Detail::TimedEvent& event)
 {
     constexpr std::array<std::uint8_t, 4> GREEN_LANE_KEYS {65, 77, 89, 101};
@@ -985,7 +1013,7 @@ drum_note_tracks_from_midi(
     for (const auto& [start, end] : combine_note_on_off_events(
              event_track.fill_on_events, event_track.fill_off_events)) {
         drum_fills.push_back(
-            {SightRead::Tick {start}, SightRead::Tick {end - start}});
+            {SightRead::Tick {start}, SightRead::Tick {end - start}, false});
     }
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
@@ -1251,7 +1279,9 @@ SightRead::Detail::MidiConverter::midi_section_instrument(
 
 void SightRead::Detail::MidiConverter::process_instrument_track(
     const std::string& track_name, const SightRead::Detail::MidiTrack& track,
-    SightRead::Song& song) const
+    SightRead::Song& song,
+    std::map<std::tuple<SightRead::Instrument, SightRead::Difficulty>,
+             SightRead::NoteTrack>& song_tracks) const
 {
     const auto inst = midi_section_instrument(track_name);
     if (!inst.has_value()) {
@@ -1261,26 +1291,25 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
         auto tracks = fortnite_note_tracks_from_midi(
             track, song.global_data_ptr(), m_permit_solos);
         for (auto& [diff, note_track] : tracks) {
-            song.add_note_track(*inst, diff, std::move(note_track));
+            song_tracks.insert({{*inst, diff}, note_track});
         }
     } else if (SightRead::Detail::is_six_fret_instrument(*inst)) {
         auto tracks = ghl_note_tracks_from_midi(
             track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos);
         for (auto& [diff, note_track] : tracks) {
-            song.add_note_track(*inst, diff, std::move(note_track));
+            song_tracks.insert({{*inst, diff}, note_track});
         }
     } else if (*inst == SightRead::Instrument::Drums) {
         auto tracks = drum_note_tracks_from_midi(track, song.global_data_ptr(),
                                                  m_permit_solos);
         for (auto& [diff, note_track] : tracks) {
-            song.add_note_track(SightRead::Instrument::Drums, diff,
-                                std::move(note_track));
+            song_tracks.insert({{*inst, diff}, note_track});
         }
     } else {
         auto tracks = note_tracks_from_midi(track, song.global_data_ptr(),
                                             m_hopo_threshold, m_permit_solos);
         for (auto& [diff, note_track] : tracks) {
-            song.add_note_track(*inst, diff, std::move(note_track));
+            song_tracks.insert({{*inst, diff}, note_track});
         }
     }
 }
@@ -1306,6 +1335,10 @@ SightRead::Song SightRead::Detail::MidiConverter::convert(
 
     song.global_data().tempo_map(
         read_first_midi_track(midi.tracks[0], midi.ticks_per_quarter_note));
+    std::optional<SightRead::Tick> coda_event_time;
+    std::map<std::tuple<SightRead::Instrument, SightRead::Difficulty>,
+             SightRead::NoteTrack>
+        song_tracks;
 
     for (const auto& track : midi.tracks) {
         const auto track_name = midi_track_name(track);
@@ -1315,11 +1348,25 @@ SightRead::Song SightRead::Detail::MidiConverter::convert(
         if (*track_name == "BEAT") {
             song.global_data().od_beats(od_beats_from_track(track));
         } else if (*track_name == "EVENTS") {
-            song.global_data().practice_sections(
-                practice_sections_from_track(track));
+            process_events_track(track, song.global_data(), coda_event_time);
         } else {
-            process_instrument_track(*track_name, track, song);
+            process_instrument_track(*track_name, track, song, song_tracks);
         }
+    }
+
+    if (coda_event_time.has_value()) {
+        for (auto& pair : song_tracks) {
+            auto drum_fills = pair.second.drum_fills();
+            for (auto& fill : drum_fills) {
+                fill.is_coda = *coda_event_time <= fill.position;
+            }
+            pair.second.drum_fills(drum_fills);
+        }
+    }
+
+    for (const auto& pair : song_tracks) {
+        song.add_note_track(std::get<0>(pair.first), std::get<1>(pair.first),
+                            pair.second);
     }
 
     const auto& od_beats = song.global_data().od_beats();

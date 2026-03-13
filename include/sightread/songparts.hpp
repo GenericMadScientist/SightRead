@@ -134,6 +134,7 @@ struct Solo {
 struct DrumFill {
     SightRead::Tick position;
     SightRead::Tick length;
+    bool is_coda;
 };
 
 struct DiscoFlip {

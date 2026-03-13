@@ -1316,7 +1316,33 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_correctly_from_mid)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {45}, SightRead::Tick {30}}};
+        {SightRead::Tick {45}, SightRead::Tick {30}, false}};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.drum_fills().cbegin(),
+                                  track.drum_fills().cend(), fills.cbegin(),
+                                  fills.cend());
+}
+
+BOOST_AUTO_TEST_CASE(coda_drum_fills_are_read_correctly_from_mid)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{0, {part_event("PART DRUMS")}},
+         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {45,
+          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {120, 64}}}},
+         {65, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {75,
+          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {120, 0}}}}}};
+    SightRead::Detail::MidiTrack events_track {
+        {{0, {part_event("EVENTS")}}, {45, {text_event("[coda]")}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track, events_track}};
+    const auto song = drums_only_converter().convert(midi);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    std::vector<SightRead::DrumFill> fills {
+        {SightRead::Tick {45}, SightRead::Tick {30}, true}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.drum_fills().cbegin(),
                                   track.drum_fills().cend(), fills.cbegin(),

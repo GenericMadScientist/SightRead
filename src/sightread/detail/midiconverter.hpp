@@ -22,9 +22,11 @@ private:
 
     [[nodiscard]] std::optional<SightRead::Instrument>
     midi_section_instrument(const std::string& track_name) const;
-    void process_instrument_track(const std::string& track_name,
-                                  const SightRead::Detail::MidiTrack& track,
-                                  SightRead::Song& song) const;
+    void process_instrument_track(
+        const std::string& track_name,
+        const SightRead::Detail::MidiTrack& track, SightRead::Song& song,
+        std::map<std::tuple<SightRead::Instrument, SightRead::Difficulty>,
+                 SightRead::NoteTrack>& song_tracks) const;
 
 public:
     explicit MidiConverter(SightRead::Metadata metadata);
