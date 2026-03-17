@@ -25,8 +25,7 @@ private:
     void process_instrument_track(
         const std::string& track_name,
         const SightRead::Detail::MidiTrack& track, SightRead::Song& song,
-        std::map<std::tuple<SightRead::Instrument, SightRead::Difficulty>,
-                 SightRead::NoteTrack>& song_tracks) const;
+        std::optional<SightRead::Tick> coda_event_time) const;
 
 public:
     explicit MidiConverter(SightRead::Metadata metadata);
