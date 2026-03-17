@@ -134,7 +134,6 @@ struct Solo {
 struct DrumFill {
     SightRead::Tick position;
     SightRead::Tick length;
-    bool is_coda;
 };
 
 struct DiscoFlip {
@@ -223,7 +222,7 @@ private:
     std::vector<Solo> m_solos;
     std::vector<DrumFill> m_drum_fills;
     std::vector<DiscoFlip> m_disco_flips;
-    std::optional<BigRockEnding> m_bre;
+    std::vector<BigRockEnding> m_bres;
     TrackType m_track_type;
     std::shared_ptr<SongGlobalData> m_global_data;
     int m_base_score_ticks;
@@ -267,8 +266,11 @@ public:
         m_disco_flips = std::move(disco_flips);
     }
 
-    [[nodiscard]] std::optional<BigRockEnding> bre() const { return m_bre; }
-    void bre(std::optional<BigRockEnding> bre) { m_bre = bre; }
+    [[nodiscard]] const std::vector<BigRockEnding>& bres() const
+    {
+        return m_bres;
+    }
+    void bres(std::vector<BigRockEnding> bres) { m_bres = std::move(bres); }
 
     [[nodiscard]] TrackType track_type() const { return m_track_type; }
     [[nodiscard]] const SongGlobalData& global_data() const

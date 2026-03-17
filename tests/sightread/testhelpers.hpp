@@ -82,6 +82,17 @@ inline std::ostream& operator<<(std::ostream& stream, const DrumFill& fill)
     return stream;
 }
 
+inline bool operator==(const BigRockEnding& lhs, const BigRockEnding& rhs)
+{
+    return std::tie(lhs.start, lhs.end) == std::tie(rhs.start, rhs.end);
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const BigRockEnding& bre)
+{
+    stream << "{Start " << bre.start << ", End " << bre.end << '}';
+    return stream;
+}
+
 inline std::ostream& operator<<(std::ostream& stream, Instrument instrument)
 {
     stream << static_cast<int>(instrument);

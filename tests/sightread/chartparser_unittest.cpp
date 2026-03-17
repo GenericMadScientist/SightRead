@@ -741,8 +741,7 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_from_chart)
     const auto chart_file
         = section_string("ExpertDrums", {{192, 1, 0}}, {{192, 64, 1}});
     const SightRead::DrumFill fill {.position = SightRead::Tick {192},
-                                    .length = SightRead::Tick {1},
-                                    .is_coda = false};
+                                    .length = SightRead::Tick {1}};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,

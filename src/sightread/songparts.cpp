@@ -328,8 +328,7 @@ void SightRead::NoteTrack::generate_drum_fills(
         const auto mid_m_seconds = (m_seconds + prev_m_seconds) * 0.5;
         const auto fill_start = tempo_map.to_ticks(mid_m_seconds);
         m_drum_fills.push_back(DrumFill {.position = fill_start,
-                                         .length = measure_ticks - fill_start,
-                                         .is_coda = false});
+                                         .length = measure_ticks - fill_start});
         m += FILL_GAP;
     }
 }

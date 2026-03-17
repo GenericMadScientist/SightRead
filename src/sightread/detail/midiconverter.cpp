@@ -1009,13 +1009,16 @@ drum_note_tracks_from_midi(
             {SightRead::Tick {start}, SightRead::Tick {end - start}});
     }
 
+    std::vector<SightRead::BigRockEnding> bres;
     std::vector<SightRead::DrumFill> drum_fills;
     for (const auto& [start, end] : combine_note_on_off_events(
              event_track.fill_on_events, event_track.fill_off_events)) {
-        const auto is_coda
-            = coda_event_time.has_value() && coda_event_time->value() <= start;
-        drum_fills.push_back(
-            {SightRead::Tick {start}, SightRead::Tick {end - start}, is_coda});
+        if (coda_event_time.has_value() && coda_event_time->value() <= start) {
+            bres.push_back({SightRead::Tick {start}, SightRead::Tick {end}});
+        } else {
+            drum_fills.push_back(
+                {SightRead::Tick {start}, SightRead::Tick {end - start}});
+        }
     }
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
@@ -1045,6 +1048,7 @@ drum_note_tracks_from_midi(
         SightRead::NoteTrack note_track {
             note_set, sp_phrases, SightRead::TrackType::Drums, global_data};
         note_track.solos(std::move(solos));
+        note_track.bres(bres);
         note_track.drum_fills(drum_fills);
         note_track.disco_flips(std::move(disco_flips));
         note_tracks.emplace(diff, std::move(note_track));
@@ -1053,37 +1057,20 @@ drum_note_tracks_from_midi(
     return note_tracks;
 }
 
-std::optional<SightRead::BigRockEnding>
-read_bre(const SightRead::Detail::MidiTrack& midi_track)
+std::vector<SightRead::BigRockEnding>
+read_bres(const InstrumentMidiTrack& event_track,
+          std::optional<SightRead::Tick> coda_event_time)
 {
-    constexpr int BRE_KEY = 120;
-    constexpr int NOTE_OFF_ID = 0x80;
-    constexpr int NOTE_ON_ID = 0x90;
-    constexpr int UPPER_NIBBLE_MASK = 0xF0;
-
-    SightRead::Tick bre_start {0};
-
-    for (const auto& event : midi_track.events) {
-        const auto* midi_event
-            = std::get_if<SightRead::Detail::MidiEvent>(&event.event);
-        if (midi_event == nullptr) {
-            continue;
-        }
-        if (midi_event->data[0] != BRE_KEY) {
-            continue;
-        }
-        const auto event_type = midi_event->status & UPPER_NIBBLE_MASK;
-        if (event_type == NOTE_OFF_ID
-            || (event_type == NOTE_ON_ID && midi_event->data[1] == 0)) {
-            const SightRead::Tick bre_end {event.time};
-            return {{.start = bre_start, .end = bre_end}};
-        }
-        if (event_type == NOTE_ON_ID) {
-            bre_start = SightRead::Tick {event.time};
+    std::vector<SightRead::BigRockEnding> bres;
+    for (const auto& [start, end] : combine_note_on_off_events(
+             event_track.fill_on_events, event_track.fill_off_events)) {
+        if (coda_event_time.has_value() && coda_event_time->value() <= start) {
+            bres.push_back(
+                {SightRead::Tick {start}, SightRead::Tick {end - start}});
         }
     }
 
-    return std::nullopt;
+    return bres;
 }
 
 bool is_fortnite_instrument(SightRead::Instrument instrument)
@@ -1102,11 +1089,11 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack>
 fortnite_note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
-    bool permit_solos)
+    bool permit_solos, std::optional<SightRead::Tick> coda_event_time)
 {
     const auto event_track = read_instrument_midi_track(
         midi_track, SightRead::TrackType::FortniteFestival);
-    const auto bre = read_bre(midi_track);
+    const auto bres = read_bres(event_track, coda_event_time);
 
     const auto notes = notes_from_event_track(
         event_track, {}, {}, SightRead::TrackType::FortniteFestival);
@@ -1140,7 +1127,7 @@ fortnite_note_tracks_from_midi(
                                          SightRead::TrackType::FortniteFestival,
                                          global_data};
         note_track.solos(std::move(solos));
-        note_track.bre(bre);
+        note_track.bres(bres);
         note_tracks.emplace(diff, std::move(note_track));
     }
 
@@ -1150,11 +1137,12 @@ fortnite_note_tracks_from_midi(
 std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
-    const SightRead::HopoThreshold& hopo_threshold, bool permit_solos)
+    const SightRead::HopoThreshold& hopo_threshold, bool permit_solos,
+    std::optional<SightRead::Tick> coda_event_time)
 {
     const auto event_track = read_instrument_midi_track(
         midi_track, SightRead::TrackType::FiveFret);
-    const auto bre = read_bre(midi_track);
+    const auto bres = read_bres(event_track, coda_event_time);
 
     std::map<SightRead::Difficulty, IntervalSet> open_events;
     for (const auto& [diff, open_ons] : event_track.open_on_events) {
@@ -1207,7 +1195,7 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
             note_set, sp_phrases, SightRead::TrackType::FiveFret, global_data,
             hopo_threshold.midi_max_hopo_gap(global_data->resolution())};
         note_track.solos(std::move(solos));
-        note_track.bre(bre);
+        note_track.bres(bres);
         note_tracks.emplace(diff, std::move(note_track));
     }
 
@@ -1289,7 +1277,7 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
     }
     if (is_fortnite_instrument(*inst)) {
         auto tracks = fortnite_note_tracks_from_midi(
-            track, song.global_data_ptr(), m_permit_solos);
+            track, song.global_data_ptr(), m_permit_solos, coda_event_time);
         for (auto& [diff, note_track] : tracks) {
             song.add_note_track(*inst, diff, std::move(note_track));
         }
@@ -1307,7 +1295,8 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
         }
     } else {
         auto tracks = note_tracks_from_midi(track, song.global_data_ptr(),
-                                            m_hopo_threshold, m_permit_solos);
+                                            m_hopo_threshold, m_permit_solos,
+                                            coda_event_time);
         for (auto& [diff, note_track] : tracks) {
             song.add_note_track(*inst, diff, std::move(note_track));
         }

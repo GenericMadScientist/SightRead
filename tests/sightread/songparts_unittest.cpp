@@ -227,8 +227,8 @@ BOOST_AUTO_TEST_CASE(automatic_zones_are_created)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}, false},
-        {SightRead::Tick {3456}, SightRead::Tick {384}, false}};
+        {SightRead::Tick {384}, SightRead::Tick {384}},
+        {SightRead::Tick {3456}, SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 
@@ -247,8 +247,8 @@ BOOST_AUTO_TEST_CASE(automatic_zones_have_250ms_of_leniency)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}, false},
-        {SightRead::Tick {3456}, SightRead::Tick {384}, false}};
+        {SightRead::Tick {384}, SightRead::Tick {384}},
+        {SightRead::Tick {3456}, SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 
@@ -266,8 +266,8 @@ BOOST_AUTO_TEST_CASE(automatic_zones_handle_skipped_measures_correctly)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}, false},
-        {SightRead::Tick {4224}, SightRead::Tick {384}, false}};
+        {SightRead::Tick {384}, SightRead::Tick {384}},
+        {SightRead::Tick {4224}, SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(the_last_automatic_zone_exists_even_if_the_note_is_early)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}, false}};
+        {SightRead::Tick {384}, SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 
@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(automatic_zones_are_half_a_measure_according_to_seconds)
     SightRead::NoteTrack track {
         notes, {}, SightRead::TrackType::Drums, global_data};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {576}, SightRead::Tick {192}, false}};
+        {SightRead::Tick {576}, SightRead::Tick {192}}};
 
     track.generate_drum_fills(tempo_map);
 
@@ -324,9 +324,9 @@ BOOST_AUTO_TEST_CASE(fill_ends_remain_snapped_to_measure)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}, false},
-        {SightRead::Tick {3456}, SightRead::Tick {384}, false},
-        {SightRead::Tick {6528}, SightRead::Tick {384}, false}};
+        {SightRead::Tick {384}, SightRead::Tick {384}},
+        {SightRead::Tick {3456}, SightRead::Tick {384}},
+        {SightRead::Tick {6528}, SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 
