@@ -719,6 +719,31 @@ BOOST_AUTO_TEST_CASE(short_midi_sustains_are_not_trimmed)
     BOOST_CHECK_EQUAL(notes[1].lengths[0], SightRead::Tick {70});
 }
 
+BOOST_AUTO_TEST_CASE(bres_are_read_correctly_on_non_drum_instruments)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{0, {part_event("PART GUITAR")}},
+         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {45,
+          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {120, 64}}}},
+         {65, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {75,
+          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {120, 0}}}}}};
+    SightRead::Detail::MidiTrack events_track {
+        {{0, {part_event("EVENTS")}}, {45, {text_event("[coda]")}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track, events_track}};
+    const auto song = guitar_only_converter().convert(midi);
+    const auto& track = song.track(SightRead::Instrument::Guitar,
+                                   SightRead::Difficulty::Expert);
+
+    std::vector<SightRead::BigRockEnding> bres {
+        {SightRead::Tick {45}, SightRead::Tick {75}}};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.bres().cbegin(), track.bres().cend(),
+                                  bres.cbegin(), bres.cend());
+}
+
 BOOST_AUTO_TEST_SUITE(midi_hopos_and_taps)
 
 BOOST_AUTO_TEST_CASE(automatically_set_based_on_distance)

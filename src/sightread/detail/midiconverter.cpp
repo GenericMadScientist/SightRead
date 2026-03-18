@@ -1065,8 +1065,7 @@ read_bres(const InstrumentMidiTrack& event_track,
     for (const auto& [start, end] : combine_note_on_off_events(
              event_track.fill_on_events, event_track.fill_off_events)) {
         if (coda_event_time.has_value() && coda_event_time->value() <= start) {
-            bres.push_back(
-                {SightRead::Tick {start}, SightRead::Tick {end - start}});
+            bres.push_back({SightRead::Tick {start}, SightRead::Tick {end}});
         }
     }
 
