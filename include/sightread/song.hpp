@@ -42,7 +42,7 @@ public:
     [[nodiscard]] const SightRead::NoteTrack&
     track(SightRead::Instrument instrument,
           SightRead::Difficulty difficulty) const;
-    [[nodiscard]] std::vector<SightRead::Tick> unison_phrase_positions() const;
+    [[nodiscard]] std::vector<SightRead::StarPower> unison_phrases() const;
     void speedup(int speed);
 };
 }

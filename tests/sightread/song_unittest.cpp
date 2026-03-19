@@ -75,7 +75,12 @@ BOOST_AUTO_TEST_CASE(difficulties_returns_the_difficulties_for_an_instrument)
                                   drum_difficulties.cend());
 }
 
-BOOST_AUTO_TEST_CASE(unison_phrase_positions_is_correct)
+BOOST_AUTO_TEST_SUITE(unison_phrases)
+
+// This is to test that unison bonuses can apply when at least 2
+// SightRead::Instruments have the phrase. This happens with the first phrase on
+// RB3 Last Dance guitar, the phrase is missing on bass.
+BOOST_AUTO_TEST_CASE(not_all_instruments_need_to_participate)
 {
     SightRead::NoteTrack guitar_track {
         {make_note(768), make_note(1024)},
@@ -83,19 +88,12 @@ BOOST_AUTO_TEST_CASE(unison_phrase_positions_is_correct)
          {SightRead::Tick {1024}, SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
-    // Note the first phrase has a different length than the other
-    // SightRead::Instruments. It should still be a unison phrase: this happens
-    // in Roundabout, with the key phrases being a slightly different length.
     SightRead::NoteTrack bass_track {
         {make_note(768), make_note(2048)},
-        {{SightRead::Tick {768}, SightRead::Tick {99}},
+        {{SightRead::Tick {768}, SightRead::Tick {100}},
          {SightRead::Tick {2048}, SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
-    // The 768 phrase is absent for drums: this is to test that unison bonuses
-    // can apply when at least 2 SightRead::Instruments have the phrase. This
-    // happens with the first phrase on RB3 Last Dance guitar, the phrase is
-    // missing on bass.
     SightRead::NoteTrack drum_track {
         {make_drum_note(768), make_drum_note(4096)},
         {{SightRead::Tick {4096}, SightRead::Tick {100}}},
@@ -109,12 +107,103 @@ BOOST_AUTO_TEST_CASE(unison_phrase_positions_is_correct)
     song.add_note_track(SightRead::Instrument::Drums,
                         SightRead::Difficulty::Expert, drum_track);
 
-    const std::vector<SightRead::Tick> unison_phrases
-        = song.unison_phrase_positions();
+    const auto unison_phrases = song.unison_phrases();
+    const SightRead::StarPower expected_phrase {
+        .position = SightRead::Tick {768}, .length = SightRead::Tick {100}};
 
     BOOST_CHECK_EQUAL(unison_phrases.size(), 1);
-    BOOST_CHECK_EQUAL(unison_phrases[0], SightRead::Tick {768});
+    BOOST_CHECK_EQUAL(unison_phrases[0], expected_phrase);
 }
+
+BOOST_AUTO_TEST_CASE(phrases_with_slightly_different_ends_still_combined)
+{
+    SightRead::NoteTrack guitar_track {
+        {make_note(768), make_note(1024)},
+        {{SightRead::Tick {768}, SightRead::Tick {100}},
+         {SightRead::Tick {1024}, SightRead::Tick {100}}},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::NoteTrack bass_track {
+        {make_note(768), make_note(2048)},
+        {{SightRead::Tick {768}, SightRead::Tick {99}},
+         {SightRead::Tick {2048}, SightRead::Tick {100}}},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::Song song;
+    song.add_note_track(SightRead::Instrument::Guitar,
+                        SightRead::Difficulty::Expert, guitar_track);
+    song.add_note_track(SightRead::Instrument::Bass,
+                        SightRead::Difficulty::Expert, bass_track);
+
+    const auto unison_phrases = song.unison_phrases();
+    const std::vector<SightRead::StarPower> expected_phrases {
+        {SightRead::Tick {768}, SightRead::Tick {99}},
+        {SightRead::Tick {768}, SightRead::Tick {100}}};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        unison_phrases.cbegin(), unison_phrases.cend(),
+        expected_phrases.cbegin(), expected_phrases.cend());
+}
+
+BOOST_AUTO_TEST_CASE(phrases_with_slightly_different_starts_still_combined)
+{
+    SightRead::NoteTrack guitar_track {
+        {make_note(768), make_note(1024)},
+        {{SightRead::Tick {768}, SightRead::Tick {100}}},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::NoteTrack bass_track {
+        {make_note(768), make_note(2048)},
+        {{SightRead::Tick {767}, SightRead::Tick {101}}},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::Song song;
+    song.add_note_track(SightRead::Instrument::Guitar,
+                        SightRead::Difficulty::Expert, guitar_track);
+    song.add_note_track(SightRead::Instrument::Bass,
+                        SightRead::Difficulty::Expert, bass_track);
+
+    const auto unison_phrases = song.unison_phrases();
+    const std::vector<SightRead::StarPower> expected_phrases {
+        {SightRead::Tick {767}, SightRead::Tick {101}},
+        {SightRead::Tick {768}, SightRead::Tick {100}}};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        unison_phrases.cbegin(), unison_phrases.cend(),
+        expected_phrases.cbegin(), expected_phrases.cend());
+}
+
+BOOST_AUTO_TEST_CASE(only_highest_difficulties_affect_unisons)
+{
+    SightRead::NoteTrack hard_guitar_track {
+        {make_note(768)},
+        {{SightRead::Tick {768}, SightRead::Tick {100}}},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::NoteTrack expert_guitar_track {
+        {make_note(768)},
+        {},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::NoteTrack bass_track {
+        {make_note(768)},
+        {{SightRead::Tick {768}, SightRead::Tick {100}}},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::Song song;
+    song.add_note_track(SightRead::Instrument::Guitar,
+                        SightRead::Difficulty::Hard, hard_guitar_track);
+    song.add_note_track(SightRead::Instrument::Guitar,
+                        SightRead::Difficulty::Expert, expert_guitar_track);
+    song.add_note_track(SightRead::Instrument::Bass,
+                        SightRead::Difficulty::Expert, bass_track);
+
+    const auto unison_phrases = song.unison_phrases();
+
+    BOOST_CHECK(unison_phrases.empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(speedup)
 

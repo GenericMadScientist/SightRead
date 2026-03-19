@@ -58,27 +58,47 @@ SightRead::Song::track(SightRead::Instrument instrument,
     return m_tracks.at({instrument, difficulty});
 }
 
-std::vector<SightRead::Tick> SightRead::Song::unison_phrase_positions() const
+std::vector<SightRead::StarPower> SightRead::Song::unison_phrases() const
 {
-    std::map<SightRead::Tick, std::set<SightRead::Instrument>>
-        phrase_by_instrument;
-    for (const auto& [key, value] : m_tracks) {
-        const auto instrument = std::get<0>(key);
-        if (SightRead::Detail::is_six_fret_instrument(instrument)) {
+    std::vector<SightRead::StarPower> all_phrases;
+    for (const auto instrument : instruments()) {
+        const auto diffs = difficulties(instrument);
+        const auto difficulty = *std::ranges::max_element(diffs);
+        const auto& track = m_tracks.at({instrument, difficulty});
+        for (const auto& phrase : track.sp_phrases()) {
+            all_phrases.push_back(phrase);
+        }
+    }
+    std::ranges::sort(all_phrases, [](const auto& x, const auto& y) {
+        return std::tie(x.position, x.length) < std::tie(y.position, y.length);
+    });
+
+    std::vector<SightRead::StarPower> phrases;
+    auto unison_start_phrase = all_phrases.cbegin();
+    const SightRead::Tick tolerance {m_global_data->resolution() / 4};
+    for (auto it = all_phrases.cbegin(); it < all_phrases.cend();) {
+        unison_start_phrase
+            = std::find_if(unison_start_phrase, it, [=](const auto& phrase) {
+                  return phrase.position + tolerance > it->position;
+              });
+        if (std::next(unison_start_phrase) == all_phrases.cend()) {
+            break;
+        }
+        if (it == unison_start_phrase
+            && it->position + tolerance <= std::next(it)->position) {
+            ++it;
             continue;
         }
-        for (const auto& phrase : value.sp_phrases()) {
-            phrase_by_instrument[phrase.position].insert(instrument);
+        if (it->length < unison_start_phrase->length + tolerance) {
+            phrases.push_back(*it);
         }
+        it = std::find_if_not(it, all_phrases.cend(), [=](const auto& phrase) {
+            return std::tie(phrase.position, phrase.length)
+                == std::tie(it->position, it->length);
+        });
     }
 
-    std::vector<SightRead::Tick> unison_starts;
-    for (const auto& [key, value] : phrase_by_instrument) {
-        if (value.size() > 1) {
-            unison_starts.push_back(key);
-        }
-    }
-    return unison_starts;
+    return phrases;
 }
 
 void SightRead::Song::speedup(int speed)
