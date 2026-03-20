@@ -26,9 +26,9 @@ HOPOs. The default behaviour is as if these tags are absent.
 
 Then to use the parsers, both have a `.parse` method. `ChartParser` accepts a
 `std::string_view`, `MidiParser` accepts a `std::span<const std::uint8_t>`.
-These are meant to be the contents of the .chart/.midi files. Of note is that
-`ChartParser::parse` expects UTF-8. Unfortunately UTF-16 .chart files do exist
-in the wild, and the conversion is your job.
+These are meant to be the contents of the .chart/.midi files.
+`ChartParser::parse` will automatically convert its argument to UTF-8 before
+parsing, as unfortunately UTF-16 .chart files do exist in the wild.
 
 Both parsers return a `SightRead::Song`. Here the primary methods are `.track`
 to get a `SightRead::NoteTrack` for a particular instrument and difficulty, and
