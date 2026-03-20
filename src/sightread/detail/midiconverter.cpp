@@ -201,7 +201,8 @@ bool has_five_lane_green_notes(const SightRead::Detail::MidiTrack& midi_track)
 bool is_enable_chart_dynamics(const SightRead::Detail::TimedEvent& event)
 {
     using namespace std::literals;
-    constexpr auto ENABLE_DYNAMICS = "[ENABLE_CHART_DYNAMICS]"sv;
+    constexpr std::array ENABLE_DYNAMICS_STRINGS {"[ENABLE_CHART_DYNAMICS]"sv,
+                                                  "ENABLE_CHART_DYNAMICS"sv};
 
     const auto* meta_event
         = std::get_if<SightRead::Detail::MetaEvent>(&event.event);
@@ -211,7 +212,9 @@ bool is_enable_chart_dynamics(const SightRead::Detail::TimedEvent& event)
     if (meta_event->type != 1) {
         return false;
     }
-    return std::ranges::equal(meta_event->data, ENABLE_DYNAMICS);
+    return std::ranges::any_of(ENABLE_DYNAMICS_STRINGS, [&](const auto string) {
+        return std::ranges::equal(meta_event->data, string);
+    });
 }
 
 bool has_enable_chart_dynamics(const SightRead::Detail::MidiTrack& midi_track)

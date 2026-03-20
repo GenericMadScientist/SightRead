@@ -1464,16 +1464,13 @@ BOOST_AUTO_TEST_CASE(drum_five_lane_to_four_lane_conversion_is_done_from_mid)
                                   notes.cbegin(), notes.cend());
 }
 
+BOOST_AUTO_TEST_SUITE(dynamics_parsing)
+
 BOOST_AUTO_TEST_CASE(dynamics_are_parsed_from_mid)
 {
     SightRead::Detail::MidiTrack note_track {
         {{0, {part_event("PART DRUMS")}},
-         {0,
-          {SightRead::Detail::MetaEvent {
-              .type = 1,
-              .data = {0x5B, 0x45, 0x4E, 0x41, 0x42, 0x4C, 0x45, 0x5F,
-                       0x43, 0x48, 0x41, 0x52, 0x54, 0x5F, 0x44, 0x59,
-                       0x4E, 0x41, 0x4D, 0x49, 0x43, 0x53, 0x5D}}}},
+         {0, {text_event("[ENABLE_CHART_DYNAMICS]")}},
          {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 1}}}},
          {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
          {2, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
@@ -1502,12 +1499,7 @@ BOOST_AUTO_TEST_CASE(dynamics_not_parsed_from_mid_without_ENABLE_CHART_DYNAMICS)
     SightRead::Detail::MidiTrack note_track {
         {{0, {part_event("PART DRUMS")}},
          {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 1}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {2, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {3, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {4,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 127}}}},
-         {5,
+         {1,
           {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
@@ -1515,13 +1507,34 @@ BOOST_AUTO_TEST_CASE(dynamics_not_parsed_from_mid_without_ENABLE_CHART_DYNAMICS)
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
 
-    std::vector<SightRead::Note> notes {make_drum_note(0, SightRead::DRUM_RED),
-                                        make_drum_note(2, SightRead::DRUM_RED),
-                                        make_drum_note(4, SightRead::DRUM_RED)};
+    std::vector<SightRead::Note> notes {make_drum_note(0, SightRead::DRUM_RED)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
 }
+
+BOOST_AUTO_TEST_CASE(ENABLE_CHART_DYNAMICS_works_without_braces)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{0, {part_event("PART DRUMS")}},
+         {0, {text_event("ENABLE_CHART_DYNAMICS")}},
+         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 1}}}},
+         {1,
+          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+    const auto song = drums_only_converter().convert(midi);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    std::vector<SightRead::Note> notes {make_drum_note(
+        0, SightRead::DRUM_RED, SightRead::NoteFlags::FLAGS_GHOST)};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
+                                  notes.cbegin(), notes.cend());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(instruments_not_permitted_are_dropped_from_midis)
 {
