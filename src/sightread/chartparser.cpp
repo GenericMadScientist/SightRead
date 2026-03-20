@@ -3,16 +3,7 @@
 #include "sightread/chartparser.hpp"
 #include "sightread/detail/chart.hpp"
 #include "sightread/detail/chartconverter.hpp"
-
-namespace {
-std::string_view remove_utf8_bom(std::string_view data)
-{
-    if (data.starts_with("\xEF\xBB\xBF")) {
-        data.remove_prefix(3);
-    }
-    return data;
-}
-}
+#include "sightread/detail/stringutil.hpp"
 
 SightRead::ChartParser::ChartParser(SightRead::Metadata metadata)
     : m_metadata {std::move(metadata)}
@@ -36,10 +27,8 @@ SightRead::ChartParser& SightRead::ChartParser::parse_solos(bool permit_solos)
 
 SightRead::Song SightRead::ChartParser::parse(std::string_view data) const
 {
-    data = remove_utf8_bom(data);
-
-    const auto chart = SightRead::Detail::parse_chart(data);
-
+    const auto utf8_string = SightRead::Detail::to_utf8_string(data);
+    const auto chart = SightRead::Detail::parse_chart(utf8_string);
     const auto converter = SightRead::Detail::ChartConverter(m_metadata)
                                .permit_instruments(m_permitted_instruments)
                                .parse_solos(m_permit_solos);

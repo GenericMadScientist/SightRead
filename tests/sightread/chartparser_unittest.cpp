@@ -140,6 +140,28 @@ BOOST_AUTO_TEST_CASE(default_is_overriden_by_specified_value_even_with_bom)
     BOOST_CHECK_EQUAL(resolution, 200);
 }
 
+BOOST_AUTO_TEST_CASE(default_is_overriden_by_specified_value_even_with_utf16le)
+{
+    using namespace std::string_literals;
+
+    const auto header = header_string({{"Resolution", "200"}});
+    const auto guitar_track = section_string("ExpertSingle", {{768, 0, 0}});
+    const auto utf8_chart_file = header + '\n' + guitar_track;
+    std::vector<char> utf16_chart_bytes {'\xFF', '\xFE'};
+    for (auto c : utf8_chart_file) {
+        utf16_chart_bytes.push_back(c);
+        utf16_chart_bytes.push_back('\0');
+    }
+    const std::string_view utf16_chart_file {utf16_chart_bytes.data(),
+                                             utf16_chart_bytes.size()};
+
+    const auto global_data
+        = SightRead::ChartParser({}).parse(utf16_chart_file).global_data();
+    const auto resolution = global_data.resolution();
+
+    BOOST_CHECK_EQUAL(resolution, 200);
+}
+
 BOOST_AUTO_TEST_CASE(bad_values_are_ignored)
 {
     const auto header = header_string({{"Resolution", "\"480\""}});
