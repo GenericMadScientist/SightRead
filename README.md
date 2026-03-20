@@ -72,3 +72,4 @@ behaviour back when I first made CHOpt.
 * AddyMills for a lot of information on parsing .qb.mid files.
 * Geomitron, whose [scan-chart](https://github.com/Geomitron/scan-chart) library
 has come in useful for ferreting out bugs.
+* JarheadHME for finding and reporting some bugs.
