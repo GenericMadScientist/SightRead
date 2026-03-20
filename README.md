@@ -40,8 +40,12 @@ can convert between any two with suitable chaining. I'll clean that up at some
 point.
 
 Worth noting, right now `SightRead::NoteTrack` pretty much contains just what is
-needed for CHOpt. However, HOPO/tap status is present on notes. This has not
-been thoroughly tested though so for the time being, caveat emptor!
+needed for CHOpt. However, HOPO/tap status is present on notes. This has been
+checked against scan-chart for a few charts but has yet to be comprehensively
+stress-tested, please do report any errors!
+
+There is also an .ini parsing function, `SightRead::parse_ini`. This is very
+minimal but you may find it useful for reading the ini tags that affect HOPOs.
 
 Lastly, no writing. Serialisation is out of scope for SightRead.
 
