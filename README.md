@@ -15,7 +15,8 @@ documentation will come when the interface settles down.
 Your two parsers are `SightRead::ChartParser` and `SightRead::MidiParser`. Find
 them in `sightread/chartparser.hpp` and `sightread/midiparser.hpp` respectively.
 Both take in their constructor a single `const SightRead::Metadata&` parameter,
-which is a simple struct with song name, artist, and charter. There's also 
+which is a struct with song name, artist, charter and a hopo threshold to
+control the division at which HOPOs appear. There's also a
 `SightRead::QbMidiParser` class to parse .mid.qb files for Guitar Hero III,
 which is far from settled.
 
