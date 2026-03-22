@@ -204,10 +204,8 @@ BOOST_AUTO_TEST_CASE(solos_do_take_into_account_drum_settings)
     track.solos(solos);
     std::vector<SightRead::Solo> required_solos {
         {SightRead::Tick {0}, SightRead::Tick {1}, 100}};
-    SightRead::DrumSettings pro_drums {.enable_double_kick = false,
-                                       .disable_kick = false,
-                                       .pro_drums = true,
-                                       .enable_dynamics = false};
+    SightRead::DrumSettings pro_drums {
+        .enable_double_kick = false, .disable_kick = false, .pro_drums = true};
     std::vector<SightRead::Solo> solo_output = track.solos(pro_drums);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(solo_output.cbegin(), solo_output.cend(),
@@ -458,10 +456,8 @@ BOOST_AUTO_TEST_CASE(all_kicks_gives_correct_answer)
                                 {},
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
-    SightRead::DrumSettings settings {.enable_double_kick = true,
-                                      .disable_kick = false,
-                                      .pro_drums = true,
-                                      .enable_dynamics = false};
+    SightRead::DrumSettings settings {
+        .enable_double_kick = true, .disable_kick = false, .pro_drums = true};
 
     BOOST_CHECK_EQUAL(track.base_score(settings), 150);
 }
@@ -476,10 +472,8 @@ BOOST_AUTO_TEST_CASE(only_single_kicks_gives_correct_answer)
                                 {},
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
-    SightRead::DrumSettings settings {.enable_double_kick = false,
-                                      .disable_kick = false,
-                                      .pro_drums = true,
-                                      .enable_dynamics = false};
+    SightRead::DrumSettings settings {
+        .enable_double_kick = false, .disable_kick = false, .pro_drums = true};
 
     BOOST_CHECK_EQUAL(track.base_score(settings), 100);
 }
@@ -494,10 +488,8 @@ BOOST_AUTO_TEST_CASE(no_kicks_gives_correct_answer)
                                 {},
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
-    SightRead::DrumSettings settings {.enable_double_kick = false,
-                                      .disable_kick = true,
-                                      .pro_drums = true,
-                                      .enable_dynamics = false};
+    SightRead::DrumSettings settings {
+        .enable_double_kick = false, .disable_kick = true, .pro_drums = true};
 
     BOOST_CHECK_EQUAL(track.base_score(settings), 50);
 }
