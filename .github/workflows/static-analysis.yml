@@ -24,8 +24,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install clang-tidy-22
 
+      - name: Make build directory
+        run: mkdir build
+
+      - name: Generate compilation database
+        working-directory: build
+        env:
+          BOOST_ROOT: ~/boost_1_86_0
+          CXX: g++-14
+        run: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSIGHTREAD_BUILD_TESTS=ON ..
+
       - name: Run clang-tidy
-        run: clang-tidy-22 src/sightread/*.cpp src/sightread/detail/*.cpp tests/sightread/*_unittest.cpp tests/sightread/detail/*_unittest.cpp -- -Iinclude -Isrc -Itests/sightread -I$HOME/boost_1_86_0 -std=c++20
+        run: run-clang-tidy-22 -p=build/ -hide-progress -quiet
 
   clang-format:
     runs-on: ubuntu-24.04
