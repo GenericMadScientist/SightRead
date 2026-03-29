@@ -3047,9 +3047,9 @@ std::vector<QbNoteEvent> note_events(const SightRead::Detail::QbMidi& midi,
     values.reserve(raw_notes.size() / 3);
     for (auto i = 0U; i < raw_notes.size(); i += 3U) {
         values.push_back(
-            {.position = std::any_cast<std::uint32_t>(raw_notes[i]),
-             .length = std::any_cast<std::uint32_t>(raw_notes[i + 1]),
-             .flags = std::any_cast<std::uint32_t>(raw_notes[i + 2])});
+            {.position = std::any_cast<std::uint32_t>(raw_notes.at(i)),
+             .length = std::any_cast<std::uint32_t>(raw_notes.at(i + 1)),
+             .flags = std::any_cast<std::uint32_t>(raw_notes.at(i + 2))});
     }
 
     return values;
@@ -3075,9 +3075,9 @@ std::vector<QbTimeSignature> qb_timesigs(const SightRead::Detail::QbMidi& midi,
         const auto array = std::any_cast<std::vector<std::any>>(value);
         assert(array.size() == 3);
         values.push_back(
-            {.time_ms = std::any_cast<std::uint32_t>(array[0]),
-             .numerator = std::any_cast<std::uint32_t>(array[1]),
-             .denominator = std::any_cast<std::uint32_t>(array[2])});
+            {.time_ms = std::any_cast<std::uint32_t>(array.at(0)),
+             .numerator = std::any_cast<std::uint32_t>(array.at(1)),
+             .denominator = std::any_cast<std::uint32_t>(array.at(2))});
     }
 
     return values;
@@ -3110,9 +3110,9 @@ std::vector<QbSpEvent> sp_events(const SightRead::Detail::QbMidi& midi,
         const auto array = std::any_cast<std::vector<std::any>>(value);
         assert(array.size() == 3);
         values.push_back(
-            {.position = std::any_cast<std::uint32_t>(array[0]),
-             .length = std::any_cast<std::uint32_t>(array[1]),
-             .note_count = std::any_cast<std::uint32_t>(array[2])});
+            {.position = std::any_cast<std::uint32_t>(array.at(0)),
+             .length = std::any_cast<std::uint32_t>(array.at(1)),
+             .note_count = std::any_cast<std::uint32_t>(array.at(2))});
     }
 
     return values;
@@ -3179,11 +3179,12 @@ public:
         std::vector<SightRead::BPM> bpms;
         bpms.reserve(m_fretbars_ms.size() - 1);
         for (auto i = 0U; i + 1 < m_fretbars_ms.size(); ++i) {
-            const auto time_diff = m_fretbars_ms[i + 1] - m_fretbars_ms[i];
+            const auto time_diff
+                = m_fretbars_ms.at(i + 1) - m_fretbars_ms.at(i);
             const auto tick_pos
-                = static_cast<int>(RESOLUTION * m_fretbars_beats[i]);
+                = static_cast<int>(RESOLUTION * m_fretbars_beats.at(i));
             const auto beat_diff
-                = m_fretbars_beats[i + 1] - m_fretbars_beats[i];
+                = m_fretbars_beats.at(i + 1) - m_fretbars_beats.at(i);
             bpms.push_back({.position = SightRead::Tick {tick_pos},
                             .millibeats_per_minute
                             = MICROS_IN_MINUTE * beat_diff / time_diff});

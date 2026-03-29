@@ -519,9 +519,9 @@ BOOST_AUTO_TEST_CASE(trim_sustains_is_correct)
     const auto new_track = track.trim_sustains();
     const auto& new_notes = new_track.notes();
 
-    BOOST_CHECK_EQUAL(new_notes[0].lengths[0], SightRead::Tick {0});
-    BOOST_CHECK_EQUAL(new_notes[1].lengths[0], SightRead::Tick {70});
-    BOOST_CHECK_EQUAL(new_notes[2].lengths[0], SightRead::Tick {140});
+    BOOST_CHECK_EQUAL(new_notes.at(0).lengths.at(0), SightRead::Tick {0});
+    BOOST_CHECK_EQUAL(new_notes.at(1).lengths.at(0), SightRead::Tick {70});
+    BOOST_CHECK_EQUAL(new_notes.at(2).lengths.at(0), SightRead::Tick {140});
     BOOST_CHECK_EQUAL(new_track.base_score(), 177);
 }
 
@@ -537,8 +537,8 @@ BOOST_AUTO_TEST_CASE(no_snapping)
     auto new_track = track.snap_chords(SightRead::Tick {0});
     const auto& new_notes = new_track.notes();
 
-    BOOST_CHECK_EQUAL(new_notes[0].position, SightRead::Tick {0});
-    BOOST_CHECK_EQUAL(new_notes[1].position, SightRead::Tick {5});
+    BOOST_CHECK_EQUAL(new_notes.at(0).position, SightRead::Tick {0});
+    BOOST_CHECK_EQUAL(new_notes.at(1).position, SightRead::Tick {5});
 }
 
 BOOST_AUTO_TEST_CASE(hmx_gh_snapping)
@@ -552,8 +552,8 @@ BOOST_AUTO_TEST_CASE(hmx_gh_snapping)
     const auto& new_notes = new_track.notes();
 
     BOOST_CHECK_EQUAL(new_notes.size(), 1);
-    BOOST_CHECK_EQUAL(new_notes[0].position, SightRead::Tick {0});
-    BOOST_CHECK_EQUAL(new_notes[0].colours(), 1 | 2);
+    BOOST_CHECK_EQUAL(new_notes.at(0).position, SightRead::Tick {0});
+    BOOST_CHECK_EQUAL(new_notes.at(0).colours(), 1 | 2);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

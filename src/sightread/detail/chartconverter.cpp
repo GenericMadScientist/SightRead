@@ -186,7 +186,7 @@ std::vector<SightRead::Note> add_fifth_lane_greens(
 
     std::set<SightRead::Tick> green_positions;
     for (const auto& note : notes) {
-        if (note.lengths[3] != SightRead::Tick {-1}) {
+        if (note.lengths.at(3) != SightRead::Tick {-1}) {
             green_positions.insert(note.position);
         }
     }
@@ -198,9 +198,9 @@ std::vector<SightRead::Note> add_fifth_lane_greens(
         note.position = SightRead::Tick {note_event.position};
         note.flags = SightRead::FLAGS_DRUMS;
         if (green_positions.contains(SightRead::Tick {note_event.position})) {
-            note.lengths[SightRead::DRUM_BLUE] = SightRead::Tick {0};
+            note.lengths.at(SightRead::DRUM_BLUE) = SightRead::Tick {0};
         } else {
-            note.lengths[SightRead::DRUM_GREEN] = SightRead::Tick {0};
+            note.lengths.at(SightRead::DRUM_GREEN) = SightRead::Tick {0};
         }
         notes.push_back(note);
     }
@@ -212,7 +212,7 @@ apply_cymbal_events(const std::vector<SightRead::Note>& notes)
 {
     std::set<unsigned int> deletion_spots;
     for (auto i = 0U; i < notes.size(); ++i) {
-        const auto& cymbal_note = notes[i];
+        const auto& cymbal_note = notes.at(i);
         if ((cymbal_note.flags & SightRead::FLAGS_CYMBAL) == 0U) {
             continue;
         }
@@ -221,7 +221,7 @@ apply_cymbal_events(const std::vector<SightRead::Note>& notes)
             if (i == j) {
                 continue;
             }
-            const auto& non_cymbal_note = notes[j];
+            const auto& non_cymbal_note = notes.at(j);
             if (non_cymbal_note.position != cymbal_note.position) {
                 continue;
             }
@@ -239,7 +239,7 @@ apply_cymbal_events(const std::vector<SightRead::Note>& notes)
     std::vector<SightRead::Note> new_notes;
     for (auto i = 0U; i < notes.size(); ++i) {
         if (!deletion_spots.contains(i)) {
-            new_notes.push_back(notes[i]);
+            new_notes.push_back(notes.at(i));
         }
     }
     return new_notes;
@@ -247,16 +247,16 @@ apply_cymbal_events(const std::vector<SightRead::Note>& notes)
 
 int no_dynamics_lane_colour(const SightRead::Note& note)
 {
-    if (note.lengths[SightRead::DRUM_RED] != SightRead::Tick {-1}) {
+    if (note.lengths.at(SightRead::DRUM_RED) != SightRead::Tick {-1}) {
         return 0;
     }
-    if (note.lengths[SightRead::DRUM_YELLOW] != SightRead::Tick {-1}) {
+    if (note.lengths.at(SightRead::DRUM_YELLOW) != SightRead::Tick {-1}) {
         return 1;
     }
-    if (note.lengths[SightRead::DRUM_BLUE] != SightRead::Tick {-1}) {
+    if (note.lengths.at(SightRead::DRUM_BLUE) != SightRead::Tick {-1}) {
         return 2;
     }
-    if (note.lengths[SightRead::DRUM_GREEN] != SightRead::Tick {-1}) {
+    if (note.lengths.at(SightRead::DRUM_GREEN) != SightRead::Tick {-1}) {
         return 3;
     }
     return -1;
@@ -400,7 +400,7 @@ bool matches_template(const std::string& data, std::string_view str_template)
     }
 
     for (auto i = 0U; i < str_template.size(); ++i) {
-        if (str_template[i] != '*' && str_template[i] != *(begin + i)) {
+        if (str_template.at(i) != '*' && str_template.at(i) != *(begin + i)) {
             return false;
         }
     }

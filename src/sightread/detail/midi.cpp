@@ -107,7 +107,7 @@ read_midi_event(std::span<const std::uint8_t>& data, int prev_status_byte)
     std::array<std::uint8_t, 2> event_data {pop_front(data), 0};
     if ((event_type & UPPER_NIBBLE_MASK) != PROGRAM_CHANGE_ID
         && (event_type & UPPER_NIBBLE_MASK) != CHANNEL_PRESSURE_ID) {
-        event_data[1] = pop_front(data);
+        event_data.at(1) = pop_front(data);
     }
 
     return {.status = event_type, .data = event_data};

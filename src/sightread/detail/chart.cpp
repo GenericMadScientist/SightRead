@@ -40,8 +40,8 @@ convert_line_to_note(int position,
     if (split_line.size() < MAX_NORMAL_EVENT_SIZE) {
         throw SightRead::ParseError("Line incomplete");
     }
-    const auto fret = SightRead::Detail::string_view_to_int(split_line[3]);
-    const auto length = SightRead::Detail::string_view_to_int(split_line[4]);
+    const auto fret = SightRead::Detail::string_view_to_int(split_line.at(3));
+    const auto length = SightRead::Detail::string_view_to_int(split_line.at(4));
     if (!fret.has_value() || !length.has_value()) {
         throw SightRead::ParseError("Bad note event");
     }
@@ -57,8 +57,8 @@ convert_line_to_special(int position,
     if (split_line.size() < MAX_NORMAL_EVENT_SIZE) {
         throw SightRead::ParseError("Line incomplete");
     }
-    const auto sp_key = SightRead::Detail::string_view_to_int(split_line[3]);
-    const auto length = SightRead::Detail::string_view_to_int(split_line[4]);
+    const auto sp_key = SightRead::Detail::string_view_to_int(split_line.at(3));
+    const auto length = SightRead::Detail::string_view_to_int(split_line.at(4));
     if (!sp_key.has_value() || !length.has_value()) {
         throw SightRead::ParseError("Bad SP event");
     }
@@ -72,7 +72,7 @@ convert_line_to_bpm(int position,
     if (split_line.size() < 4) {
         throw SightRead::ParseError("Line incomplete");
     }
-    const auto bpm = SightRead::Detail::string_view_to_int(split_line[3]);
+    const auto bpm = SightRead::Detail::string_view_to_int(split_line.at(3));
     if (!bpm.has_value()) {
         throw SightRead::ParseError("Bad BPM event");
     }
@@ -88,10 +88,10 @@ convert_line_to_timesig(int position,
     if (split_line.size() < 4) {
         throw SightRead::ParseError("Line incomplete");
     }
-    const auto numer = SightRead::Detail::string_view_to_int(split_line[3]);
+    const auto numer = SightRead::Detail::string_view_to_int(split_line.at(3));
     std::optional<int> denom = 2;
     if (split_line.size() >= MAX_NORMAL_EVENT_SIZE) {
-        denom = SightRead::Detail::string_view_to_int(split_line[4]);
+        denom = SightRead::Detail::string_view_to_int(split_line.at(4));
     }
     if (!numer.has_value() || !denom.has_value()) {
         throw SightRead::ParseError("Bad TS event");
@@ -108,9 +108,10 @@ convert_line_to_event(int position,
     }
     SightRead::Detail::Event event;
     event.position = position;
-    for (auto i = 3U; i < split_line.size(); ++i) {
-        event.data += split_line[i];
-        if (i + 1 != split_line.size()) {
+    for (auto it = std::next(split_line.cbegin(), 3); it < split_line.cend();
+         ++it) {
+        event.data += *it;
+        if (std::next(it) != split_line.cend()) {
             event.data += ' ';
         }
     }
@@ -136,30 +137,32 @@ SightRead::Detail::ChartSection read_section(std::string_view& input)
         if (separated_line.size() < 3) {
             throw SightRead::ParseError("Line incomplete");
         }
-        const auto key = separated_line[0];
+        const auto key = separated_line.at(0);
         const auto key_val = SightRead::Detail::string_view_to_int(key);
         if (key_val.has_value()) {
             const auto pos = *key_val;
-            if (separated_line[2] == "N") {
+            const auto event_type = separated_line.at(2);
+            if (event_type == "N") {
                 section.note_events.push_back(
                     convert_line_to_note(pos, separated_line));
-            } else if (separated_line[2] == "S") {
+            } else if (event_type == "S") {
                 section.special_events.push_back(
                     convert_line_to_special(pos, separated_line));
-            } else if (separated_line[2] == "B") {
+            } else if (event_type == "B") {
                 section.bpm_events.push_back(
                     convert_line_to_bpm(pos, separated_line));
-            } else if (separated_line[2] == "TS") {
+            } else if (event_type == "TS") {
                 section.ts_events.push_back(
                     convert_line_to_timesig(pos, separated_line));
-            } else if (separated_line[2] == "E") {
+            } else if (event_type == "E") {
                 section.events.push_back(
                     convert_line_to_event(pos, separated_line));
             }
         } else {
-            std::string value {separated_line[2]};
-            for (auto i = 3U; i < separated_line.size(); ++i) {
-                value.append(separated_line[i]);
+            std::string value;
+            for (auto it = std::next(separated_line.cbegin(), 2);
+                 it < separated_line.cend(); ++it) {
+                value.append(*it);
             }
             section.key_value_pairs[std::string(key)] = value;
         }

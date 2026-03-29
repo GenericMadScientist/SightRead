@@ -110,8 +110,8 @@ void SightRead::Note::disable_dynamics()
 bool SightRead::Note::is_kick_note() const
 {
     return ((flags & FLAGS_DRUMS) != 0U)
-        && (lengths[DRUM_KICK] != SightRead::Tick {-1}
-            || lengths[DRUM_DOUBLE_KICK] != SightRead::Tick {-1});
+        && (lengths.at(DRUM_KICK) != SightRead::Tick {-1}
+            || lengths.at(DRUM_DOUBLE_KICK) != SightRead::Tick {-1});
 }
 
 bool SightRead::Note::is_skipped_kick(
@@ -120,7 +120,7 @@ bool SightRead::Note::is_skipped_kick(
     if (!is_kick_note()) {
         return false;
     }
-    if (lengths[DRUM_KICK] != SightRead::Tick {-1}) {
+    if (lengths.at(DRUM_KICK) != SightRead::Tick {-1}) {
         return settings.disable_kick;
     }
     return !settings.enable_double_kick;
@@ -180,26 +180,28 @@ void SightRead::NoteTrack::add_hopos(SightRead::Tick max_hopo_gap)
     }
 
     for (auto i = 0U; i < m_notes.size(); ++i) {
-        if ((m_notes[i].flags & (FLAGS_TAP | FLAGS_FORCE_STRUM)) != 0U) {
+        if ((m_notes.at(i).flags & (FLAGS_TAP | FLAGS_FORCE_STRUM)) != 0U) {
             continue;
         }
-        bool is_hopo = (m_notes[i].flags & FLAGS_FORCE_FLIP) != 0U;
+        bool is_hopo = (m_notes.at(i).flags & FLAGS_FORCE_FLIP) != 0U;
         if (i != 0U) {
-            const auto note_gap = m_notes[i].position - m_notes[i - 1].position;
-            if (!is_chord(m_notes[i])
-                && m_notes[i].colours() != m_notes[i - 1].colours()
-                && (((m_notes[i].colours() & m_notes[i - 1].colours()) == 0)
+            const auto note_gap
+                = m_notes.at(i).position - m_notes.at(i - 1).position;
+            if (!is_chord(m_notes.at(i))
+                && m_notes.at(i).colours() != m_notes.at(i - 1).colours()
+                && (((m_notes.at(i).colours() & m_notes.at(i - 1).colours())
+                     == 0)
                     || !m_global_data->is_from_midi())
                 && note_gap <= max_hopo_gap) {
                 is_hopo = !is_hopo;
             }
         }
-        if ((m_notes[i].flags & FLAGS_FORCE_HOPO) != 0U) {
+        if ((m_notes.at(i).flags & FLAGS_FORCE_HOPO) != 0U) {
             is_hopo = true;
         }
         if (is_hopo) {
-            m_notes[i].flags
-                = static_cast<NoteFlags>(m_notes[i].flags | FLAGS_HOPO);
+            m_notes.at(i).flags
+                = static_cast<NoteFlags>(m_notes.at(i).flags | FLAGS_HOPO);
         }
     }
 }
@@ -248,11 +250,11 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes,
     std::vector<StarPower> new_sp_phrases;
     new_sp_phrases.reserve(sp_phrases.size());
     for (auto i = 0U; i < sp_phrases.size(); ++i) {
-        auto start = sp_starts[i];
+        auto start = sp_starts.at(i);
         if (i > 0) {
-            start = std::max(sp_starts[i], sp_ends[i - 1]);
+            start = std::max(sp_starts.at(i), sp_ends.at(i - 1));
         }
-        const auto length = sp_ends[i] - start;
+        const auto length = sp_ends.at(i) - start;
         new_sp_phrases.push_back({.position = start, .length = length});
     }
 
@@ -430,9 +432,10 @@ SightRead::NoteTrack::snap_chords(SightRead::Tick snap_gap) const
 {
     auto new_track = *this;
     auto& new_notes = new_track.m_notes;
-    for (auto i = 1U; i < m_notes.size(); ++i) {
-        if (new_notes[i].position - new_notes[i - 1].position <= snap_gap) {
-            new_notes[i].position = new_notes[i - 1].position;
+    for (auto it = new_notes.begin(); std::next(it) < new_notes.end(); ++it) {
+        auto next_note = std::next(it);
+        if (next_note->position - it->position <= snap_gap) {
+            next_note->position = it->position;
         }
     }
     new_track.merge_same_time_notes();

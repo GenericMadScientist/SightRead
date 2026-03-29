@@ -92,7 +92,7 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
 
     if (!m_od_beats.empty()) {
         for (auto i = 0U; i < m_od_beats.size(); ++i) {
-            const auto beat = to_beats(m_od_beats[i]);
+            const auto beat = to_beats(m_od_beats.at(i));
             m_od_beat_timestamps.push_back(
                 {.od_beat = SightRead::OdBeat(i / DEFAULT_BEAT_RATE),
                  .beat = beat});

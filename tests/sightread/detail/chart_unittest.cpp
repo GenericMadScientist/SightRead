@@ -75,8 +75,8 @@ BOOST_AUTO_TEST_CASE(section_names_are_read)
     const auto chart = SightRead::Detail::parse_chart(text);
 
     BOOST_CHECK_EQUAL(chart.sections.size(), 2);
-    BOOST_CHECK_EQUAL(chart.sections[0].name, "SectionA");
-    BOOST_CHECK_EQUAL(chart.sections[1].name, "SectionB");
+    BOOST_CHECK_EQUAL(chart.sections.at(0).name, "SectionA");
+    BOOST_CHECK_EQUAL(chart.sections.at(1).name, "SectionB");
 }
 
 BOOST_AUTO_TEST_CASE(chart_can_end_without_newline)
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(lone_carriage_return_does_not_break_line)
 {
     const char* text = "[Section]\r\n{\r\nKey = Value\rOops\r\n}";
 
-    const auto section = SightRead::Detail::parse_chart(text).sections[0];
+    const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
     BOOST_CHECK_EQUAL(section.key_value_pairs.size(), 1);
     BOOST_CHECK_EQUAL(section.key_value_pairs.at("Key"), "Value\rOops");
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(key_value_pairs_are_read)
 {
     const char* text = "[Section]\n{\nKey = Value\nKey2 = Value2\n}";
 
-    const auto section = SightRead::Detail::parse_chart(text).sections[0];
+    const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
     BOOST_CHECK_EQUAL(section.key_value_pairs.size(), 2);
     BOOST_CHECK_EQUAL(section.key_value_pairs.at("Key"), "Value");
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(note_events_are_read)
     const std::vector<SightRead::Detail::NoteEvent> events {
         {.position = 1000, .fret = 1, .length = 0}};
 
-    const auto section = SightRead::Detail::parse_chart(text).sections[0];
+    const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(section.note_events.cbegin(),
                                   section.note_events.cend(), events.cbegin(),
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(bpm_events_are_read)
     const std::vector<SightRead::Detail::BpmEvent> events {
         {.position = 1000, .bpm = 150000}};
 
-    const auto section = SightRead::Detail::parse_chart(text).sections[0];
+    const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(section.bpm_events.cbegin(),
                                   section.bpm_events.cend(), events.cbegin(),
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(timesig_events_are_read)
         {.position = 1000, .numerator = 4, .denominator = 2},
         {.position = 2000, .numerator = 3, .denominator = 3}};
 
-    const auto section = SightRead::Detail::parse_chart(text).sections[0];
+    const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(section.ts_events.cbegin(),
                                   section.ts_events.cend(), events.cbegin(),
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(special_events_are_read)
     const std::vector<SightRead::Detail::SpecialEvent> events {
         {.position = 1000, .key = 2, .length = 700}};
 
-    const auto section = SightRead::Detail::parse_chart(text).sections[0];
+    const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(section.special_events.cbegin(),
                                   section.special_events.cend(),
@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(e_events_are_read)
     const std::vector<SightRead::Detail::Event> events {
         {.position = 1000, .data = "soloing"}};
 
-    const auto section = SightRead::Detail::parse_chart(text).sections[0];
+    const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(section.events.cbegin(),
                                   section.events.cend(), events.cbegin(),
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(other_events_are_ignored)
 {
     const char* text = "[Section]\n{\n1105 = A 133\n}";
 
-    const auto section = SightRead::Detail::parse_chart(text).sections[0];
+    const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
     BOOST_TEST(section.note_events.empty());
     BOOST_TEST(section.note_events.empty());

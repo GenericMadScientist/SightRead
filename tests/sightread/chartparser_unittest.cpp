@@ -807,7 +807,8 @@ BOOST_AUTO_TEST_CASE(drum_solos_are_read_correctly_from_chart)
                                    SightRead::Difficulty::Expert);
 
     BOOST_CHECK_EQUAL(
-        track.solos(SightRead::DrumSettings::default_settings())[0].value, 200);
+        track.solos(SightRead::DrumSettings::default_settings()).at(0).value,
+        200);
 }
 
 BOOST_AUTO_TEST_CASE(fifth_lane_notes_are_read_correctly_from_chart)
@@ -857,7 +858,7 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_from_chart)
                                    SightRead::Difficulty::Expert);
 
     BOOST_CHECK_EQUAL(track.drum_fills().size(), 1);
-    BOOST_CHECK_EQUAL(track.drum_fills()[0], fill);
+    BOOST_CHECK_EQUAL(track.drum_fills().at(0), fill);
 }
 
 BOOST_AUTO_TEST_SUITE(disco_flips)
@@ -876,7 +877,7 @@ BOOST_AUTO_TEST_CASE(disco_flips_without_brackets_are_read_from_chart)
                                    SightRead::Difficulty::Expert);
 
     BOOST_CHECK_EQUAL(track.disco_flips().size(), 1);
-    BOOST_CHECK_EQUAL(track.disco_flips()[0], flip);
+    BOOST_CHECK_EQUAL(track.disco_flips().at(0), flip);
 }
 
 BOOST_AUTO_TEST_CASE(disco_flips_with_brackets_are_read_from_chart)
@@ -893,7 +894,7 @@ BOOST_AUTO_TEST_CASE(disco_flips_with_brackets_are_read_from_chart)
                                    SightRead::Difficulty::Expert);
 
     BOOST_CHECK_EQUAL(track.disco_flips().size(), 1);
-    BOOST_CHECK_EQUAL(track.disco_flips()[0], flip);
+    BOOST_CHECK_EQUAL(track.disco_flips().at(0), flip);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -956,11 +957,11 @@ BOOST_AUTO_TEST_CASE(automatically_set_based_on_distance)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[0].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(0).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[2].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(2).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(does_not_do_it_on_same_note)
@@ -975,7 +976,7 @@ BOOST_AUTO_TEST_CASE(does_not_do_it_on_same_note)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(1).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(forcing_is_handled_correctly)
@@ -992,10 +993,10 @@ BOOST_AUTO_TEST_CASE(forcing_is_handled_correctly)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[0].flags,
+    BOOST_CHECK_EQUAL(notes.at(0).flags,
                       SightRead::FLAGS_FORCE_FLIP | SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_FORCE_FLIP
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
@@ -1013,7 +1014,7 @@ BOOST_AUTO_TEST_CASE(chords_are_not_hopos_due_to_proximity)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(1).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(chords_can_be_forced)
@@ -1030,7 +1031,7 @@ BOOST_AUTO_TEST_CASE(chords_can_be_forced)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_FORCE_FLIP | SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
@@ -1047,7 +1048,7 @@ BOOST_AUTO_TEST_CASE(taps_are_read)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[0].flags,
+    BOOST_CHECK_EQUAL(notes.at(0).flags,
                       SightRead::FLAGS_TAP | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
@@ -1064,7 +1065,7 @@ BOOST_AUTO_TEST_CASE(taps_take_precedence_over_hopos)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_TAP | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
@@ -1082,7 +1083,7 @@ BOOST_AUTO_TEST_CASE(chords_can_be_taps)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_TAP | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
@@ -1101,10 +1102,10 @@ BOOST_AUTO_TEST_CASE(other_resolutions_are_handled_correctly)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[2].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(2).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
@@ -1128,10 +1129,10 @@ BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[2].flags,
+    BOOST_CHECK_EQUAL(notes.at(2).flags,
                       SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
@@ -1150,9 +1151,9 @@ BOOST_AUTO_TEST_CASE(not_done_on_drums)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[0].flags, SightRead::FLAGS_DRUMS);
-    BOOST_CHECK_EQUAL(notes[1].flags, SightRead::FLAGS_DRUMS);
-    BOOST_CHECK_EQUAL(notes[2].flags, SightRead::FLAGS_DRUMS);
+    BOOST_CHECK_EQUAL(notes.at(0).flags, SightRead::FLAGS_DRUMS);
+    BOOST_CHECK_EQUAL(notes.at(1).flags, SightRead::FLAGS_DRUMS);
+    BOOST_CHECK_EQUAL(notes.at(2).flags, SightRead::FLAGS_DRUMS);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

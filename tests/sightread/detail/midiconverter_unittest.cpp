@@ -369,7 +369,8 @@ BOOST_AUTO_TEST_CASE(notes_are_read_from_part_guitar)
 
     BOOST_CHECK_EQUAL(
         song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
-            .notes()[0]
+            .notes()
+            .at(0)
             .colours(),
         1 << SightRead::FIVE_FRET_RED);
 }
@@ -394,7 +395,8 @@ BOOST_AUTO_TEST_CASE(part_guitar_event_need_not_be_the_first_event)
 
     BOOST_CHECK_EQUAL(
         song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
-            .notes()[0]
+            .notes()
+            .at(0)
             .colours(),
         1 << SightRead::FIVE_FRET_RED);
 }
@@ -423,7 +425,8 @@ BOOST_AUTO_TEST_CASE(guitar_notes_are_also_read_from_t1_gems)
 
     BOOST_CHECK_EQUAL(
         song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
-            .notes()[0]
+            .notes()
+            .at(0)
             .colours(),
         1 << SightRead::FIVE_FRET_RED);
 }
@@ -478,7 +481,7 @@ BOOST_AUTO_TEST_CASE(corresponding_note_off_events_are_after_note_on_events)
                             .notes();
 
     BOOST_CHECK_EQUAL(notes.size(), 2);
-    BOOST_CHECK_EQUAL(notes[0].lengths[0], SightRead::Tick {480});
+    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {480});
 }
 
 BOOST_AUTO_TEST_CASE(note_on_events_with_velocity_zero_count_as_note_off_events)
@@ -551,7 +554,7 @@ BOOST_AUTO_TEST_CASE(each_note_on_event_consumes_the_following_note_off_event)
                             .notes();
 
     BOOST_CHECK_EQUAL(notes.size(), 2);
-    BOOST_CHECK_GT(notes[1].lengths[0], SightRead::Tick {0});
+    BOOST_CHECK_GT(notes.at(1).lengths.at(0), SightRead::Tick {0});
 }
 
 BOOST_AUTO_TEST_CASE(note_off_events_can_be_zero_ticks_after_the_note_on_events)
@@ -614,7 +617,8 @@ BOOST_AUTO_TEST_CASE(open_notes_are_read_correctly)
 
     BOOST_CHECK_EQUAL(
         song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
-            .notes()[0]
+            .notes()
+            .at(0)
             .colours(),
         1 << SightRead::FIVE_FRET_OPEN);
 }
@@ -800,8 +804,8 @@ BOOST_AUTO_TEST_CASE(short_midi_sustains_are_not_trimmed)
                                    SightRead::Difficulty::Expert)
                             .notes();
 
-    BOOST_CHECK_EQUAL(notes[0].lengths[0], SightRead::Tick {65});
-    BOOST_CHECK_EQUAL(notes[1].lengths[0], SightRead::Tick {70});
+    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {65});
+    BOOST_CHECK_EQUAL(notes.at(1).lengths.at(0), SightRead::Tick {70});
 }
 
 BOOST_AUTO_TEST_CASE(bres_are_read_correctly_on_non_drum_instruments)
@@ -869,11 +873,11 @@ BOOST_AUTO_TEST_CASE(automatically_set_based_on_distance)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[0].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(0).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[2].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(2).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(does_not_do_it_on_same_note)
@@ -900,7 +904,7 @@ BOOST_AUTO_TEST_CASE(does_not_do_it_on_same_note)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(1).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(note_after_chord_not_automatically_hopo_with_shared_lane)
@@ -933,7 +937,7 @@ BOOST_AUTO_TEST_CASE(note_after_chord_not_automatically_hopo_with_shared_lane)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(1).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(forcing_is_handled_correctly)
@@ -972,10 +976,10 @@ BOOST_AUTO_TEST_CASE(forcing_is_handled_correctly)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[0].flags,
+    BOOST_CHECK_EQUAL(notes.at(0).flags,
                       SightRead::FLAGS_FORCE_HOPO | SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_FORCE_STRUM
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
@@ -1010,7 +1014,7 @@ BOOST_AUTO_TEST_CASE(chords_are_not_hopos_due_to_proximity)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(1).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(chords_can_be_forced)
@@ -1049,7 +1053,7 @@ BOOST_AUTO_TEST_CASE(chords_can_be_forced)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_FORCE_HOPO | SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
@@ -1076,7 +1080,8 @@ BOOST_AUTO_TEST_CASE(tap_note_sysex_events_are_read_correctly)
     const auto song = guitar_only_converter().convert(midi);
     const auto flags = song.track(SightRead::Instrument::Guitar,
                                   SightRead::Difficulty::Expert)
-                           .notes()[0]
+                           .notes()
+                           .at(0)
                            .flags;
 
     BOOST_CHECK_EQUAL(flags & SightRead::NoteFlags::FLAGS_TAP,
@@ -1105,7 +1110,8 @@ BOOST_AUTO_TEST_CASE(tap_note_sysex_events_spanning_all_diffs_are_handled)
     const auto song = guitar_only_converter().convert(midi);
     const auto flags = song.track(SightRead::Instrument::Guitar,
                                   SightRead::Difficulty::Expert)
-                           .notes()[0]
+                           .notes()
+                           .at(0)
                            .flags;
 
     BOOST_CHECK_EQUAL(flags & SightRead::NoteFlags::FLAGS_TAP,
@@ -1136,7 +1142,7 @@ BOOST_AUTO_TEST_CASE(tap_note_events_are_read)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[0].flags,
+    BOOST_CHECK_EQUAL(notes.at(0).flags,
                       SightRead::FLAGS_TAP | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
@@ -1170,7 +1176,7 @@ BOOST_AUTO_TEST_CASE(taps_take_precedence_over_hopos)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_TAP | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
@@ -1210,7 +1216,7 @@ BOOST_AUTO_TEST_CASE(chords_can_be_taps)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_TAP | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
@@ -1245,10 +1251,10 @@ BOOST_AUTO_TEST_CASE(other_resolutions_are_handled_correctly)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[2].flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+    BOOST_CHECK_EQUAL(notes.at(2).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
@@ -1286,10 +1292,10 @@ BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
                                   SightRead::Difficulty::Expert)
                            .notes();
 
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
-    BOOST_CHECK_EQUAL(notes[2].flags,
+    BOOST_CHECK_EQUAL(notes.at(2).flags,
                       SightRead::FLAGS_HOPO
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
@@ -1320,8 +1326,8 @@ BOOST_AUTO_TEST_CASE(not_done_on_drums)
                                    SightRead::Difficulty::Expert)
                             .notes();
 
-    BOOST_CHECK_EQUAL(notes[0].flags, SightRead::FLAGS_DRUMS);
-    BOOST_CHECK_EQUAL(notes[1].flags,
+    BOOST_CHECK_EQUAL(notes.at(0).flags, SightRead::FLAGS_DRUMS);
+    BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_DRUMS | SightRead::FLAGS_CYMBAL);
 }
 
@@ -1911,7 +1917,8 @@ BOOST_AUTO_TEST_CASE(ch_instruments_have_priority_over_fortnite)
                                   expected_instruments.cend());
     BOOST_CHECK_EQUAL(
         song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
-            .notes()[0]
+            .notes()
+            .at(0)
             .colours(),
         1 << SightRead::FIVE_FRET_RED);
 }

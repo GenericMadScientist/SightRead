@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(not_all_instruments_need_to_participate)
         .position = SightRead::Tick {768}, .length = SightRead::Tick {100}};
 
     BOOST_CHECK_EQUAL(unison_phrases.size(), 1);
-    BOOST_CHECK_EQUAL(unison_phrases[0], expected_phrase);
+    BOOST_CHECK_EQUAL(unison_phrases.at(0), expected_phrase);
 }
 
 BOOST_AUTO_TEST_CASE(phrases_with_slightly_different_ends_still_combined)

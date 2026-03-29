@@ -29,8 +29,8 @@ read_first_midi_track(const SightRead::Detail::MidiTrack& track, int resolution)
             if (meta_event->data.size() < 3) {
                 throw SightRead::ParseError("Tempo meta event too short");
             }
-            const auto us_per_quarter = meta_event->data[0] << 16
-                | meta_event->data[1] << 8 | meta_event->data[2];
+            const auto us_per_quarter = meta_event->data.at(0) << 16
+                | meta_event->data.at(1) << 8 | meta_event->data.at(2);
             const auto millibeats_per_minute = 60000000000.0 / us_per_quarter;
             tempos.push_back({.position = SightRead::Tick {event.time},
                               .millibeats_per_minute = millibeats_per_minute});
@@ -40,12 +40,12 @@ read_first_midi_track(const SightRead::Detail::MidiTrack& track, int resolution)
             if (meta_event->data.size() < 2) {
                 throw SightRead::ParseError("Tempo meta event too short");
             }
-            if (meta_event->data[1] >= (CHAR_BIT * sizeof(int))) {
+            if (meta_event->data.at(1) >= (CHAR_BIT * sizeof(int))) {
                 throw SightRead::ParseError("Time sig denominator too large");
             }
             time_sigs.push_back({.position = SightRead::Tick {event.time},
-                                 .numerator = meta_event->data[0],
-                                 .denominator = 1 << meta_event->data[1]});
+                                 .numerator = meta_event->data.at(0),
+                                 .denominator = 1 << meta_event->data.at(1)});
             break;
         default:
             break;
@@ -94,10 +94,10 @@ od_beats_from_track(const SightRead::Detail::MidiTrack& track)
         if ((midi_event->status & UPPER_NIBBLE_MASK) != NOTE_ON_ID) {
             continue;
         }
-        if (midi_event->data[1] == 0) {
+        if (midi_event->data.at(1) == 0) {
             continue;
         }
-        const auto key = midi_event->data[0];
+        const auto key = midi_event->data.at(0);
         if (key == BEAT_LOW_KEY || key == BEAT_HIGH_KEY) {
             od_beats.emplace_back(event.time);
         }
@@ -187,7 +187,7 @@ bool is_five_lane_green_note(const SightRead::Detail::TimedEvent& event)
     if (event_type != NOTE_ON_ID && event_type != NOTE_OFF_ID) {
         return false;
     }
-    const auto key = midi_event->data[0];
+    const auto key = midi_event->data.at(0);
     return std::ranges::find(GREEN_LANE_KEYS, key)
         != std::ranges::end(GREEN_LANE_KEYS);
 }
@@ -235,12 +235,12 @@ bool is_open_sysex_event(const SightRead::Detail::SysexEvent& event)
         return false;
     }
     if (std::ranges::any_of(REQUIRED_BYTES, [&](const auto& pair) {
-            return event.data[std::get<0>(pair)] != std::get<1>(pair);
+            return event.data.at(std::get<0>(pair)) != std::get<1>(pair);
         })) {
         return false;
     }
     return std::ranges::all_of(UPPER_BOUNDS, [&](const auto& pair) {
-        return event.data[std::get<0>(pair)] <= std::get<1>(pair);
+        return event.data.at(std::get<0>(pair)) <= std::get<1>(pair);
     });
 }
 
@@ -471,15 +471,15 @@ bool is_tap_sysex_event(const SightRead::Detail::SysexEvent& event)
     if (event.data.size() != SYSEX_DATA_SIZE) {
         return false;
     }
-    if (event.data[DIFF_INDEX] > 3
-        && event.data[DIFF_INDEX] != ALL_DIFFICULTIES) {
+    if (event.data.at(DIFF_INDEX) > 3
+        && event.data.at(DIFF_INDEX) != ALL_DIFFICULTIES) {
         return false;
     }
-    if (event.data[PS_EVENT_VALUE_INDEX] > 1) {
+    if (event.data.at(PS_EVENT_VALUE_INDEX) > 1) {
         return false;
     }
     return std::ranges::all_of(REQUIRED_BYTES, [&](const auto& pair) {
-        return event.data[std::get<0>(pair)] == std::get<1>(pair);
+        return event.data.at(std::get<0>(pair)) == std::get<1>(pair);
     });
 }
 
@@ -509,17 +509,17 @@ void add_sysex_event(InstrumentMidiTrack& track,
                      int rank)
 {
     constexpr int SYSEX_ON_INDEX = 6;
-    const auto diffs = difficulties_from_sysex_diff(event.data[4]);
+    const auto diffs = difficulties_from_sysex_diff(event.data.at(4));
 
     for (auto diff : diffs) {
         if (is_open_sysex_event(event)) {
-            if (event.data[SYSEX_ON_INDEX] == 0) {
+            if (event.data.at(SYSEX_ON_INDEX) == 0) {
                 track.open_off_events[diff].emplace_back(time, rank);
             } else {
                 track.open_on_events[diff].emplace_back(time, rank);
             }
         } else if (is_tap_sysex_event(event)) {
-            if (event.data[SYSEX_ON_INDEX] == 0) {
+            if (event.data.at(SYSEX_ON_INDEX) == 0) {
                 track.tap_off_sysex_events[diff].emplace_back(time, rank);
             } else {
                 track.tap_on_sysex_events[diff].emplace_back(time, rank);
@@ -553,14 +553,14 @@ void append_disco_flip(InstrumentMidiTrack& event_track,
                     meta_event.data.cbegin() + MIX.size() + 1)) {
         return;
     }
-    const auto diff
-        = static_cast<SightRead::Difficulty>(meta_event.data[MIX.size()] - '0');
+    const auto diff = static_cast<SightRead::Difficulty>(
+        meta_event.data.at(MIX.size()) - '0');
     if (meta_event.data.size() == FLIP_END_SIZE
-        && meta_event.data[FLIP_END_SIZE - 1] == ']') {
+        && meta_event.data.at(FLIP_END_SIZE - 1) == ']') {
         event_track.disco_flip_off_events[diff].emplace_back(time, rank);
     } else if (meta_event.data.size() == FLIP_START_SIZE
-               && meta_event.data[FLIP_START_SIZE - 2] == 'd'
-               && meta_event.data[FLIP_START_SIZE - 1] == ']') {
+               && meta_event.data.at(FLIP_START_SIZE - 2) == 'd'
+               && meta_event.data.at(FLIP_START_SIZE - 1) == ']') {
         event_track.disco_flip_on_events[diff].emplace_back(time, rank);
     }
 }
@@ -598,31 +598,43 @@ void add_note_off_event(InstrumentMidiTrack& track,
     constexpr int TAP_NOTE_ID = 104;
     constexpr int DRUM_FILL_ID = 120;
 
-    const auto diff = difficulty_from_key(data[0], track_type);
+    const auto diff = difficulty_from_key(data.at(0), track_type);
     if (diff.has_value()) {
-        if (force_hopo_key(data[0], track_type)) {
+        if (force_hopo_key(data.at(0), track_type)) {
             track.force_hopo_off_events[*diff].emplace_back(time, rank);
-        } else if (force_strum_key(data[0], track_type)) {
+        } else if (force_strum_key(data.at(0), track_type)) {
             track.force_strum_off_events[*diff].emplace_back(time, rank);
         } else {
             const auto colour
-                = colour_from_key(data[0], track_type, from_five_lane);
+                = colour_from_key(data.at(0), track_type, from_five_lane);
             track.note_off_events[{*diff, colour}].emplace_back(time, rank);
         }
-    } else if (data[0] == YELLOW_TOM_ID) {
-        track.yellow_tom_off_events.emplace_back(time, rank);
-    } else if (data[0] == BLUE_TOM_ID) {
-        track.blue_tom_off_events.emplace_back(time, rank);
-    } else if (data[0] == GREEN_TOM_ID) {
-        track.green_tom_off_events.emplace_back(time, rank);
-    } else if (data[0] == SOLO_NOTE_ID) {
-        track.solo_off_events.emplace_back(time, rank);
-    } else if (data[0] == SP_NOTE_ID) {
-        track.sp_off_events.emplace_back(time, rank);
-    } else if (data[0] == TAP_NOTE_ID) {
-        track.tap_off_events.emplace_back(time, rank);
-    } else if (data[0] == DRUM_FILL_ID) {
-        track.fill_off_events.emplace_back(time, rank);
+    } else {
+        switch (data.at(0)) {
+        case YELLOW_TOM_ID:
+            track.yellow_tom_off_events.emplace_back(time, rank);
+            break;
+        case BLUE_TOM_ID:
+            track.blue_tom_off_events.emplace_back(time, rank);
+            break;
+        case GREEN_TOM_ID:
+            track.green_tom_off_events.emplace_back(time, rank);
+            break;
+        case SOLO_NOTE_ID:
+            track.solo_off_events.emplace_back(time, rank);
+            break;
+        case SP_NOTE_ID:
+            track.sp_off_events.emplace_back(time, rank);
+            break;
+        case TAP_NOTE_ID:
+            track.tap_off_events.emplace_back(time, rank);
+            break;
+        case DRUM_FILL_ID:
+            track.fill_off_events.emplace_back(time, rank);
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -640,47 +652,60 @@ void add_note_on_event(InstrumentMidiTrack& track,
     constexpr int DRUM_FILL_ID = 120;
 
     // Velocity 0 Note On events are counted as Note Off events.
-    if (data[1] == 0) {
+    if (data.at(1) == 0) {
         add_note_off_event(track, data, time, rank, from_five_lane, track_type);
         return;
     }
 
-    const auto diff = difficulty_from_key(data[0], track_type);
+    const auto diff = difficulty_from_key(data.at(0), track_type);
     if (diff.has_value()) {
-        if (force_hopo_key(data[0], track_type)) {
+        if (force_hopo_key(data.at(0), track_type)) {
             track.force_hopo_on_events[*diff].emplace_back(time, rank);
-        } else if (force_strum_key(data[0], track_type)) {
+        } else if (force_strum_key(data.at(0), track_type)) {
             track.force_strum_on_events[*diff].emplace_back(time, rank);
         } else {
-            auto colour = colour_from_key(data[0], track_type, from_five_lane);
+            auto colour
+                = colour_from_key(data.at(0), track_type, from_five_lane);
             auto flags = flags_from_track_type(track_type);
             if (track_type == SightRead::TrackType::Drums) {
-                if (is_cymbal_key(data[0], from_five_lane)) {
+                if (is_cymbal_key(data.at(0), from_five_lane)) {
                     flags = static_cast<SightRead::NoteFlags>(
                         flags | SightRead::FLAGS_CYMBAL);
                 }
                 if (parse_dynamics) {
                     flags = static_cast<SightRead::NoteFlags>(
-                        flags | dynamics_flags_from_velocity(data[1]));
+                        flags | dynamics_flags_from_velocity(data.at(1)));
                 }
             }
             track.note_on_events[{*diff, colour, flags}].emplace_back(time,
                                                                       rank);
         }
-    } else if (data[0] == YELLOW_TOM_ID) {
-        track.yellow_tom_on_events.emplace_back(time, rank);
-    } else if (data[0] == BLUE_TOM_ID) {
-        track.blue_tom_on_events.emplace_back(time, rank);
-    } else if (data[0] == GREEN_TOM_ID) {
-        track.green_tom_on_events.emplace_back(time, rank);
-    } else if (data[0] == SOLO_NOTE_ID) {
-        track.solo_on_events.emplace_back(time, rank);
-    } else if (data[0] == SP_NOTE_ID) {
-        track.sp_on_events.emplace_back(time, rank);
-    } else if (data[0] == TAP_NOTE_ID) {
-        track.tap_on_events.emplace_back(time, rank);
-    } else if (data[0] == DRUM_FILL_ID) {
-        track.fill_on_events.emplace_back(time, rank);
+    } else {
+        switch (data.at(0)) {
+        case YELLOW_TOM_ID:
+            track.yellow_tom_on_events.emplace_back(time, rank);
+            break;
+        case BLUE_TOM_ID:
+            track.blue_tom_on_events.emplace_back(time, rank);
+            break;
+        case GREEN_TOM_ID:
+            track.green_tom_on_events.emplace_back(time, rank);
+            break;
+        case SOLO_NOTE_ID:
+            track.solo_on_events.emplace_back(time, rank);
+            break;
+        case SP_NOTE_ID:
+            track.sp_on_events.emplace_back(time, rank);
+            break;
+        case TAP_NOTE_ID:
+            track.tap_on_events.emplace_back(time, rank);
+            break;
+        case DRUM_FILL_ID:
+            track.fill_on_events.emplace_back(time, rank);
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -963,8 +988,8 @@ void fix_double_greens(std::vector<SightRead::Note>& notes)
             continue;
         }
         if (green_cymbal_positions.contains(note.position)) {
-            std::swap(note.lengths[SightRead::DRUM_BLUE],
-                      note.lengths[SightRead::DRUM_GREEN]);
+            std::swap(note.lengths.at(SightRead::DRUM_BLUE),
+                      note.lengths.at(SightRead::DRUM_GREEN));
         }
     }
 }
@@ -1327,7 +1352,7 @@ SightRead::Song SightRead::Detail::MidiConverter::convert(
     }
 
     song.global_data().tempo_map(
-        read_first_midi_track(midi.tracks[0], midi.ticks_per_quarter_note));
+        read_first_midi_track(midi.tracks.at(0), midi.ticks_per_quarter_note));
 
     std::map<std::string, MidiTrack> tracks_with_names;
     for (const auto& track : midi.tracks) {

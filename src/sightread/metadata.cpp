@@ -95,7 +95,7 @@ SightRead::Metadata parse_ini(std::string_view data)
                 continue;
             }
             auto value = skip_whitespace(line.substr(key.size()));
-            if (value[0] != '=') {
+            if (value.at(0) != '=') {
                 continue;
             }
             value = skip_whitespace(value.substr(1));
