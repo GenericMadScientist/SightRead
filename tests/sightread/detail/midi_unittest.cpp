@@ -200,8 +200,9 @@ BOOST_AUTO_TEST_CASE(simple_meta_event_is_read)
                                      0x60, 0xFF, 0x51, 3,    8, 0x6B, 0xC3};
     auto data = midi_from_tracks({track});
     std::vector<SightRead::Detail::TimedEvent> events {
-        {0x60,
-         SightRead::Detail::MetaEvent {.type = 0x51, .data = {8, 0x6B, 0xC3}}}};
+        {.time = 0x60,
+         .event = SightRead::Detail::MetaEvent {.type = 0x51,
+                                                .data = {8, 0x6B, 0xC3}}}};
 
     const auto midi = SightRead::Detail::parse_midi(data);
 
@@ -216,8 +217,9 @@ BOOST_AUTO_TEST_CASE(meta_event_with_multi_byte_length_is_read)
                                      0x60, 0xFF, 0x51, 0x80, 3, 8, 0x6B, 0xC3};
     const auto data = midi_from_tracks({track});
     std::vector<SightRead::Detail::TimedEvent> events {
-        {0x60,
-         SightRead::Detail::MetaEvent {.type = 0x51, .data = {8, 0x6B, 0xC3}}}};
+        {.time = 0x60,
+         .event = SightRead::Detail::MetaEvent {.type = 0x51,
+                                                .data = {8, 0x6B, 0xC3}}}};
 
     const auto midi = SightRead::Detail::parse_midi(data);
 
@@ -247,8 +249,9 @@ BOOST_AUTO_TEST_CASE(a_single_event_is_read)
                                      0,    4,    0,    0x94, 0x7F, 0x64};
     auto data = midi_from_tracks({track});
     std::vector<SightRead::Detail::TimedEvent> events {
-        {0,
-         SightRead::Detail::MidiEvent {.status = 0x94, .data = {0x7F, 0x64}}}};
+        {.time = 0,
+         .event = SightRead::Detail::MidiEvent {.status = 0x94,
+                                                .data = {0x7F, 0x64}}}};
 
     const auto midi = SightRead::Detail::parse_midi(data);
 
@@ -263,10 +266,12 @@ BOOST_AUTO_TEST_CASE(running_status_is_parsed)
                                      0,    0x94, 0x7F, 0x64, 0x10, 0x7F, 0x64};
     auto data = midi_from_tracks({track});
     std::vector<SightRead::Detail::TimedEvent> events {
-        {0,
-         SightRead::Detail::MidiEvent {.status = 0x94, .data = {0x7F, 0x64}}},
-        {0x10,
-         SightRead::Detail::MidiEvent {.status = 0x94, .data = {0x7F, 0x64}}}};
+        {.time = 0,
+         .event
+         = SightRead::Detail::MidiEvent {.status = 0x94, .data = {0x7F, 0x64}}},
+        {.time = 0x10,
+         .event = SightRead::Detail::MidiEvent {.status = 0x94,
+                                                .data = {0x7F, 0x64}}}};
 
     const auto midi = SightRead::Detail::parse_midi(data);
 
@@ -326,7 +331,7 @@ BOOST_AUTO_TEST_CASE(simple_sysex_event_is_read)
                                      6,    0x0,  0xF0, 3,    1, 2, 3};
     const auto data = midi_from_tracks({track});
     std::vector<SightRead::Detail::TimedEvent> events {
-        {0, SightRead::Detail::SysexEvent {{1, 2, 3}}}};
+        {.time = 0, .event = SightRead::Detail::SysexEvent {{1, 2, 3}}}};
 
     const auto midi = SightRead::Detail::parse_midi(data);
 
@@ -341,7 +346,7 @@ BOOST_AUTO_TEST_CASE(sysex_event_with_multi_byte_length_is_read)
                                      0x0,  0xF0, 0x80, 3,    1, 2, 3};
     const auto data = midi_from_tracks({track});
     std::vector<SightRead::Detail::TimedEvent> events {
-        {0, SightRead::Detail::SysexEvent {{1, 2, 3}}}};
+        {.time = 0, .event = SightRead::Detail::SysexEvent {{1, 2, 3}}}};
 
     const auto midi = SightRead::Detail::parse_midi(data);
 

@@ -116,13 +116,13 @@ BOOST_AUTO_TEST_CASE(empty_sp_phrases_are_culled)
 {
     std::vector<SightRead::Note> notes {make_note(768)};
     std::vector<SightRead::StarPower> phrases {
-        {SightRead::Tick {0}, SightRead::Tick {100}},
-        {SightRead::Tick {700}, SightRead::Tick {100}},
-        {SightRead::Tick {1000}, SightRead::Tick {100}}};
+        {.position = SightRead::Tick {0}, .length = SightRead::Tick {100}},
+        {.position = SightRead::Tick {700}, .length = SightRead::Tick {100}},
+        {.position = SightRead::Tick {1000}, .length = SightRead::Tick {100}}};
     SightRead::NoteTrack track {notes, phrases, SightRead::TrackType::FiveFret,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::StarPower> required_phrases {
-        {SightRead::Tick {700}, SightRead::Tick {100}}};
+        {.position = SightRead::Tick {700}, .length = SightRead::Tick {100}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         track.sp_phrases().cbegin(), track.sp_phrases().cend(),
@@ -133,13 +133,13 @@ BOOST_AUTO_TEST_CASE(sp_phrases_are_sorted)
 {
     std::vector<SightRead::Note> notes {make_note(768), make_note(1000)};
     std::vector<SightRead::StarPower> phrases {
-        {SightRead::Tick {1000}, SightRead::Tick {1}},
-        {SightRead::Tick {768}, SightRead::Tick {1}}};
+        {.position = SightRead::Tick {1000}, .length = SightRead::Tick {1}},
+        {.position = SightRead::Tick {768}, .length = SightRead::Tick {1}}};
     SightRead::NoteTrack track {notes, phrases, SightRead::TrackType::FiveFret,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::StarPower> required_phrases {
-        {SightRead::Tick {768}, SightRead::Tick {1}},
-        {SightRead::Tick {1000}, SightRead::Tick {1}}};
+        {.position = SightRead::Tick {768}, .length = SightRead::Tick {1}},
+        {.position = SightRead::Tick {1000}, .length = SightRead::Tick {1}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         track.sp_phrases().cbegin(), track.sp_phrases().cend(),
@@ -151,13 +151,13 @@ BOOST_AUTO_TEST_CASE(sp_phrases_do_not_overlap)
     std::vector<SightRead::Note> notes {make_note(768), make_note(1000),
                                         make_note(1500)};
     std::vector<SightRead::StarPower> phrases {
-        {SightRead::Tick {768}, SightRead::Tick {1000}},
-        {SightRead::Tick {900}, SightRead::Tick {150}}};
+        {.position = SightRead::Tick {768}, .length = SightRead::Tick {1000}},
+        {.position = SightRead::Tick {900}, .length = SightRead::Tick {150}}};
     SightRead::NoteTrack track {notes, phrases, SightRead::TrackType::FiveFret,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::StarPower> required_phrases {
-        {SightRead::Tick {768}, SightRead::Tick {282}},
-        {SightRead::Tick {1050}, SightRead::Tick {718}}};
+        {.position = SightRead::Tick {768}, .length = SightRead::Tick {282}},
+        {.position = SightRead::Tick {1050}, .length = SightRead::Tick {718}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         track.sp_phrases().cbegin(), track.sp_phrases().cend(),
@@ -167,17 +167,24 @@ BOOST_AUTO_TEST_CASE(sp_phrases_do_not_overlap)
 BOOST_AUTO_TEST_CASE(solos_are_sorted)
 {
     std::vector<SightRead::Note> notes {make_note(0), make_note(768)};
-    std::vector<SightRead::Solo> solos {
-        {SightRead::Tick {768}, SightRead::Tick {868}, 100},
-        {SightRead::Tick {0}, SightRead::Tick {100}, 100}};
+    std::vector<SightRead::Solo> solos {{.start = SightRead::Tick {768},
+                                         .end = SightRead::Tick {868},
+                                         .value = 100},
+                                        {.start = SightRead::Tick {0},
+                                         .end = SightRead::Tick {100},
+                                         .value = 100}};
     SightRead::NoteTrack track {notes,
                                 {},
                                 SightRead::TrackType::FiveFret,
                                 std::make_shared<SightRead::SongGlobalData>()};
     track.solos(solos);
     std::vector<SightRead::Solo> required_solos {
-        {SightRead::Tick {0}, SightRead::Tick {100}, 100},
-        {SightRead::Tick {768}, SightRead::Tick {868}, 100}};
+        {.start = SightRead::Tick {0},
+         .end = SightRead::Tick {100},
+         .value = 100},
+        {.start = SightRead::Tick {768},
+         .end = SightRead::Tick {868},
+         .value = 100}};
     std::vector<SightRead::Solo> solo_output
         = track.solos(SightRead::DrumSettings::default_settings());
 
@@ -194,16 +201,20 @@ BOOST_AUTO_TEST_CASE(solos_do_take_into_account_drum_settings)
         make_drum_note(0, SightRead::DRUM_RED),
         make_drum_note(0, SightRead::DRUM_DOUBLE_KICK),
         make_drum_note(192, SightRead::DRUM_DOUBLE_KICK)};
-    std::vector<SightRead::Solo> solos {
-        {SightRead::Tick {0}, SightRead::Tick {1}, 200},
-        {SightRead::Tick {192}, SightRead::Tick {193}, 100}};
+    std::vector<SightRead::Solo> solos {{.start = SightRead::Tick {0},
+                                         .end = SightRead::Tick {1},
+                                         .value = 200},
+                                        {.start = SightRead::Tick {192},
+                                         .end = SightRead::Tick {193},
+                                         .value = 100}};
     SightRead::NoteTrack track {notes,
                                 {},
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     track.solos(solos);
-    std::vector<SightRead::Solo> required_solos {
-        {SightRead::Tick {0}, SightRead::Tick {1}, 100}};
+    std::vector<SightRead::Solo> required_solos {{.start = SightRead::Tick {0},
+                                                  .end = SightRead::Tick {1},
+                                                  .value = 100}};
     SightRead::DrumSettings pro_drums {
         .enable_double_kick = false, .disable_kick = false, .pro_drums = true};
     std::vector<SightRead::Solo> solo_output = track.solos(pro_drums);
@@ -225,8 +236,8 @@ BOOST_AUTO_TEST_CASE(automatic_zones_are_created)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}},
-        {SightRead::Tick {3456}, SightRead::Tick {384}}};
+        {.position = SightRead::Tick {384}, .length = SightRead::Tick {384}},
+        {.position = SightRead::Tick {3456}, .length = SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 
@@ -245,8 +256,8 @@ BOOST_AUTO_TEST_CASE(automatic_zones_have_250ms_of_leniency)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}},
-        {SightRead::Tick {3456}, SightRead::Tick {384}}};
+        {.position = SightRead::Tick {384}, .length = SightRead::Tick {384}},
+        {.position = SightRead::Tick {3456}, .length = SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 
@@ -264,8 +275,8 @@ BOOST_AUTO_TEST_CASE(automatic_zones_handle_skipped_measures_correctly)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}},
-        {SightRead::Tick {4224}, SightRead::Tick {384}}};
+        {.position = SightRead::Tick {384}, .length = SightRead::Tick {384}},
+        {.position = SightRead::Tick {4224}, .length = SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 
@@ -282,7 +293,7 @@ BOOST_AUTO_TEST_CASE(the_last_automatic_zone_exists_even_if_the_note_is_early)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}}};
+        {.position = SightRead::Tick {384}, .length = SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 
@@ -295,7 +306,10 @@ BOOST_AUTO_TEST_CASE(automatic_zones_are_half_a_measure_according_to_seconds)
 {
     std::vector<SightRead::Note> notes {make_drum_note(768)};
     SightRead::TempoMap tempo_map {
-        {}, {{SightRead::Tick {576}, 40000}}, {}, 192};
+        {},
+        {{.position = SightRead::Tick {576}, .millibeats_per_minute = 40000}},
+        {},
+        192};
 
     auto global_data = std::make_shared<SightRead::SongGlobalData>();
     global_data->tempo_map(tempo_map);
@@ -303,7 +317,7 @@ BOOST_AUTO_TEST_CASE(automatic_zones_are_half_a_measure_according_to_seconds)
     SightRead::NoteTrack track {
         notes, {}, SightRead::TrackType::Drums, global_data};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {576}, SightRead::Tick {192}}};
+        {.position = SightRead::Tick {576}, .length = SightRead::Tick {192}}};
 
     track.generate_drum_fills(tempo_map);
 
@@ -322,9 +336,9 @@ BOOST_AUTO_TEST_CASE(fill_ends_remain_snapped_to_measure)
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {384}, SightRead::Tick {384}},
-        {SightRead::Tick {3456}, SightRead::Tick {384}},
-        {SightRead::Tick {6528}, SightRead::Tick {384}}};
+        {.position = SightRead::Tick {384}, .length = SightRead::Tick {384}},
+        {.position = SightRead::Tick {3456}, .length = SightRead::Tick {384}},
+        {.position = SightRead::Tick {6528}, .length = SightRead::Tick {384}}};
 
     track.generate_drum_fills({});
 

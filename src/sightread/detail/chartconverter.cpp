@@ -26,8 +26,8 @@ tempo_map_from_section(const SightRead::Detail::ChartSection& section,
     std::vector<SightRead::BPM> bpms;
     bpms.reserve(section.bpm_events.size());
     for (const auto& bpm : section.bpm_events) {
-        bpms.push_back(
-            {SightRead::Tick {bpm.position}, static_cast<double>(bpm.bpm)});
+        bpms.push_back({.position = SightRead::Tick {bpm.position},
+                        .millibeats_per_minute = static_cast<double>(bpm.bpm)});
     }
     std::vector<SightRead::TimeSignature> tses;
     for (const auto& ts : section.ts_events) {
@@ -35,8 +35,9 @@ tempo_map_from_section(const SightRead::Detail::ChartSection& section,
             >= (CHAR_BIT * sizeof(int))) {
             throw SightRead::ParseError("Invalid Time Signature denominator");
         }
-        tses.push_back(
-            {SightRead::Tick {ts.position}, ts.numerator, 1 << ts.denominator});
+        tses.push_back({.position = SightRead::Tick {ts.position},
+                        .numerator = ts.numerator,
+                        .denominator = 1 << ts.denominator});
     }
     return {std::move(tses), std::move(bpms), {}, resolution};
 }
@@ -61,7 +62,8 @@ practice_sections_from_section(const SightRead::Detail::ChartSection& section)
             }
             section_name = section_name.substr(prefix.size());
             practice_sections.push_back(
-                {std::string {section_name}, SightRead::Tick {event.position}});
+                {.name = std::string {section_name},
+                 .start = SightRead::Tick {event.position}});
             break;
         }
     }
@@ -484,7 +486,7 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
     std::vector<SightRead::DiscoFlip> disco_flips;
     for (auto [start, end] : SightRead::Detail::combine_solo_events(
              disco_flip_on_events, disco_flip_off_events)) {
-        disco_flips.push_back({start, end - start});
+        disco_flips.push_back({.position = start, .length = end - start});
     }
 
     SightRead::NoteTrack note_track {std::move(notes), sp, track_type,

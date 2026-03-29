@@ -253,7 +253,7 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes,
             start = std::max(sp_starts[i], sp_ends[i - 1]);
         }
         const auto length = sp_ends[i] - start;
-        new_sp_phrases.push_back({start, length});
+        new_sp_phrases.push_back({.position = start, .length = length});
     }
 
     for (const auto& phrase : new_sp_phrases) {

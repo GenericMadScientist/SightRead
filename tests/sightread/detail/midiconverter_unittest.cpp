@@ -72,16 +72,17 @@ BOOST_AUTO_TEST_SUITE(first_track_is_read_correctly)
 BOOST_AUTO_TEST_CASE(tempos_are_read_correctly)
 {
     SightRead::Detail::MidiTrack tempo_track {
-        {{0,
-          {SightRead::Detail::MetaEvent {.type = 0x51,
-                                         .data = {6, 0x1A, 0x80}}}},
-         {1920,
-          {SightRead::Detail::MetaEvent {.type = 0x51,
-                                         .data = {4, 0x93, 0xE0}}}}}};
+        {{.time = 0,
+          .event = {SightRead::Detail::MetaEvent {.type = 0x51,
+                                                  .data = {6, 0x1A, 0x80}}}},
+         {.time = 1920,
+          .event = {SightRead::Detail::MetaEvent {.type = 0x51,
+                                                  .data = {4, 0x93, 0xE0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {tempo_track}};
-    const std::vector<SightRead::BPM> bpms {{SightRead::Tick {0}, 150000},
-                                            {SightRead::Tick {1920}, 200000}};
+    const std::vector<SightRead::BPM> bpms {
+        {.position = SightRead::Tick {0}, .millibeats_per_minute = 150000},
+        {.position = SightRead::Tick {1920}, .millibeats_per_minute = 200000}};
 
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
     const auto& tempo_map = song.global_data().tempo_map();
@@ -94,8 +95,9 @@ BOOST_AUTO_TEST_CASE(tempos_are_read_correctly)
 BOOST_AUTO_TEST_CASE(too_short_tempo_events_cause_an_exception)
 {
     SightRead::Detail::MidiTrack tempo_track {
-        {{0,
-          {SightRead::Detail::MetaEvent {.type = 0x51, .data = {6, 0x1A}}}}}};
+        {{.time = 0,
+          .event
+          = {SightRead::Detail::MetaEvent {.type = 0x51, .data = {6, 0x1A}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {tempo_track}};
     const SightRead::Detail::MidiConverter converter {{}};
@@ -107,15 +109,17 @@ BOOST_AUTO_TEST_CASE(too_short_tempo_events_cause_an_exception)
 BOOST_AUTO_TEST_CASE(time_signatures_are_read_correctly)
 {
     SightRead::Detail::MidiTrack ts_track {
-        {{0,
-          {SightRead::Detail::MetaEvent {.type = 0x58, .data = {6, 2, 24, 8}}}},
-         {1920,
-          {SightRead::Detail::MetaEvent {.type = 0x58,
-                                         .data = {3, 3, 24, 8}}}}}};
+        {{.time = 0,
+          .event = {SightRead::Detail::MetaEvent {.type = 0x58,
+                                                  .data = {6, 2, 24, 8}}}},
+         {.time = 1920,
+          .event = {SightRead::Detail::MetaEvent {.type = 0x58,
+                                                  .data = {3, 3, 24, 8}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {ts_track}};
     const std::vector<SightRead::TimeSignature> tses {
-        {SightRead::Tick {0}, 6, 4}, {SightRead::Tick {1920}, 3, 8}};
+        {.position = SightRead::Tick {0}, .numerator = 6, .denominator = 4},
+        {.position = SightRead::Tick {1920}, .numerator = 3, .denominator = 8}};
 
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
     const auto& tempo_map = song.global_data().tempo_map();
@@ -128,9 +132,9 @@ BOOST_AUTO_TEST_CASE(time_signatures_are_read_correctly)
 BOOST_AUTO_TEST_CASE(time_signatures_with_large_denominators_cause_an_exception)
 {
     SightRead::Detail::MidiTrack ts_track {
-        {{0,
-          {SightRead::Detail::MetaEvent {.type = 0x58,
-                                         .data = {6, 32, 24, 8}}}}}};
+        {{.time = 0,
+          .event = {SightRead::Detail::MetaEvent {.type = 0x58,
+                                                  .data = {6, 32, 24, 8}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {ts_track}};
     const SightRead::Detail::MidiConverter converter {{}};
@@ -142,7 +146,9 @@ BOOST_AUTO_TEST_CASE(time_signatures_with_large_denominators_cause_an_exception)
 BOOST_AUTO_TEST_CASE(too_short_time_sig_events_cause_an_exception)
 {
     SightRead::Detail::MidiTrack ts_track {
-        {{0, {SightRead::Detail::MetaEvent {.type = 0x58, .data = {6}}}}}};
+        {{.time = 0,
+          .event
+          = {SightRead::Detail::MetaEvent {.type = 0x58, .data = {6}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {ts_track}};
     const SightRead::Detail::MidiConverter converter {{}};
@@ -159,9 +165,9 @@ BOOST_AUTO_TEST_CASE(too_short_time_sig_events_cause_an_exception)
 BOOST_AUTO_TEST_CASE(loss_of_precision_reading_bpms_is_negligible)
 {
     SightRead::Detail::MidiTrack tempo_track {
-        {{0,
-          {SightRead::Detail::MetaEvent {.type = 0x51,
-                                         .data = {7, 0xA1, 0x22}}}}}};
+        {{.time = 0,
+          .event = {SightRead::Detail::MetaEvent {.type = 0x51,
+                                                  .data = {7, 0xA1, 0x22}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {tempo_track}};
 
@@ -176,9 +182,9 @@ BOOST_AUTO_TEST_CASE(loss_of_precision_reading_bpms_is_negligible)
 BOOST_AUTO_TEST_CASE(song_name_is_not_read_from_midi)
 {
     SightRead::Detail::MidiTrack name_track {
-        {{0,
-          {SightRead::Detail::MetaEvent {.type = 1,
-                                         .data = {72, 101, 108, 108, 111}}}}}};
+        {{.time = 0,
+          .event = {SightRead::Detail::MetaEvent {
+              .type = 1, .data = {72, 101, 108, 108, 111}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {name_track}};
 
@@ -210,9 +216,10 @@ BOOST_AUTO_TEST_SUITE(practice_mode_sections_are_read_from_mid_files)
 BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_space_are_read)
 {
     const std::vector<SightRead::PracticeSection> expected_sections {
-        {"Start", SightRead::Tick {768}}};
+        {.name = "Start", .start = SightRead::Tick {768}}};
     SightRead::Detail::MidiTrack events_track {
-        {{0, {part_event("EVENTS")}}, {768, {text_event("[section Start]")}}}};
+        {{.time = 0, .event = {part_event("EVENTS")}},
+         {.time = 768, .event = {text_event("[section Start]")}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {events_track}};
 
@@ -227,9 +234,10 @@ BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_space_are_read)
 BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_underscore_are_read)
 {
     const std::vector<SightRead::PracticeSection> expected_sections {
-        {"Start", SightRead::Tick {768}}};
+        {.name = "Start", .start = SightRead::Tick {768}}};
     SightRead::Detail::MidiTrack events_track {
-        {{0, {part_event("EVENTS")}}, {768, {text_event("[section_Start]")}}}};
+        {{.time = 0, .event = {part_event("EVENTS")}},
+         {.time = 768, .event = {text_event("[section_Start]")}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {events_track}};
 
@@ -244,9 +252,10 @@ BOOST_AUTO_TEST_CASE(sections_prefixed_with_section_underscore_are_read)
 BOOST_AUTO_TEST_CASE(sections_prefixed_with_prc_underscore_are_read)
 {
     const std::vector<SightRead::PracticeSection> expected_sections {
-        {"Start", SightRead::Tick {768}}};
+        {.name = "Start", .start = SightRead::Tick {768}}};
     SightRead::Detail::MidiTrack events_track {
-        {{0, {part_event("EVENTS")}}, {768, {text_event("[prc_Start]")}}}};
+        {{.time = 0, .event = {part_event("EVENTS")}},
+         {.time = 768, .event = {text_event("[prc_Start]")}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {events_track}};
 
@@ -261,7 +270,8 @@ BOOST_AUTO_TEST_CASE(sections_prefixed_with_prc_underscore_are_read)
 BOOST_AUTO_TEST_CASE(sections_with_other_prefixes_are_ignored)
 {
     SightRead::Detail::MidiTrack events_track {
-        {{0, {part_event("EVENTS")}}, {768, {text_event("[ignored Start]")}}}};
+        {{.time = 0, .event = {part_event("EVENTS")}},
+         {.time = 768, .event = {text_event("[ignored Start]")}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {events_track}};
 
@@ -274,7 +284,8 @@ BOOST_AUTO_TEST_CASE(sections_with_other_prefixes_are_ignored)
 BOOST_AUTO_TEST_CASE(non_text_events_are_ignored)
 {
     SightRead::Detail::MidiTrack events_track {
-        {{0, {part_event("EVENTS")}}, {768, {part_event("[section Start]")}}}};
+        {{.time = 0, .event = {part_event("EVENTS")}},
+         {.time = 768, .event = {part_event("[section Start]")}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {events_track}};
 
@@ -291,23 +302,31 @@ BOOST_AUTO_TEST_SUITE(notes_are_read_from_mids_correctly)
 BOOST_AUTO_TEST_CASE(notes_of_every_difficulty_are_read)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {84, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {72, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {60, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {84, 0}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {72, 0}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {60, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {84, 64}}}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {72, 64}}}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {60, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {84, 0}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {72, 0}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {60, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const std::vector<SightRead::Note> green_note {
@@ -329,16 +348,20 @@ BOOST_AUTO_TEST_CASE(notes_of_every_difficulty_are_read)
 BOOST_AUTO_TEST_CASE(notes_are_read_from_part_guitar)
 {
     SightRead::Detail::MidiTrack other_track {
-        {{768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {other_track, note_track}};
 
@@ -354,14 +377,16 @@ BOOST_AUTO_TEST_CASE(notes_are_read_from_part_guitar)
 BOOST_AUTO_TEST_CASE(part_guitar_event_need_not_be_the_first_event)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0,
-          {SightRead::Detail::MetaEvent {
+        {{.time = 0,
+          .event = {SightRead::Detail::MetaEvent {
               .type = 0x7F, .data = {0x05, 0x0F, 0x09, 0x08, 0x40}}}},
-         {0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+         {.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -377,16 +402,20 @@ BOOST_AUTO_TEST_CASE(part_guitar_event_need_not_be_the_first_event)
 BOOST_AUTO_TEST_CASE(guitar_notes_are_also_read_from_t1_gems)
 {
     SightRead::Detail::MidiTrack other_track {
-        {{768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("T1 GEMS")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+        {{.time = 0, .event = {part_event("T1 GEMS")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {other_track, note_track}};
 
@@ -402,13 +431,16 @@ BOOST_AUTO_TEST_CASE(guitar_notes_are_also_read_from_t1_gems)
 BOOST_AUTO_TEST_CASE(note_on_events_must_have_a_corresponding_note_off_event)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
-         {1152,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
+         {.time = 1152,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x90,
+                                                  .data = {96, 64}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const SightRead::Detail::MidiConverter converter {{}};
@@ -420,17 +452,22 @@ BOOST_AUTO_TEST_CASE(note_on_events_must_have_a_corresponding_note_off_event)
 BOOST_AUTO_TEST_CASE(corresponding_note_off_events_are_after_note_on_events)
 {
     SightRead::Detail::MidiTrack note_track {{
-        {0, {part_event("PART GUITAR")}},
-        {480,
-         {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
-        {480,
-         {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-        {960,
-         {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
-        {960,
-         {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-        {1440,
-         {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
+        {.time = 0, .event = {part_event("PART GUITAR")}},
+        {.time = 480,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
+        {.time = 480,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+        {.time = 960,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
+        {.time = 960,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+        {.time = 1440,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
     }};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
@@ -447,11 +484,13 @@ BOOST_AUTO_TEST_CASE(corresponding_note_off_events_are_after_note_on_events)
 BOOST_AUTO_TEST_CASE(note_on_events_with_velocity_zero_count_as_note_off_events)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const SightRead::Detail::MidiConverter converter {{}};
@@ -463,15 +502,19 @@ BOOST_AUTO_TEST_CASE(
     note_on_events_with_no_intermediate_note_off_events_are_not_merged)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {769,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {800,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
-         {801,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 769,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 800,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
+         {.time = 801,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {96, 64}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -486,15 +529,19 @@ BOOST_AUTO_TEST_CASE(
 BOOST_AUTO_TEST_CASE(each_note_on_event_consumes_the_following_note_off_event)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {769,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {800,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
-         {1000,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 769,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 800,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
+         {.time = 1000,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {96, 64}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -510,11 +557,13 @@ BOOST_AUTO_TEST_CASE(each_note_on_event_consumes_the_following_note_off_event)
 BOOST_AUTO_TEST_CASE(note_off_events_can_be_zero_ticks_after_the_note_on_events)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 768,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {96, 64}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -530,9 +579,10 @@ BOOST_AUTO_TEST_CASE(
     parseerror_thrown_if_note_on_has_no_corresponding_note_off_track)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x90,
+                                                  .data = {96, 64}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const SightRead::Detail::MidiConverter converter {{}};
@@ -544,15 +594,19 @@ BOOST_AUTO_TEST_CASE(
 BOOST_AUTO_TEST_CASE(open_notes_are_read_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {768,
-          {SightRead::Detail::SysexEvent {{0x50, 0x53, 0, 0, 3, 1, 1, 0xF7}}}},
-         {770,
-          {SightRead::Detail::SysexEvent {{0x50, 0x53, 0, 0, 3, 1, 0, 0xF7}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 768,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 3, 1, 1, 0xF7}}}},
+         {.time = 770,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 3, 1, 0, 0xF7}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -568,13 +622,16 @@ BOOST_AUTO_TEST_CASE(open_notes_are_read_correctly)
 BOOST_AUTO_TEST_CASE(parseerror_thrown_if_open_note_ons_have_no_note_offs)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {768,
-          {SightRead::Detail::SysexEvent {{0x50, 0x53, 0, 0, 3, 1, 1, 0xF7}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 768,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 3, 1, 1, 0xF7}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -589,23 +646,30 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(solos_are_read_from_mids_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {103, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {900,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {900,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {103, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 64}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {103, 64}}}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 900,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 900,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {103, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 960,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {97, 64}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
-    const std::vector<SightRead::Solo> solos {
-        {SightRead::Tick {768}, SightRead::Tick {900}, 100}};
+    const std::vector<SightRead::Solo> solos {{.start = SightRead::Tick {768},
+                                               .end = SightRead::Tick {900},
+                                               .value = 100}};
 
     const auto song = guitar_only_converter().convert(midi);
     const auto parsed_solos
@@ -622,19 +686,23 @@ BOOST_AUTO_TEST_SUITE(star_power_is_read)
 BOOST_AUTO_TEST_CASE(a_single_phrase_is_read)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {116, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {900,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {116, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {116, 64}}}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 900,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {116, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const std::vector<SightRead::StarPower> sp_phrases {
-        {SightRead::Tick {768}, SightRead::Tick {132}}};
+        {.position = SightRead::Tick {768}, .length = SightRead::Tick {132}}};
 
     const auto song = guitar_only_converter().convert(midi);
     const auto& parsed_sp = song.track(SightRead::Instrument::Guitar,
@@ -648,13 +716,16 @@ BOOST_AUTO_TEST_CASE(a_single_phrase_is_read)
 BOOST_AUTO_TEST_CASE(note_off_event_is_required_for_every_phrase)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {116, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {116, 64}}}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const SightRead::Detail::MidiConverter converter {{}};
@@ -668,23 +739,31 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(mids_with_multiple_solos_and_no_sp_have_solos_read_as_sp)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {103, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {800,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
-         {900,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {103, 64}}}},
-         {950,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {103, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {1000,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 64}}}},
-         {1000,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {103, 64}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {103, 64}}}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 800,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
+         {.time = 900,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {103, 64}}}},
+         {.time = 950,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {103, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 1000,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 64}}}},
+         {.time = 1000,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {103, 64}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -701,13 +780,19 @@ BOOST_AUTO_TEST_CASE(mids_with_multiple_solos_and_no_sp_have_solos_read_as_sp)
 BOOST_AUTO_TEST_CASE(short_midi_sustains_are_not_trimmed)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {65, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {100,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {170,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 100,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 170,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 200,
                                         .tracks = {note_track}};
     const auto song = guitar_only_converter().convert(midi);
@@ -722,15 +807,22 @@ BOOST_AUTO_TEST_CASE(short_midi_sustains_are_not_trimmed)
 BOOST_AUTO_TEST_CASE(bres_are_read_correctly_on_non_drum_instruments)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {45,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {120, 64}}}},
-         {65, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
-         {75,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {120, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 45,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {120, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {.time = 75,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {120, 0}}}}}};
     SightRead::Detail::MidiTrack events_track {
-        {{0, {part_event("EVENTS")}}, {45, {text_event("[coda]")}}}};
+        {{.time = 0, .event = {part_event("EVENTS")}},
+         {.time = 45, .event = {text_event("[coda]")}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track, events_track}};
     const auto song = guitar_only_converter().convert(midi);
@@ -738,7 +830,7 @@ BOOST_AUTO_TEST_CASE(bres_are_read_correctly_on_non_drum_instruments)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::BigRockEnding> bres {
-        {SightRead::Tick {45}, SightRead::Tick {75}}};
+        {.start = SightRead::Tick {45}, .end = SightRead::Tick {75}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.bres().cbegin(), track.bres().cend(),
                                   bres.cbegin(), bres.cend());
@@ -749,15 +841,25 @@ BOOST_AUTO_TEST_SUITE(midi_hopos_and_taps)
 BOOST_AUTO_TEST_CASE(automatically_set_based_on_distance)
 {
     SightRead::Detail::MidiTrack note_track {{
-        {0, {part_event("PART GUITAR")}},
-        {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-        {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-        {161,
-         {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-        {162, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-        {323,
-         {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-        {324, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+        {.time = 0, .event = {part_event("PART GUITAR")}},
+        {.time = 0,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+        {.time = 1,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+        {.time = 161,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+        {.time = 162,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+        {.time = 323,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+        {.time = 324,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
     }};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
@@ -777,13 +879,19 @@ BOOST_AUTO_TEST_CASE(automatically_set_based_on_distance)
 BOOST_AUTO_TEST_CASE(does_not_do_it_on_same_note)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 162,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
 
@@ -798,15 +906,25 @@ BOOST_AUTO_TEST_CASE(does_not_do_it_on_same_note)
 BOOST_AUTO_TEST_CASE(note_after_chord_not_automatically_hopo_with_shared_lane)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 162,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
 
@@ -821,20 +939,31 @@ BOOST_AUTO_TEST_CASE(note_after_chord_not_automatically_hopo_with_shared_lane)
 BOOST_AUTO_TEST_CASE(forcing_is_handled_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {0,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {102, 64}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {102, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {102, 64}}}},
+         {.time = 162,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+         {.time = 162,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {102, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
 
@@ -854,17 +983,25 @@ BOOST_AUTO_TEST_CASE(forcing_is_handled_correctly)
 BOOST_AUTO_TEST_CASE(chords_are_not_hopos_due_to_proximity)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 162,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+         {.time = 162,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
 
@@ -879,21 +1016,31 @@ BOOST_AUTO_TEST_CASE(chords_are_not_hopos_due_to_proximity)
 BOOST_AUTO_TEST_CASE(chords_can_be_forced)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
+         {.time = 162,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+         {.time = 162,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {.time = 162,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {101, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
 
@@ -910,15 +1057,19 @@ BOOST_AUTO_TEST_CASE(chords_can_be_forced)
 BOOST_AUTO_TEST_CASE(tap_note_sysex_events_are_read_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {768,
-          {SightRead::Detail::SysexEvent {{0x50, 0x53, 0, 0, 3, 4, 1, 0xF7}}}},
-         {770,
-          {SightRead::Detail::SysexEvent {{0x50, 0x53, 0, 0, 3, 4, 0, 0xF7}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 768,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 3, 4, 1, 0xF7}}}},
+         {.time = 770,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 3, 4, 0, 0xF7}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -935,16 +1086,19 @@ BOOST_AUTO_TEST_CASE(tap_note_sysex_events_are_read_correctly)
 BOOST_AUTO_TEST_CASE(tap_note_sysex_events_spanning_all_diffs_are_handled)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {768,
-          {SightRead::Detail::SysexEvent {{0x50, 0x53, 0, 0, 3, 4, 1, 0xF7}}}},
-         {770,
-          {SightRead::Detail::SysexEvent {
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 768,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 3, 4, 1, 0xF7}}}},
+         {.time = 770,
+          .event = {SightRead::Detail::SysexEvent {
               {0x50, 0x53, 0, 0, 0xFF, 4, 0, 0xF7}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -961,13 +1115,19 @@ BOOST_AUTO_TEST_CASE(tap_note_sysex_events_spanning_all_diffs_are_handled)
 BOOST_AUTO_TEST_CASE(tap_note_events_are_read)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {0,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {104, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {1,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {104, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {104, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 1,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {104, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
 
@@ -983,17 +1143,25 @@ BOOST_AUTO_TEST_CASE(tap_note_events_are_read)
 BOOST_AUTO_TEST_CASE(taps_take_precedence_over_hopos)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {104, 64}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {104, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {104, 64}}}},
+         {.time = 162,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+         {.time = 162,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {104, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
 
@@ -1009,21 +1177,31 @@ BOOST_AUTO_TEST_CASE(taps_take_precedence_over_hopos)
 BOOST_AUTO_TEST_CASE(chords_can_be_taps)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {160,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {160,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {160,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {104, 64}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {104, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 160,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 160,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 160,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {104, 64}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {.time = 161,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {104, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
 
@@ -1039,14 +1217,25 @@ BOOST_AUTO_TEST_CASE(chords_can_be_taps)
 BOOST_AUTO_TEST_CASE(other_resolutions_are_handled_correctly)
 {
     SightRead::Detail::MidiTrack note_track {{
-        {0, {part_event("PART GUITAR")}},
-        {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-        {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-        {65, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-        {66, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-        {131,
-         {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-        {132, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+        {.time = 0, .event = {part_event("PART GUITAR")}},
+        {.time = 0,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+        {.time = 1,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+        {.time = 65,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+        {.time = 66,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+        {.time = 131,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+        {.time = 132,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
     }};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
@@ -1065,15 +1254,25 @@ BOOST_AUTO_TEST_CASE(other_resolutions_are_handled_correctly)
 BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
 {
     SightRead::Detail::MidiTrack note_track {{
-        {0, {part_event("PART GUITAR")}},
-        {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-        {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-        {161,
-         {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-        {162, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-        {323,
-         {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-        {324, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+        {.time = 0, .event = {part_event("PART GUITAR")}},
+        {.time = 0,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+        {.time = 1,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+        {.time = 161,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+        {.time = 162,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+        {.time = 323,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+        {.time = 324,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
     }};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
@@ -1098,13 +1297,19 @@ BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
 BOOST_AUTO_TEST_CASE(not_done_on_drums)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 64}}}},
-         {161,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {162,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 64}}}},
+         {.time = 161,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 162,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
                                         .tracks = {note_track}};
     const auto converter
@@ -1127,10 +1332,13 @@ BOOST_AUTO_TEST_SUITE(other_five_fret_instruments_are_read_from_mid)
 BOOST_AUTO_TEST_CASE(guitar_coop_is_read)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR COOP")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR COOP")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
@@ -1144,10 +1352,13 @@ BOOST_AUTO_TEST_CASE(guitar_coop_is_read)
 BOOST_AUTO_TEST_CASE(bass_is_read)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART BASS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART BASS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto converter
@@ -1164,10 +1375,13 @@ BOOST_AUTO_TEST_CASE(bass_is_read)
 BOOST_AUTO_TEST_CASE(rhythm_is_read)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART RHYTHM")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART RHYTHM")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
@@ -1181,10 +1395,13 @@ BOOST_AUTO_TEST_CASE(rhythm_is_read)
 BOOST_AUTO_TEST_CASE(keys_is_read)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART KEYS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART KEYS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
@@ -1202,10 +1419,13 @@ BOOST_AUTO_TEST_SUITE(six_fret_instruments_are_read_correctly_from_mid)
 BOOST_AUTO_TEST_CASE(six_fret_guitar_is_read_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR GHL")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR GHL")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
@@ -1222,10 +1442,13 @@ BOOST_AUTO_TEST_CASE(six_fret_guitar_is_read_correctly)
 BOOST_AUTO_TEST_CASE(six_fret_bass_is_read_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART BASS GHL")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART BASS GHL")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
@@ -1242,10 +1465,13 @@ BOOST_AUTO_TEST_CASE(six_fret_bass_is_read_correctly)
 BOOST_AUTO_TEST_CASE(six_fret_rhythm_is_read_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART RHYTHM GHL")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART RHYTHM GHL")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
@@ -1262,10 +1488,13 @@ BOOST_AUTO_TEST_CASE(six_fret_rhythm_is_read_correctly)
 BOOST_AUTO_TEST_CASE(six_fret_guitar_coop_is_read_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR COOP GHL")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR COOP GHL")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
@@ -1284,13 +1513,19 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(drums_are_read_correctly_from_mid)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {0,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {110, 64}}}},
-         {65, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {110, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {110, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {.time = 65,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {110, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1307,10 +1542,13 @@ BOOST_AUTO_TEST_CASE(drums_are_read_correctly_from_mid)
 BOOST_AUTO_TEST_CASE(double_kicks_are_read_correctly_from_mid)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {95, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {95, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {95, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {95, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1327,13 +1565,19 @@ BOOST_AUTO_TEST_CASE(double_kicks_are_read_correctly_from_mid)
 BOOST_AUTO_TEST_CASE(drum_fills_are_read_correctly_from_mid)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {45,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {120, 64}}}},
-         {65, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
-         {75,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {120, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 45,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {120, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {.time = 75,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {120, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1341,7 +1585,7 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_correctly_from_mid)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::DrumFill> fills {
-        {SightRead::Tick {45}, SightRead::Tick {30}}};
+        {.position = SightRead::Tick {45}, .length = SightRead::Tick {30}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.drum_fills().cbegin(),
                                   track.drum_fills().cend(), fills.cbegin(),
@@ -1351,15 +1595,22 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_correctly_from_mid)
 BOOST_AUTO_TEST_CASE(bres_are_read_correctly_from_mid)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {45,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {120, 64}}}},
-         {65, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
-         {75,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {120, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 45,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {120, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {.time = 75,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {120, 0}}}}}};
     SightRead::Detail::MidiTrack events_track {
-        {{0, {part_event("EVENTS")}}, {45, {text_event("[coda]")}}}};
+        {{.time = 0, .event = {part_event("EVENTS")}},
+         {.time = 45, .event = {text_event("[coda]")}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track, events_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1367,7 +1618,7 @@ BOOST_AUTO_TEST_CASE(bres_are_read_correctly_from_mid)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::BigRockEnding> bres {
-        {SightRead::Tick {45}, SightRead::Tick {75}}};
+        {.start = SightRead::Tick {45}, .end = SightRead::Tick {75}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.bres().cbegin(), track.bres().cend(),
                                   bres.cbegin(), bres.cend());
@@ -1376,20 +1627,23 @@ BOOST_AUTO_TEST_CASE(bres_are_read_correctly_from_mid)
 BOOST_AUTO_TEST_CASE(disco_flips_are_read_correctly_from_mid)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {15,
-          {SightRead::Detail::MetaEvent {
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 15,
+          .event = {SightRead::Detail::MetaEvent {
               .type = 1,
               .data = {0x5B, 0x6D, 0x69, 0x78, 0x20, 0x33, 0x20, 0x64, 0x72,
                        0x75, 0x6D, 0x73, 0x30, 0x64, 0x5D}}}},
-         {45,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {65, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
-         {75,
-          {SightRead::Detail::MetaEvent {.type = 1,
-                                         .data = {0x5B, 0x6D, 0x69, 0x78, 0x20,
-                                                  0x33, 0x20, 0x64, 0x72, 0x75,
-                                                  0x6D, 0x73, 0x30, 0x5D}}}}}};
+         {.time = 45,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {.time = 75,
+          .event = {SightRead::Detail::MetaEvent {
+              .type = 1,
+              .data = {0x5B, 0x6D, 0x69, 0x78, 0x20, 0x33, 0x20, 0x64, 0x72,
+                       0x75, 0x6D, 0x73, 0x30, 0x5D}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1397,7 +1651,7 @@ BOOST_AUTO_TEST_CASE(disco_flips_are_read_correctly_from_mid)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::DiscoFlip> flips {
-        {SightRead::Tick {15}, SightRead::Tick {60}}};
+        {.position = SightRead::Tick {15}, .length = SightRead::Tick {60}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.disco_flips().cbegin(),
                                   track.disco_flips().cend(), flips.cbegin(),
@@ -1407,16 +1661,18 @@ BOOST_AUTO_TEST_CASE(disco_flips_are_read_correctly_from_mid)
 BOOST_AUTO_TEST_CASE(missing_disco_flip_end_event_just_ends_at_max_int)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {15,
-          {SightRead::Detail::MetaEvent {
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 15,
+          .event = {SightRead::Detail::MetaEvent {
               .type = 1,
               .data = {0x5B, 0x6D, 0x69, 0x78, 0x20, 0x33, 0x20, 0x64, 0x72,
                        0x75, 0x6D, 0x73, 0x30, 0x64, 0x5D}}}},
-         {45,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
+         {.time = 45,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1424,7 +1680,8 @@ BOOST_AUTO_TEST_CASE(missing_disco_flip_end_event_just_ends_at_max_int)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::DiscoFlip> flips {
-        {SightRead::Tick {15}, SightRead::Tick {2147483632}}};
+        {.position = SightRead::Tick {15},
+         .length = SightRead::Tick {2147483632}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.disco_flips().cbegin(),
                                   track.disco_flips().cend(), flips.cbegin(),
@@ -1434,20 +1691,31 @@ BOOST_AUTO_TEST_CASE(missing_disco_flip_end_event_just_ends_at_max_int)
 BOOST_AUTO_TEST_CASE(drum_five_lane_to_four_lane_conversion_is_done_from_mid)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {0,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}},
-         {2,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {100, 64}}}},
-         {3, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {100, 0}}}},
-         {4,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
-         {4,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {100, 64}}}},
-         {5, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}},
-         {5,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {100, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}},
+         {.time = 2,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {100, 64}}}},
+         {.time = 3,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {100, 0}}}},
+         {.time = 4,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
+         {.time = 4,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {100, 64}}}},
+         {.time = 5,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}},
+         {.time = 5,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {100, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1469,16 +1737,26 @@ BOOST_AUTO_TEST_SUITE(dynamics_parsing)
 BOOST_AUTO_TEST_CASE(dynamics_are_parsed_from_mid)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {0, {text_event("[ENABLE_CHART_DYNAMICS]")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 1}}}},
-         {1, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {2, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {3, {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
-         {4,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 127}}}},
-         {5,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0, .event = {text_event("[ENABLE_CHART_DYNAMICS]")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 1}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+         {.time = 2,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 3,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}},
+         {.time = 4,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 127}}}},
+         {.time = 5,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1497,10 +1775,13 @@ BOOST_AUTO_TEST_CASE(dynamics_are_parsed_from_mid)
 BOOST_AUTO_TEST_CASE(dynamics_not_parsed_from_mid_without_ENABLE_CHART_DYNAMICS)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 1}}}},
-         {1,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 1}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1516,11 +1797,14 @@ BOOST_AUTO_TEST_CASE(dynamics_not_parsed_from_mid_without_ENABLE_CHART_DYNAMICS)
 BOOST_AUTO_TEST_CASE(ENABLE_CHART_DYNAMICS_works_without_braces)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART DRUMS")}},
-         {0, {text_event("ENABLE_CHART_DYNAMICS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 1}}}},
-         {1,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0, .event = {text_event("ENABLE_CHART_DYNAMICS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 1}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const auto song = drums_only_converter().convert(midi);
@@ -1539,16 +1823,21 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(instruments_not_permitted_are_dropped_from_midis)
 {
     SightRead::Detail::MidiTrack guitar_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     SightRead::Detail::MidiTrack bass_track {
-        {{0, {part_event("PART BASS")}},
-         {0, {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {65,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART BASS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {guitar_track, bass_track}};
     const std::vector<SightRead::Instrument> expected_instruments {
@@ -1565,19 +1854,25 @@ BOOST_AUTO_TEST_CASE(instruments_not_permitted_are_dropped_from_midis)
 BOOST_AUTO_TEST_CASE(solos_ignored_from_midis_if_not_permitted)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {103, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {900,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {900,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {103, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 64}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {103, 64}}}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 900,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 900,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {103, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 960,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {97, 64}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 
@@ -1596,11 +1891,13 @@ BOOST_AUTO_TEST_SUITE(fortnite_instruments)
 BOOST_AUTO_TEST_CASE(ch_instruments_have_priority_over_fortnite)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const std::vector<SightRead::Instrument> expected_instruments {
@@ -1622,15 +1919,19 @@ BOOST_AUTO_TEST_CASE(ch_instruments_have_priority_over_fortnite)
 BOOST_AUTO_TEST_CASE(fortnite_instrument_notes_are_separated)
 {
     SightRead::Detail::MidiTrack note_track {
-        {{0, {part_event("PART GUITAR")}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {768,
-          {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {960,
-          {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
 

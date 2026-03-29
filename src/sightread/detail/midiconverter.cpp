@@ -32,8 +32,8 @@ read_first_midi_track(const SightRead::Detail::MidiTrack& track, int resolution)
             const auto us_per_quarter = meta_event->data[0] << 16
                 | meta_event->data[1] << 8 | meta_event->data[2];
             const auto millibeats_per_minute = 60000000000.0 / us_per_quarter;
-            tempos.push_back(
-                {SightRead::Tick {event.time}, millibeats_per_minute});
+            tempos.push_back({.position = SightRead::Tick {event.time},
+                              .millibeats_per_minute = millibeats_per_minute});
             break;
         }
         case TIME_SIG_ID:
@@ -43,9 +43,9 @@ read_first_midi_track(const SightRead::Detail::MidiTrack& track, int resolution)
             if (meta_event->data[1] >= (CHAR_BIT * sizeof(int))) {
                 throw SightRead::ParseError("Time sig denominator too large");
             }
-            time_sigs.push_back({SightRead::Tick {event.time},
-                                 meta_event->data[0],
-                                 1 << meta_event->data[1]});
+            time_sigs.push_back({.position = SightRead::Tick {event.time},
+                                 .numerator = meta_event->data[0],
+                                 .denominator = 1 << meta_event->data[1]});
             break;
         default:
             break;
@@ -135,8 +135,8 @@ practice_sections_from_track(const SightRead::Detail::MidiTrack& track)
             }
             section_name = section_name.subspan(prefix.size());
             practice_sections.push_back(
-                {std::string {section_name.begin(), section_name.end()},
-                 SightRead::Tick {event.time}});
+                {.name = std::string {section_name.begin(), section_name.end()},
+                 .start = SightRead::Tick {event.time}});
             break;
         }
     }
@@ -871,8 +871,8 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
     std::vector<SightRead::StarPower> sp_phrases;
     for (const auto& [start, end] : combine_note_on_off_events(
              event_track.sp_on_events, event_track.sp_off_events)) {
-        sp_phrases.push_back(
-            {SightRead::Tick {start}, SightRead::Tick {end - start}});
+        sp_phrases.push_back({.position = SightRead::Tick {start},
+                              .length = SightRead::Tick {end - start}});
     }
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
@@ -1008,8 +1008,8 @@ drum_note_tracks_from_midi(
     std::vector<SightRead::StarPower> sp_phrases;
     for (const auto& [start, end] : combine_note_on_off_events(
              event_track.sp_on_events, event_track.sp_off_events)) {
-        sp_phrases.push_back(
-            {SightRead::Tick {start}, SightRead::Tick {end - start}});
+        sp_phrases.push_back({.position = SightRead::Tick {start},
+                              .length = SightRead::Tick {end - start}});
     }
 
     std::vector<SightRead::BigRockEnding> bres;
@@ -1017,10 +1017,11 @@ drum_note_tracks_from_midi(
     for (const auto& [start, end] : combine_note_on_off_events(
              event_track.fill_on_events, event_track.fill_off_events)) {
         if (coda_event_time.has_value() && coda_event_time->value() <= start) {
-            bres.push_back({SightRead::Tick {start}, SightRead::Tick {end}});
+            bres.push_back({.start = SightRead::Tick {start},
+                            .end = SightRead::Tick {end}});
         } else {
-            drum_fills.push_back(
-                {SightRead::Tick {start}, SightRead::Tick {end - start}});
+            drum_fills.push_back({.position = SightRead::Tick {start},
+                                  .length = SightRead::Tick {end - start}});
         }
     }
 
@@ -1040,8 +1041,8 @@ drum_note_tracks_from_midi(
         for (const auto& [start, end] : combine_note_on_off_events(
                  event_track.disco_flip_on_events.at(diff),
                  event_track.disco_flip_off_events.at(diff))) {
-            disco_flips.push_back(
-                {SightRead::Tick {start}, SightRead::Tick {end - start}});
+            disco_flips.push_back({.position = SightRead::Tick {start},
+                                   .length = SightRead::Tick {end - start}});
         }
         auto solos = SightRead::Detail::form_solo_vector(
             solo_ons, solo_offs, note_set, SightRead::TrackType::Drums, true);
@@ -1068,7 +1069,8 @@ read_bres(const InstrumentMidiTrack& event_track,
     for (const auto& [start, end] : combine_note_on_off_events(
              event_track.fill_on_events, event_track.fill_off_events)) {
         if (coda_event_time.has_value() && coda_event_time->value() <= start) {
-            bres.push_back({SightRead::Tick {start}, SightRead::Tick {end}});
+            bres.push_back({.start = SightRead::Tick {start},
+                            .end = SightRead::Tick {end}});
         }
     }
 
@@ -1103,8 +1105,8 @@ fortnite_note_tracks_from_midi(
     std::vector<SightRead::StarPower> sp_phrases;
     for (const auto& [start, end] : combine_note_on_off_events(
              event_track.sp_on_events, event_track.sp_off_events)) {
-        sp_phrases.push_back(
-            {SightRead::Tick {start}, SightRead::Tick {end - start}});
+        sp_phrases.push_back({.position = SightRead::Tick {start},
+                              .length = SightRead::Tick {end - start}});
     }
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
@@ -1171,8 +1173,8 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
     std::vector<SightRead::StarPower> sp_phrases;
     for (const auto& [start, end] : combine_note_on_off_events(
              event_track.sp_on_events, event_track.sp_off_events)) {
-        sp_phrases.push_back(
-            {SightRead::Tick {start}, SightRead::Tick {end - start}});
+        sp_phrases.push_back({.position = SightRead::Tick {start},
+                              .length = SightRead::Tick {end - start}});
     }
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;

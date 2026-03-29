@@ -67,7 +67,9 @@ SightRead::Detail::form_solo_vector(const std::vector<int>& solo_on_events,
         if (track_type != SightRead::TrackType::Drums) {
             note_count = static_cast<int>(positions_in_solo.size());
         }
-        solos.push_back({start, solo_struct_end, SOLO_NOTE_VALUE * note_count});
+        solos.push_back({.start = start,
+                         .end = solo_struct_end,
+                         .value = SOLO_NOTE_VALUE * note_count});
     }
 
     return solos;

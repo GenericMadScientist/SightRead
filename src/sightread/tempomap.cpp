@@ -59,7 +59,8 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
         last_time += to_beats(bpm.position - last_tick).value()
             * (MS_PER_MINUTE / last_bpm);
         const auto beat = to_beats(bpm.position);
-        m_beat_timestamps.push_back({beat, SightRead::Second(last_time)});
+        m_beat_timestamps.push_back(
+            {.beat = beat, .time = SightRead::Second(last_time)});
         last_bpm = bpm.millibeats_per_minute;
         last_tick = bpm.position;
     }
@@ -78,9 +79,9 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
         last_measure += beat_increment / last_beat_rate;
         const auto beat = to_beats(ts.position);
         m_fretbar_timestamps.push_back(
-            {SightRead::Fretbar(last_fretbar), beat});
+            {.fretbar = SightRead::Fretbar(last_fretbar), .beat = beat});
         m_measure_timestamps.push_back(
-            {SightRead::Measure(last_measure), beat});
+            {.measure = SightRead::Measure(last_measure), .beat = beat});
         last_beat_rate = (ts.numerator * DEFAULT_BEAT_RATE) / ts.denominator;
         last_fretbar_rate = ts.denominator / DEFAULT_TIMESIG_DENOM;
         last_tick = ts.position;
@@ -93,11 +94,12 @@ SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
         for (auto i = 0U; i < m_od_beats.size(); ++i) {
             const auto beat = to_beats(m_od_beats[i]);
             m_od_beat_timestamps.push_back(
-                {SightRead::OdBeat(i / DEFAULT_BEAT_RATE), beat});
+                {.od_beat = SightRead::OdBeat(i / DEFAULT_BEAT_RATE),
+                 .beat = beat});
         }
     } else {
         m_od_beat_timestamps.push_back(
-            {SightRead::OdBeat(0.0), SightRead::Beat(0.0)});
+            {.od_beat = SightRead::OdBeat(0.0), .beat = SightRead::Beat(0.0)});
     }
 
     m_last_od_beat_rate = DEFAULT_BEAT_RATE;

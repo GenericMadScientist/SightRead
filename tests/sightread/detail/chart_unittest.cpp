@@ -119,7 +119,8 @@ BOOST_AUTO_TEST_CASE(key_value_pairs_are_read)
 BOOST_AUTO_TEST_CASE(note_events_are_read)
 {
     const char* text = "[Section]\n{\n1000 = N 1 0\n}";
-    const std::vector<SightRead::Detail::NoteEvent> events {{1000, 1, 0}};
+    const std::vector<SightRead::Detail::NoteEvent> events {
+        {.position = 1000, .fret = 1, .length = 0}};
 
     const auto section = SightRead::Detail::parse_chart(text).sections[0];
 
@@ -139,7 +140,8 @@ BOOST_AUTO_TEST_CASE(note_events_with_extra_spaces_throw)
 BOOST_AUTO_TEST_CASE(bpm_events_are_read)
 {
     const char* text = "[Section]\n{\n1000 = B 150000\n}";
-    const std::vector<SightRead::Detail::BpmEvent> events {{1000, 150000}};
+    const std::vector<SightRead::Detail::BpmEvent> events {
+        {.position = 1000, .bpm = 150000}};
 
     const auto section = SightRead::Detail::parse_chart(text).sections[0];
 
@@ -151,8 +153,9 @@ BOOST_AUTO_TEST_CASE(bpm_events_are_read)
 BOOST_AUTO_TEST_CASE(timesig_events_are_read)
 {
     const char* text = "[Section]\n{\n1000 = TS 4\n2000 = TS 3 3\n}";
-    const std::vector<SightRead::Detail::TimeSigEvent> events {{1000, 4, 2},
-                                                               {2000, 3, 3}};
+    const std::vector<SightRead::Detail::TimeSigEvent> events {
+        {.position = 1000, .numerator = 4, .denominator = 2},
+        {.position = 2000, .numerator = 3, .denominator = 3}};
 
     const auto section = SightRead::Detail::parse_chart(text).sections[0];
 
@@ -164,7 +167,8 @@ BOOST_AUTO_TEST_CASE(timesig_events_are_read)
 BOOST_AUTO_TEST_CASE(special_events_are_read)
 {
     const char* text = "[Section]\n{\n1000 = S 2 700\n}";
-    const std::vector<SightRead::Detail::SpecialEvent> events {{1000, 2, 700}};
+    const std::vector<SightRead::Detail::SpecialEvent> events {
+        {.position = 1000, .key = 2, .length = 700}};
 
     const auto section = SightRead::Detail::parse_chart(text).sections[0];
 
@@ -176,7 +180,8 @@ BOOST_AUTO_TEST_CASE(special_events_are_read)
 BOOST_AUTO_TEST_CASE(e_events_are_read)
 {
     const char* text = "[Section]\n{\n1000 = E soloing\n}";
-    const std::vector<SightRead::Detail::Event> events {{1000, "soloing"}};
+    const std::vector<SightRead::Detail::Event> events {
+        {.position = 1000, .data = "soloing"}};
 
     const auto section = SightRead::Detail::parse_chart(text).sections[0];
 

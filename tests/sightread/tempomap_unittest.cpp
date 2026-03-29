@@ -17,16 +17,17 @@ BOOST_AUTO_TEST_SUITE(sync_track_ctor_maintains_invariants)
 
 BOOST_AUTO_TEST_CASE(bpms_are_sorted_by_position)
 {
-    SightRead::TempoMap tempo_map {{},
-                                   {{SightRead::Tick {0}, 150000},
-                                    {SightRead::Tick {2000}, 200000},
-                                    {SightRead::Tick {1000}, 225000}},
-                                   {},
-                                   192};
+    SightRead::TempoMap tempo_map {
+        {},
+        {{.position = SightRead::Tick {0}, .millibeats_per_minute = 150000},
+         {.position = SightRead::Tick {2000}, .millibeats_per_minute = 200000},
+         {.position = SightRead::Tick {1000}, .millibeats_per_minute = 225000}},
+        {},
+        192};
     std::vector<SightRead::BPM> expected_bpms {
-        {SightRead::Tick {0}, 150000},
-        {SightRead::Tick {1000}, 225000},
-        {SightRead::Tick {2000}, 200000}};
+        {.position = SightRead::Tick {0}, .millibeats_per_minute = 150000},
+        {.position = SightRead::Tick {1000}, .millibeats_per_minute = 225000},
+        {.position = SightRead::Tick {2000}, .millibeats_per_minute = 200000}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(tempo_map.bpms().cbegin(),
                                   tempo_map.bpms().cend(),
@@ -37,10 +38,12 @@ BOOST_AUTO_TEST_CASE(no_two_bpms_have_the_same_position)
 {
     SightRead::TempoMap tempo_map {
         {},
-        {{SightRead::Tick {0}, 150000}, {SightRead::Tick {0}, 200000}},
+        {{.position = SightRead::Tick {0}, .millibeats_per_minute = 150000},
+         {.position = SightRead::Tick {0}, .millibeats_per_minute = 200000}},
         {},
         192};
-    std::vector<SightRead::BPM> expected_bpms {{SightRead::Tick {0}, 200000}};
+    std::vector<SightRead::BPM> expected_bpms {
+        {.position = SightRead::Tick {0}, .millibeats_per_minute = 200000}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(tempo_map.bpms().cbegin(),
                                   tempo_map.bpms().cend(),
@@ -50,7 +53,8 @@ BOOST_AUTO_TEST_CASE(no_two_bpms_have_the_same_position)
 BOOST_AUTO_TEST_CASE(bpms_is_never_empty)
 {
     SightRead::TempoMap tempo_map;
-    std::vector<SightRead::BPM> expected_bpms {{SightRead::Tick {0}, 120000}};
+    std::vector<SightRead::BPM> expected_bpms {
+        {.position = SightRead::Tick {0}, .millibeats_per_minute = 120000}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(tempo_map.bpms().cbegin(),
                                   tempo_map.bpms().cend(),
@@ -59,16 +63,19 @@ BOOST_AUTO_TEST_CASE(bpms_is_never_empty)
 
 BOOST_AUTO_TEST_CASE(time_signatures_are_sorted_by_position)
 {
-    SightRead::TempoMap tempo_map {{{SightRead::Tick {0}, 4, 4},
-                                    {SightRead::Tick {2000}, 3, 3},
-                                    {SightRead::Tick {1000}, 2, 2}},
-                                   {},
-                                   {},
-                                   192};
+    SightRead::TempoMap tempo_map {
+        {{.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4},
+         {.position = SightRead::Tick {2000}, .numerator = 3, .denominator = 3},
+         {.position = SightRead::Tick {1000},
+          .numerator = 2,
+          .denominator = 2}},
+        {},
+        {},
+        192};
     std::vector<SightRead::TimeSignature> expected_tses {
-        {SightRead::Tick {0}, 4, 4},
-        {SightRead::Tick {1000}, 2, 2},
-        {SightRead::Tick {2000}, 3, 3}};
+        {.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4},
+        {.position = SightRead::Tick {1000}, .numerator = 2, .denominator = 2},
+        {.position = SightRead::Tick {2000}, .numerator = 3, .denominator = 3}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(tempo_map.time_sigs().cbegin(),
                                   tempo_map.time_sigs().cend(),
@@ -78,12 +85,13 @@ BOOST_AUTO_TEST_CASE(time_signatures_are_sorted_by_position)
 BOOST_AUTO_TEST_CASE(no_two_time_signatures_have_the_same_position)
 {
     SightRead::TempoMap tempo_map {
-        {{SightRead::Tick {0}, 4, 4}, {SightRead::Tick {0}, 3, 4}},
+        {{.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4},
+         {.position = SightRead::Tick {0}, .numerator = 3, .denominator = 4}},
         {},
         {},
         192};
     std::vector<SightRead::TimeSignature> expected_tses {
-        {SightRead::Tick {0}, 3, 4}};
+        {.position = SightRead::Tick {0}, .numerator = 3, .denominator = 4}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(tempo_map.time_sigs().cbegin(),
                                   tempo_map.time_sigs().cend(),
@@ -94,7 +102,7 @@ BOOST_AUTO_TEST_CASE(time_sigs_is_never_empty)
 {
     SightRead::TempoMap tempo_map;
     std::vector<SightRead::TimeSignature> expected_tses {
-        {SightRead::Tick {0}, 4, 4}};
+        {.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(tempo_map.time_sigs().cbegin(),
                                   tempo_map.time_sigs().cend(),
@@ -144,14 +152,16 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(speedup_returns_correct_tempo_map)
 {
     const SightRead::TempoMap tempo_map {
-        {{SightRead::Tick {0}, 4, 4}},
-        {{SightRead::Tick {0}, 120000}, {SightRead::Tick {192}, 240000}},
+        {{.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4}},
+        {{.position = SightRead::Tick {0}, .millibeats_per_minute = 120000},
+         {.position = SightRead::Tick {192}, .millibeats_per_minute = 240000}},
         {},
         192};
     const std::vector<SightRead::BPM> expected_bpms {
-        {SightRead::Tick {0}, 180000}, {SightRead::Tick {192}, 360000}};
+        {.position = SightRead::Tick {0}, .millibeats_per_minute = 180000},
+        {.position = SightRead::Tick {192}, .millibeats_per_minute = 360000}};
     const std::vector<SightRead::TimeSignature> expected_tses {
-        {SightRead::Tick {0}, 4, 4}};
+        {.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4}};
 
     const auto speedup = tempo_map.speedup(150);
 
@@ -166,8 +176,9 @@ BOOST_AUTO_TEST_CASE(speedup_returns_correct_tempo_map)
 BOOST_AUTO_TEST_CASE(speedup_updates_time_conversion_correctly)
 {
     const SightRead::TempoMap tempo_map {
-        {{SightRead::Tick {0}, 4, 4}},
-        {{SightRead::Tick {0}, 120000}, {SightRead::Tick {192}, 240000}},
+        {{.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4}},
+        {{.position = SightRead::Tick {0}, .millibeats_per_minute = 120000},
+         {.position = SightRead::Tick {192}, .millibeats_per_minute = 240000}},
         {},
         192};
 
@@ -180,9 +191,12 @@ BOOST_AUTO_TEST_CASE(speedup_updates_time_conversion_correctly)
 BOOST_AUTO_TEST_CASE(speedup_doesnt_overflow)
 {
     const SightRead::TempoMap tempo_map {
-        {}, {{SightRead::Tick {0}, 200000000}}, {}, 192};
+        {},
+        {{.position = SightRead::Tick {0}, .millibeats_per_minute = 200000000}},
+        {},
+        192};
     const std::vector<SightRead::BPM> expected_bpms {
-        {SightRead::Tick {0}, 400000000}};
+        {.position = SightRead::Tick {0}, .millibeats_per_minute = 400000000}};
 
     const auto speedup = tempo_map.speedup(200);
 
@@ -194,8 +208,9 @@ BOOST_AUTO_TEST_CASE(speedup_doesnt_overflow)
 BOOST_AUTO_TEST_CASE(seconds_to_beats_conversion_works_correctly)
 {
     SightRead::TempoMap tempo_map {
-        {{SightRead::Tick {0}, 4, 4}},
-        {{SightRead::Tick {0}, 150000}, {SightRead::Tick {800}, 200000}},
+        {{.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4}},
+        {{.position = SightRead::Tick {0}, .millibeats_per_minute = 150000},
+         {.position = SightRead::Tick {800}, .millibeats_per_minute = 200000}},
         {},
         200};
     constexpr std::array beats {-1.0, 0.0, 3.0, 5.0};
@@ -219,8 +234,9 @@ BOOST_AUTO_TEST_CASE(seconds_to_beats_conversion_works_correctly_after_speedup)
 BOOST_AUTO_TEST_CASE(beats_to_seconds_conversion_works_correctly)
 {
     SightRead::TempoMap tempo_map {
-        {{SightRead::Tick {0}, 4, 4}},
-        {{SightRead::Tick {0}, 150000}, {SightRead::Tick {800}, 200000}},
+        {{.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4}},
+        {{.position = SightRead::Tick {0}, .millibeats_per_minute = 150000},
+         {.position = SightRead::Tick {800}, .millibeats_per_minute = 200000}},
         {},
         200};
     constexpr std::array beats {-1.0, 0.0, 3.0, 5.0};
@@ -243,12 +259,15 @@ BOOST_AUTO_TEST_CASE(beats_to_seconds_conversion_works_correctly_after_speedup)
 
 BOOST_AUTO_TEST_CASE(beats_to_measures_conversion_works_correctly)
 {
-    SightRead::TempoMap tempo_map {{{SightRead::Tick {0}, 5, 4},
-                                    {SightRead::Tick {1000}, 4, 4},
-                                    {SightRead::Tick {1200}, 4, 16}},
-                                   {},
-                                   {},
-                                   200};
+    SightRead::TempoMap tempo_map {
+        {{.position = SightRead::Tick {0}, .numerator = 5, .denominator = 4},
+         {.position = SightRead::Tick {1000}, .numerator = 4, .denominator = 4},
+         {.position = SightRead::Tick {1200},
+          .numerator = 4,
+          .denominator = 16}},
+        {},
+        {},
+        200};
     constexpr std::array beats {-1.0, 0.0, 3.0, 5.5, 6.5};
     constexpr std::array measures {-0.25, 0.0, 0.6, 1.125, 1.75};
 
@@ -261,12 +280,15 @@ BOOST_AUTO_TEST_CASE(beats_to_measures_conversion_works_correctly)
 
 BOOST_AUTO_TEST_CASE(measures_to_beats_conversion_works_correctly)
 {
-    SightRead::TempoMap tempo_map {{{SightRead::Tick {0}, 5, 4},
-                                    {SightRead::Tick {1000}, 4, 4},
-                                    {SightRead::Tick {1200}, 4, 16}},
-                                   {},
-                                   {},
-                                   200};
+    SightRead::TempoMap tempo_map {
+        {{.position = SightRead::Tick {0}, .numerator = 5, .denominator = 4},
+         {.position = SightRead::Tick {1000}, .numerator = 4, .denominator = 4},
+         {.position = SightRead::Tick {1200},
+          .numerator = 4,
+          .denominator = 16}},
+        {},
+        {},
+        200};
     constexpr std::array beats {-1.0, 0.0, 3.0, 5.5, 6.5};
     constexpr std::array measures {-0.25, 0.0, 0.6, 1.125, 1.75};
 
@@ -280,10 +302,13 @@ BOOST_AUTO_TEST_CASE(measures_to_beats_conversion_works_correctly)
 BOOST_AUTO_TEST_CASE(measures_to_seconds_conversion_works_correctly)
 {
     SightRead::TempoMap tempo_map {
-        {{SightRead::Tick {0}, 5, 4},
-         {SightRead::Tick {1000}, 4, 4},
-         {SightRead::Tick {1200}, 4, 16}},
-        {{SightRead::Tick {0}, 150000}, {SightRead::Tick {800}, 200000}},
+        {{.position = SightRead::Tick {0}, .numerator = 5, .denominator = 4},
+         {.position = SightRead::Tick {1000}, .numerator = 4, .denominator = 4},
+         {.position = SightRead::Tick {1200},
+          .numerator = 4,
+          .denominator = 16}},
+        {{.position = SightRead::Tick {0}, .millibeats_per_minute = 150000},
+         {.position = SightRead::Tick {800}, .millibeats_per_minute = 200000}},
         {},
         200};
     constexpr std::array measures {-0.25, 0.0, 0.6, 1.125, 1.75};
@@ -299,10 +324,13 @@ BOOST_AUTO_TEST_CASE(measures_to_seconds_conversion_works_correctly)
 BOOST_AUTO_TEST_CASE(seconds_to_measures_conversion_works_correctly)
 {
     SightRead::TempoMap tempo_map {
-        {{SightRead::Tick {0}, 5, 4},
-         {SightRead::Tick {1000}, 4, 4},
-         {SightRead::Tick {1200}, 4, 16}},
-        {{SightRead::Tick {0}, 150000}, {SightRead::Tick {800}, 200000}},
+        {{.position = SightRead::Tick {0}, .numerator = 5, .denominator = 4},
+         {.position = SightRead::Tick {1000}, .numerator = 4, .denominator = 4},
+         {.position = SightRead::Tick {1200},
+          .numerator = 4,
+          .denominator = 16}},
+        {{.position = SightRead::Tick {0}, .millibeats_per_minute = 150000},
+         {.position = SightRead::Tick {800}, .millibeats_per_minute = 200000}},
         {},
         200};
     constexpr std::array measures {-0.25, 0.0, 0.6, 1.125, 1.75};
@@ -317,12 +345,15 @@ BOOST_AUTO_TEST_CASE(seconds_to_measures_conversion_works_correctly)
 
 BOOST_AUTO_TEST_CASE(fretbars_to_beats_conversion_works_correctly)
 {
-    SightRead::TempoMap tempo_map {{{SightRead::Tick {0}, 5, 4},
-                                    {SightRead::Tick {1000}, 4, 8},
-                                    {SightRead::Tick {1200}, 4, 16}},
-                                   {},
-                                   {},
-                                   200};
+    SightRead::TempoMap tempo_map {
+        {{.position = SightRead::Tick {0}, .numerator = 5, .denominator = 4},
+         {.position = SightRead::Tick {1000}, .numerator = 4, .denominator = 8},
+         {.position = SightRead::Tick {1200},
+          .numerator = 4,
+          .denominator = 16}},
+        {},
+        {},
+        200};
     constexpr std::array beats {-1.0, 0.0, 3.0, 5.5, 6.5};
     constexpr std::array fretbars {-1.0, 0.0, 3.0, 6.0, 9.0};
 
@@ -335,12 +366,15 @@ BOOST_AUTO_TEST_CASE(fretbars_to_beats_conversion_works_correctly)
 
 BOOST_AUTO_TEST_CASE(beats_to_fretbars_conversion_works_correctly)
 {
-    SightRead::TempoMap tempo_map {{{SightRead::Tick {0}, 5, 4},
-                                    {SightRead::Tick {1000}, 4, 8},
-                                    {SightRead::Tick {1200}, 4, 16}},
-                                   {},
-                                   {},
-                                   200};
+    SightRead::TempoMap tempo_map {
+        {{.position = SightRead::Tick {0}, .numerator = 5, .denominator = 4},
+         {.position = SightRead::Tick {1000}, .numerator = 4, .denominator = 8},
+         {.position = SightRead::Tick {1200},
+          .numerator = 4,
+          .denominator = 16}},
+        {},
+        {},
+        200};
     constexpr std::array beats {-1.0, 0.0, 3.0, 5.5, 6.5};
     constexpr std::array fretbars {-1.0, 0.0, 3.0, 6.0, 9.0};
 

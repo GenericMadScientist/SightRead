@@ -3046,9 +3046,10 @@ std::vector<QbNoteEvent> note_events(const SightRead::Detail::QbMidi& midi,
     std::vector<QbNoteEvent> values;
     values.reserve(raw_notes.size() / 3);
     for (auto i = 0U; i < raw_notes.size(); i += 3U) {
-        values.push_back({std::any_cast<std::uint32_t>(raw_notes[i]),
-                          std::any_cast<std::uint32_t>(raw_notes[i + 1]),
-                          std::any_cast<std::uint32_t>(raw_notes[i + 2])});
+        values.push_back(
+            {.position = std::any_cast<std::uint32_t>(raw_notes[i]),
+             .length = std::any_cast<std::uint32_t>(raw_notes[i + 1]),
+             .flags = std::any_cast<std::uint32_t>(raw_notes[i + 2])});
     }
 
     return values;
@@ -3073,9 +3074,10 @@ std::vector<QbTimeSignature> qb_timesigs(const SightRead::Detail::QbMidi& midi,
     for (const auto& value : raw_timesigs) {
         const auto array = std::any_cast<std::vector<std::any>>(value);
         assert(array.size() == 3);
-        values.push_back({std::any_cast<std::uint32_t>(array[0]),
-                          std::any_cast<std::uint32_t>(array[1]),
-                          std::any_cast<std::uint32_t>(array[2])});
+        values.push_back(
+            {.time_ms = std::any_cast<std::uint32_t>(array[0]),
+             .numerator = std::any_cast<std::uint32_t>(array[1]),
+             .denominator = std::any_cast<std::uint32_t>(array[2])});
     }
 
     return values;
@@ -3107,9 +3109,10 @@ std::vector<QbSpEvent> sp_events(const SightRead::Detail::QbMidi& midi,
     for (const auto& value : raw_phrases) {
         const auto array = std::any_cast<std::vector<std::any>>(value);
         assert(array.size() == 3);
-        values.push_back({std::any_cast<std::uint32_t>(array[0]),
-                          std::any_cast<std::uint32_t>(array[1]),
-                          std::any_cast<std::uint32_t>(array[2])});
+        values.push_back(
+            {.position = std::any_cast<std::uint32_t>(array[0]),
+             .length = std::any_cast<std::uint32_t>(array[1]),
+             .note_count = std::any_cast<std::uint32_t>(array[2])});
     }
 
     return values;
@@ -3181,8 +3184,9 @@ public:
                 = static_cast<int>(RESOLUTION * m_fretbars_beats[i]);
             const auto beat_diff
                 = m_fretbars_beats[i + 1] - m_fretbars_beats[i];
-            bpms.push_back({SightRead::Tick {tick_pos},
-                            MICROS_IN_MINUTE * beat_diff / time_diff});
+            bpms.push_back({.position = SightRead::Tick {tick_pos},
+                            .millibeats_per_minute
+                            = MICROS_IN_MINUTE * beat_diff / time_diff});
         }
 
         return bpms;
@@ -3204,8 +3208,10 @@ public:
         time_sigs.reserve(m_timesigs.size());
         for (const auto& time_sig : m_timesigs) {
             const auto position = ms_to_ticks(time_sig.time_ms);
-            time_sigs.push_back({position, static_cast<int>(time_sig.numerator),
-                                 static_cast<int>(time_sig.denominator)});
+            time_sigs.push_back(
+                {.position = position,
+                 .numerator = static_cast<int>(time_sig.numerator),
+                 .denominator = static_cast<int>(time_sig.denominator)});
         }
 
         return time_sigs;
@@ -3283,7 +3289,8 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
         const auto position = timedata.ms_to_ticks(event.position);
         const auto end_position
             = timedata.ms_to_ticks(event.position + event.length);
-        sp_phrases.push_back({position, end_position - position});
+        sp_phrases.push_back(
+            {.position = position, .length = end_position - position});
     }
 
     return {{std::move(notes), sp_phrases, SightRead::TrackType::FiveFret,
