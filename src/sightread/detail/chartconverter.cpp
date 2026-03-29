@@ -474,10 +474,10 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
     }
     std::ranges::sort(solo_on_events);
     std::ranges::sort(solo_off_events);
-    auto solos = SightRead::Detail::form_solo_vector(
-        solo_on_events, solo_off_events, notes, track_type, false);
-    if (!permit_solos) {
-        solos.clear();
+    std::vector<SightRead::Solo> solos;
+    if (permit_solos) {
+        solos = SightRead::Detail::form_solo_vector(
+            solo_on_events, solo_off_events, notes, track_type, false);
     }
     std::ranges::sort(disco_flip_on_events);
     std::ranges::sort(disco_flip_off_events);
