@@ -773,7 +773,9 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_from_chart)
     BOOST_CHECK_EQUAL(track.drum_fills()[0], fill);
 }
 
-BOOST_AUTO_TEST_CASE(disco_flips_are_read_from_chart)
+BOOST_AUTO_TEST_SUITE(disco_flips)
+
+BOOST_AUTO_TEST_CASE(disco_flips_without_brackets_are_read_from_chart)
 {
     const auto chart_file
         = section_string("ExpertDrums", {{192, 1, 0}}, {},
@@ -788,6 +790,24 @@ BOOST_AUTO_TEST_CASE(disco_flips_are_read_from_chart)
     BOOST_CHECK_EQUAL(track.disco_flips().size(), 1);
     BOOST_CHECK_EQUAL(track.disco_flips()[0], flip);
 }
+
+BOOST_AUTO_TEST_CASE(disco_flips_with_brackets_are_read_from_chart)
+{
+    const auto chart_file
+        = section_string("ExpertDrums", {{192, 1, 0}}, {},
+                         {{100, "[mix_3_drums0d]"}, {105, "[mix_3_drums0]"}});
+    const SightRead::DiscoFlip flip {.position = SightRead::Tick {100},
+                                     .length = SightRead::Tick {5}};
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    BOOST_CHECK_EQUAL(track.disco_flips().size(), 1);
+    BOOST_CHECK_EQUAL(track.disco_flips()[0], flip);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(instruments_not_permitted_are_dropped_from_charts)
 {

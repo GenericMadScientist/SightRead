@@ -379,18 +379,50 @@ apply_drum_events(std::vector<SightRead::Note> notes,
     return apply_dynamics_events(notes, note_events);
 }
 
+bool matches_template(const std::string& data, std::string_view str_template)
+{
+    if (data.size() < 2) {
+        return false;
+    }
+
+    auto begin = data.cbegin();
+    auto end = data.cend();
+
+    if (*begin == '[' && *std::prev(end) == ']') {
+        ++begin;
+        --end;
+    }
+
+    if (std::distance(begin, end) != static_cast<int>(str_template.size())) {
+        return false;
+    }
+
+    for (auto i = 0U; i < str_template.size(); ++i) {
+        if (str_template[i] != '*' && str_template[i] != *(begin + i)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool is_event_disco_start(const std::string& data)
+{
+    return matches_template(data, "mix_*_drums*d");
+}
+
+bool is_event_disco_end(const std::string& data)
+{
+    return matches_template(data, "mix_*_drums*");
+}
+
 SightRead::NoteTrack
 note_track_from_section(const SightRead::Detail::ChartSection& section,
                         std::shared_ptr<SightRead::SongGlobalData> global_data,
                         SightRead::TrackType track_type, bool permit_solos,
                         SightRead::Tick max_hopo_gap)
 {
-    constexpr int DISCO_FLIP_START_SIZE = 13;
-    constexpr int DISCO_FLIP_END_SIZE = 12;
     constexpr int DRUM_FILL_KEY = 64;
-    constexpr std::array<std::uint8_t, 4> MIX {{'m', 'i', 'x', '_'}};
-    constexpr std::array<std::uint8_t, 6> DRUMS {
-        {'_', 'd', 'r', 'u', 'm', 's'}};
 
     ForcingEvents forcing_events;
     std::vector<SightRead::Note> notes;
@@ -434,18 +466,10 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
             solo_on_events.push_back(event.position);
         } else if (event.data == "soloend") {
             solo_off_events.push_back(event.position);
-        } else if (event.data.size() >= DISCO_FLIP_END_SIZE) {
-            if (!std::equal(MIX.cbegin(), MIX.cend(), event.data.cbegin())
-                || !std::equal(DRUMS.cbegin(), DRUMS.cend(),
-                               event.data.cbegin() + MIX.size() + 1)) {
-                continue;
-            }
-            if (event.data.size() == DISCO_FLIP_END_SIZE) {
-                disco_flip_off_events.push_back(event.position);
-            } else if (event.data.size() == DISCO_FLIP_START_SIZE
-                       && event.data.back() == 'd') {
-                disco_flip_on_events.push_back(event.position);
-            }
+        } else if (is_event_disco_start(event.data)) {
+            disco_flip_on_events.push_back(event.position);
+        } else if (is_event_disco_end(event.data)) {
+            disco_flip_off_events.push_back(event.position);
         }
     }
     std::ranges::sort(solo_on_events);
