@@ -1,0 +1,34 @@
+Checks: >
+  boost-*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  cert-*,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,
+  -clang-analyzer-optin.cplusplus.VirtualCall,
+  concurrency-*,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-vararg,
+  misc-*,
+  -misc-const-correctness,
+  -misc-include-cleaner,
+  -misc-no-recursion,
+  -misc-use-internal-linkage,
+  modernize-*,
+  -modernize-use-integer-sign-comparison,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  portability-*,
+  readability-*,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-math-missing-parentheses
+WarningsAsErrors: '*'
+HeaderFilterRegex: ''
+FormatStyle: none
+CheckOptions:
+  - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value: true
