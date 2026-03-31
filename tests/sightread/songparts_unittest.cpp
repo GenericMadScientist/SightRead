@@ -595,3 +595,117 @@ BOOST_AUTO_TEST_CASE(disable_dynamics_is_correct)
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   new_notes.cbegin(), new_notes.cend());
 }
+
+BOOST_AUTO_TEST_SUITE(apply_disco_flips)
+
+BOOST_AUTO_TEST_CASE(red_toms_become_yellow_cymbals)
+{
+    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_RED)},
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.disco_flips(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+
+    track.apply_disco_flips();
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.colours(), 1 << SightRead::DRUM_YELLOW);
+    BOOST_CHECK_EQUAL(note.flags,
+                      SightRead::FLAGS_CYMBAL | SightRead::FLAGS_DRUMS);
+}
+
+BOOST_AUTO_TEST_CASE(yellow_toms_become_red_toms)
+{
+    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_YELLOW)},
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.disco_flips(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+
+    track.apply_disco_flips();
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.colours(), 1 << SightRead::DRUM_RED);
+    BOOST_CHECK_EQUAL(note.flags, SightRead::FLAGS_DRUMS);
+}
+
+BOOST_AUTO_TEST_CASE(yellow_cymbals_become_red_toms)
+{
+    SightRead::NoteTrack track {
+        {make_drum_note(0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)},
+        {},
+        SightRead::TrackType::Drums,
+        std::make_shared<SightRead::SongGlobalData>()};
+    track.disco_flips(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+
+    track.apply_disco_flips();
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.colours(), 1 << SightRead::DRUM_RED);
+    BOOST_CHECK_EQUAL(note.flags, SightRead::FLAGS_DRUMS);
+}
+
+BOOST_AUTO_TEST_CASE(other_notes_are_unaffected)
+{
+    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_BLUE)},
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.disco_flips(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+
+    track.apply_disco_flips();
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.colours(), 1 << SightRead::DRUM_BLUE);
+    BOOST_CHECK_EQUAL(note.flags, SightRead::FLAGS_DRUMS);
+}
+
+BOOST_AUTO_TEST_CASE(notes_outside_of_disco_flips_are_unaffected)
+{
+    SightRead::NoteTrack track {{make_drum_note(192, SightRead::DRUM_RED)},
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.disco_flips(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+
+    track.apply_disco_flips();
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.colours(), 1 << SightRead::DRUM_RED);
+}
+
+BOOST_AUTO_TEST_CASE(other_instruments_are_unaffected)
+{
+    SightRead::NoteTrack track {{make_note(0)},
+                                {},
+                                SightRead::TrackType::FiveFret,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.disco_flips(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+
+    track.apply_disco_flips();
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.colours(), 1 << SightRead::FIVE_FRET_GREEN);
+}
+
+BOOST_AUTO_TEST_CASE(disco_flips_are_cleared)
+{
+    SightRead::NoteTrack track {{make_drum_note(0)},
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.disco_flips(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+
+    track.apply_disco_flips();
+
+    BOOST_CHECK(track.disco_flips().empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END()

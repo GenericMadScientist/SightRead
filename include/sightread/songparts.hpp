@@ -238,6 +238,7 @@ public:
     void generate_drum_fills(const SightRead::TempoMap& tempo_map);
     void disable_cymbals();
     void disable_dynamics();
+    void apply_disco_flips();
     [[nodiscard]] const std::vector<Note>& notes() const { return m_notes; }
     [[nodiscard]] const std::vector<StarPower>& sp_phrases() const
     {
