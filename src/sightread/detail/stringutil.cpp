@@ -37,14 +37,16 @@ std::string_view break_off_newline(std::string_view& input)
         throw SightRead::ParseError("No lines left");
     }
 
-    const auto newline_location
-        = std::min(input.find('\n'), input.find("\r\n"));
+    auto newline_location = input.find('\n');
     if (newline_location == std::string_view::npos) {
         const auto line = input;
         input.remove_prefix(input.size());
         return line;
     }
 
+    if (newline_location > 0 && input.at(newline_location - 1) == '\r') {
+        --newline_location;
+    }
     const auto line = input.substr(0, newline_location);
     input.remove_prefix(newline_location);
     input = skip_whitespace(input);
