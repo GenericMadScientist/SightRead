@@ -78,7 +78,7 @@ jobs:
         run: cmake --build . --verbose
 
   mac-gcc:
-    runs-on: macos-14
+    runs-on: macos-15-intel
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -89,7 +89,7 @@ jobs:
           tar --bzip2 -xf "$HOME/boost_1_86_0.tar.bz2" -C "$HOME"
           cd "$HOME/boost_1_86_0"
           ./bootstrap.sh --with-libraries=locale,test --prefix=.
-          ./b2 toolset=gcc-14 install > /dev/null
+          ./b2 toolset=gcc-15 install > /dev/null
 
       - name: Make build directory
         run: mkdir build
@@ -98,7 +98,7 @@ jobs:
         working-directory: build
         env:
           BOOST_ROOT: ~/boost_1_86_0
-          CXX: g++-14
+          CXX: g++-15
         run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON ..
 
       - name: Build
@@ -106,7 +106,7 @@ jobs:
         run: cmake --build . --verbose
 
   apple-clang:
-    runs-on: macos-14
+    runs-on: macos-15-intel
     steps:
       - name: Checkout
         uses: actions/checkout@v6
