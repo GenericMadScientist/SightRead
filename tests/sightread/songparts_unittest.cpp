@@ -551,7 +551,7 @@ BOOST_AUTO_TEST_CASE(hmx_gh_snapping)
     auto new_track = track.snap_chords(SightRead::Tick {10});
     const auto& new_notes = new_track.notes();
 
-    BOOST_CHECK_EQUAL(new_notes.size(), 1);
+    BOOST_CHECK_EQUAL(new_notes.size(), 1U);
     BOOST_CHECK_EQUAL(new_notes.at(0).position, SightRead::Tick {0});
     BOOST_CHECK_EQUAL(new_notes.at(0).colours(), 1 | 2);
 }

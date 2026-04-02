@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(section_names_are_read)
 
     const auto chart = SightRead::Detail::parse_chart(text);
 
-    BOOST_CHECK_EQUAL(chart.sections.size(), 2);
+    BOOST_CHECK_EQUAL(chart.sections.size(), 2U);
     BOOST_CHECK_EQUAL(chart.sections.at(0).name, "SectionA");
     BOOST_CHECK_EQUAL(chart.sections.at(1).name, "SectionB");
 }
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(lone_carriage_return_does_not_break_line)
 
     const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
-    BOOST_CHECK_EQUAL(section.key_value_pairs.size(), 1);
+    BOOST_CHECK_EQUAL(section.key_value_pairs.size(), 1U);
     BOOST_CHECK_EQUAL(section.key_value_pairs.at("Key"), "Value\rOops");
 }
 
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(key_value_pairs_are_read)
 
     const auto section = SightRead::Detail::parse_chart(text).sections.at(0);
 
-    BOOST_CHECK_EQUAL(section.key_value_pairs.size(), 2);
+    BOOST_CHECK_EQUAL(section.key_value_pairs.size(), 2U);
     BOOST_CHECK_EQUAL(section.key_value_pairs.at("Key"), "Value");
     BOOST_CHECK_EQUAL(section.key_value_pairs.at("Key2"), "Value2");
 }

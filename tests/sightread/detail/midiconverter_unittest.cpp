@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE(corresponding_note_off_events_are_after_note_on_events)
                                    SightRead::Difficulty::Expert)
                             .notes();
 
-    BOOST_CHECK_EQUAL(notes.size(), 2);
+    BOOST_CHECK_EQUAL(notes.size(), 2U);
     BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {480});
 }
 
@@ -526,7 +526,7 @@ BOOST_AUTO_TEST_CASE(
                                    SightRead::Difficulty::Expert)
                             .notes();
 
-    BOOST_CHECK_EQUAL(notes.size(), 2);
+    BOOST_CHECK_EQUAL(notes.size(), 2U);
 }
 
 BOOST_AUTO_TEST_CASE(each_note_on_event_consumes_the_following_note_off_event)
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(each_note_on_event_consumes_the_following_note_off_event)
                                    SightRead::Difficulty::Expert)
                             .notes();
 
-    BOOST_CHECK_EQUAL(notes.size(), 2);
+    BOOST_CHECK_EQUAL(notes.size(), 2U);
     BOOST_CHECK_GT(notes.at(1).lengths.at(0), SightRead::Tick {0});
 }
 
@@ -575,7 +575,7 @@ BOOST_AUTO_TEST_CASE(note_off_events_can_be_zero_ticks_after_the_note_on_events)
                                    SightRead::Difficulty::Expert)
                             .notes();
 
-    BOOST_CHECK_EQUAL(notes.size(), 1);
+    BOOST_CHECK_EQUAL(notes.size(), 1U);
 }
 
 BOOST_AUTO_TEST_CASE(
@@ -777,7 +777,7 @@ BOOST_AUTO_TEST_CASE(mids_with_multiple_solos_and_no_sp_have_solos_read_as_sp)
 
     BOOST_TEST(
         track.solos(SightRead::DrumSettings::default_settings()).empty());
-    BOOST_CHECK_EQUAL(track.sp_phrases().size(), 2);
+    BOOST_CHECK_EQUAL(track.sp_phrases().size(), 2U);
 }
 
 // This should be done by NoteTrack's trim_sustains method.
@@ -1951,7 +1951,7 @@ BOOST_AUTO_TEST_CASE(fortnite_instrument_notes_are_separated)
                                  SightRead::Difficulty::Expert)
                           .notes()
                           .size(),
-                      2);
+                      2U);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -842,7 +842,7 @@ BOOST_AUTO_TEST_CASE(invalid_drum_notes_are_ignored)
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
 
-    BOOST_CHECK_EQUAL(track.notes().size(), 1);
+    BOOST_CHECK_EQUAL(track.notes().size(), 1U);
 }
 
 BOOST_AUTO_TEST_CASE(drum_fills_are_read_from_chart)
@@ -857,7 +857,7 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_from_chart)
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
 
-    BOOST_CHECK_EQUAL(track.drum_fills().size(), 1);
+    BOOST_CHECK_EQUAL(track.drum_fills().size(), 1U);
     BOOST_CHECK_EQUAL(track.drum_fills().at(0), fill);
 }
 
@@ -876,7 +876,7 @@ BOOST_AUTO_TEST_CASE(disco_flips_without_brackets_are_read_from_chart)
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
 
-    BOOST_CHECK_EQUAL(track.disco_flips().size(), 1);
+    BOOST_CHECK_EQUAL(track.disco_flips().size(), 1U);
     BOOST_CHECK_EQUAL(track.disco_flips().at(0), flip);
 }
 
@@ -893,7 +893,7 @@ BOOST_AUTO_TEST_CASE(disco_flips_with_brackets_are_read_from_chart)
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
 
-    BOOST_CHECK_EQUAL(track.disco_flips().size(), 1);
+    BOOST_CHECK_EQUAL(track.disco_flips().size(), 1U);
     BOOST_CHECK_EQUAL(track.disco_flips().at(0), flip);
 }
 

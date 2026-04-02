@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(not_all_instruments_need_to_participate)
     const SightRead::StarPower expected_phrase {
         .position = SightRead::Tick {768}, .length = SightRead::Tick {100}};
 
-    BOOST_CHECK_EQUAL(unison_phrases.size(), 1);
+    BOOST_CHECK_EQUAL(unison_phrases.size(), 1U);
     BOOST_CHECK_EQUAL(unison_phrases.at(0), expected_phrase);
 }
 

@@ -127,9 +127,9 @@ BOOST_AUTO_TEST_CASE(track_lengths_are_read_correctly)
 
     const auto midi = SightRead::Detail::parse_midi(data);
 
-    BOOST_CHECK_EQUAL(midi.tracks.size(), 2);
+    BOOST_CHECK_EQUAL(midi.tracks.size(), 2U);
     BOOST_TEST(midi.tracks.at(0).events.empty());
-    BOOST_CHECK_EQUAL(midi.tracks.at(1).events.size(), 1);
+    BOOST_CHECK_EQUAL(midi.tracks.at(1).events.size(), 1U);
 }
 
 BOOST_AUTO_TEST_CASE(track_magic_number_is_checked)
@@ -151,9 +151,9 @@ BOOST_AUTO_TEST_CASE(extra_tracks_in_header_are_ignored)
 
     const auto midi = SightRead::Detail::parse_midi(data);
 
-    BOOST_CHECK_EQUAL(midi.tracks.size(), 2);
+    BOOST_CHECK_EQUAL(midi.tracks.size(), 2U);
     BOOST_TEST(midi.tracks.at(0).events.empty());
-    BOOST_CHECK_EQUAL(midi.tracks.at(1).events.size(), 1);
+    BOOST_CHECK_EQUAL(midi.tracks.at(1).events.size(), 1U);
 }
 
 BOOST_AUTO_TEST_SUITE(event_times_are_handled_correctly)
@@ -308,7 +308,7 @@ BOOST_AUTO_TEST_CASE(not_all_midi_events_take_two_data_bytes)
 
     const auto midi = SightRead::Detail::parse_midi(data);
 
-    BOOST_CHECK_EQUAL(midi.tracks.at(0).events.size(), 2);
+    BOOST_CHECK_EQUAL(midi.tracks.at(0).events.size(), 2U);
 }
 
 BOOST_AUTO_TEST_CASE(midi_events_with_status_byte_high_nibble_f_throw)
