@@ -2,6 +2,8 @@ name: Tests
 
 on: push
 
+permissions: {}
+
 jobs:
   tests:
     runs-on: ubuntu-24.04
