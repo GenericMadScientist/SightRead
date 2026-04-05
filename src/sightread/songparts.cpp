@@ -247,26 +247,14 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes,
     std::ranges::sort(sp_starts);
     std::ranges::sort(sp_ends);
 
-    std::vector<StarPower> new_sp_phrases;
-    new_sp_phrases.reserve(sp_phrases.size());
+    m_sp_phrases.reserve(sp_phrases.size());
     for (auto i = 0U; i < sp_phrases.size(); ++i) {
         auto start = sp_starts.at(i);
         if (i > 0) {
             start = std::max(sp_starts.at(i), sp_ends.at(i - 1));
         }
         const auto length = sp_ends.at(i) - start;
-        new_sp_phrases.push_back({.position = start, .length = length});
-    }
-
-    for (const auto& phrase : new_sp_phrases) {
-        const auto first_note = std::ranges::lower_bound(
-            m_notes, phrase.position,
-            [](const auto& x, const auto& y) { return x < y; },
-            [](const auto& x) { return x.position; });
-        if ((first_note != m_notes.cend())
-            && (first_note->position < (phrase.position + phrase.length))) {
-            m_sp_phrases.push_back(phrase);
-        }
+        m_sp_phrases.push_back({.position = start, .length = length});
     }
 
     merge_same_time_notes();

@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(resolution_is_positive)
     BOOST_CHECK_THROW([&] { data.resolution(0); }(), std::runtime_error);
 }
 
-BOOST_AUTO_TEST_CASE(empty_sp_phrases_are_culled)
+BOOST_AUTO_TEST_CASE(empty_sp_phrases_are_not_culled)
 {
     std::vector<SightRead::Note> notes {make_note(768)};
     std::vector<SightRead::StarPower> phrases {
@@ -121,12 +121,10 @@ BOOST_AUTO_TEST_CASE(empty_sp_phrases_are_culled)
         {.position = SightRead::Tick {1000}, .length = SightRead::Tick {100}}};
     SightRead::NoteTrack track {notes, phrases, SightRead::TrackType::FiveFret,
                                 std::make_shared<SightRead::SongGlobalData>()};
-    std::vector<SightRead::StarPower> required_phrases {
-        {.position = SightRead::Tick {700}, .length = SightRead::Tick {100}}};
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        track.sp_phrases().cbegin(), track.sp_phrases().cend(),
-        required_phrases.cbegin(), required_phrases.cend());
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.sp_phrases().cbegin(),
+                                  track.sp_phrases().cend(), phrases.cbegin(),
+                                  phrases.cend());
 }
 
 BOOST_AUTO_TEST_CASE(sp_phrases_are_sorted)
