@@ -210,38 +210,43 @@ std::vector<SightRead::Note> add_fifth_lane_greens(
 std::vector<SightRead::Note>
 apply_cymbal_events(const std::vector<SightRead::Note>& notes)
 {
-    std::set<unsigned int> deletion_spots;
-    for (auto i = 0U; i < notes.size(); ++i) {
-        const auto& cymbal_note = notes.at(i);
-        if ((cymbal_note.flags & SightRead::FLAGS_CYMBAL) == 0U) {
+    std::map<unsigned int,
+             std::vector<std::tuple<SightRead::Tick, SightRead::Tick>>>
+        cymbal_markers;
+    for (const auto& note : notes) {
+        if ((note.flags & SightRead::FLAGS_CYMBAL) == 0U) {
             continue;
         }
-        bool delete_cymbal = true;
-        for (auto j = 0U; j < notes.size(); ++j) {
-            if (i == j) {
-                continue;
+        for (auto i = 0U; i < note.lengths.size(); ++i) {
+            if (note.lengths.at(i) != SightRead::Tick {-1}) {
+                cymbal_markers[i].emplace_back(
+                    note.position, note.position + note.lengths.at(i));
             }
-            const auto& non_cymbal_note = notes.at(j);
-            if (non_cymbal_note.position != cymbal_note.position) {
-                continue;
-            }
-            if (cymbal_note.colours() != non_cymbal_note.colours()) {
-                continue;
-            }
-            delete_cymbal = false;
-            deletion_spots.insert(j);
-        }
-        if (delete_cymbal) {
-            deletion_spots.insert(i);
         }
     }
 
     std::vector<SightRead::Note> new_notes;
-    for (auto i = 0U; i < notes.size(); ++i) {
-        if (!deletion_spots.contains(i)) {
-            new_notes.push_back(notes.at(i));
+    for (auto note : notes) {
+        if ((note.flags & SightRead::FLAGS_CYMBAL) != 0U) {
+            continue;
+        }
+        for (auto i = 0U; i < note.lengths.size(); ++i) {
+            if (note.lengths.at(i) == SightRead::Tick {-1}) {
+                continue;
+            }
+
+            for (const auto& range : cymbal_markers[i]) {
+                if (note.position >= std::get<0>(range)
+                    && note.position <= std::get<1>(range)) {
+                    note.flags = static_cast<SightRead::NoteFlags>(
+                        note.flags | SightRead::FLAGS_CYMBAL);
+                }
+            }
+
+            new_notes.push_back(note);
         }
     }
+
     return new_notes;
 }
 

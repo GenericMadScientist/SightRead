@@ -772,6 +772,21 @@ BOOST_AUTO_TEST_CASE(drum_notes_are_read_correctly_from_chart)
                                   notes.cbegin(), notes.cend());
 }
 
+BOOST_AUTO_TEST_CASE(cymbal_events_do_not_override_lengths)
+{
+    const auto chart_file
+        = section_string("ExpertDrums",
+                         {{.position = 192, .fret = 3, .length = 12},
+                          {.position = 192, .fret = 67, .length = 0}});
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    BOOST_CHECK_EQUAL(track.notes().front().lengths.at(2),
+                      SightRead::Tick {12});
+}
+
 BOOST_AUTO_TEST_CASE(dynamics_are_read_correctly_from_chart)
 {
     const auto chart_file
