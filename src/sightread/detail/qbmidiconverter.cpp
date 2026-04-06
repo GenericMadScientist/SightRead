@@ -2,6 +2,7 @@
 #include <array>
 #include <cassert>
 #include <climits>
+#include <optional>
 #include <unordered_map>
 
 #include <boost/locale.hpp>

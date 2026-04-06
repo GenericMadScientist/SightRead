@@ -4,7 +4,6 @@
 #include <array>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -95,11 +94,12 @@ enum DrumNotes : std::uint8_t {
 
 struct Note {
 private:
+    static constexpr int LENGTHS_SIZE = 7;
     [[nodiscard]] int open_index() const;
 
 public:
     SightRead::Tick position {0};
-    std::array<SightRead::Tick, 7> lengths {
+    std::array<SightRead::Tick, LENGTHS_SIZE> lengths {
         {SightRead::Tick {-1}, SightRead::Tick {-1}, SightRead::Tick {-1},
          SightRead::Tick {-1}, SightRead::Tick {-1}, SightRead::Tick {-1},
          SightRead::Tick {-1}}};
@@ -217,6 +217,8 @@ public:
 
 class NoteTrack {
 private:
+    static constexpr int DEFAULT_MAX_HOPO_GAP = 65;
+
     std::vector<Note> m_notes;
     std::vector<StarPower> m_sp_phrases;
     std::vector<Solo> m_solos;
@@ -234,7 +236,8 @@ private:
 public:
     NoteTrack(std::vector<Note> notes, const std::vector<StarPower>& sp_phrases,
               TrackType track_type, std::shared_ptr<SongGlobalData> global_data,
-              SightRead::Tick max_hopo_gap = SightRead::Tick {65});
+              SightRead::Tick max_hopo_gap
+              = SightRead::Tick {DEFAULT_MAX_HOPO_GAP});
     void generate_drum_fills(const SightRead::TempoMap& tempo_map);
     void disable_cymbals();
     void disable_dynamics();
