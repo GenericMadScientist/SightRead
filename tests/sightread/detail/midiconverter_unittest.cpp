@@ -643,6 +643,59 @@ BOOST_AUTO_TEST_CASE(parseerror_thrown_if_open_note_ons_have_no_note_offs)
                       SightRead::ParseError);
 }
 
+BOOST_AUTO_TEST_CASE(extra_opens_are_read_with_enhanced_opens)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0, .event = {text_event("[ENHANCED_OPENS]")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {95, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {95, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+
+    const auto song = guitar_only_converter().convert(midi);
+
+    BOOST_CHECK_EQUAL(
+        song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
+            .notes()
+            .at(0)
+            .colours(),
+        1 << SightRead::FIVE_FRET_OPEN);
+}
+
+BOOST_AUTO_TEST_CASE(extra_opens_are_ignored_without_enhanced_opens)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {95, 64}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {95, 0}}}},
+         {.time = 961,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 962,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+
+    const auto song = guitar_only_converter().convert(midi);
+
+    BOOST_CHECK_EQUAL(
+        song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
+            .notes()
+            .at(0)
+            .colours(),
+        1 << SightRead::FIVE_FRET_GREEN);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // Note that a note at the very end of a solo event is not considered part of

@@ -223,6 +223,30 @@ bool has_enable_chart_dynamics(const SightRead::Detail::MidiTrack& midi_track)
         != std::ranges::end(midi_track.events);
 }
 
+bool is_enhanced_opens(const SightRead::Detail::TimedEvent& event)
+{
+    using namespace std::literals;
+    constexpr std::array ENHANCED_OPENS_STRINGS {"[ENHANCED_OPENS]"sv};
+
+    const auto* meta_event
+        = std::get_if<SightRead::Detail::MetaEvent>(&event.event);
+    if (meta_event == nullptr) {
+        return false;
+    }
+    if (meta_event->type != 1) {
+        return false;
+    }
+    return std::ranges::any_of(ENHANCED_OPENS_STRINGS, [&](const auto string) {
+        return std::ranges::equal(meta_event->data, string);
+    });
+}
+
+bool has_enhanced_opens(const SightRead::Detail::MidiTrack& midi_track)
+{
+    return std::ranges::find_if(midi_track.events, is_enhanced_opens)
+        != std::ranges::end(midi_track.events);
+}
+
 bool is_open_sysex_event(const SightRead::Detail::SysexEvent& event)
 {
     constexpr std::array<std::tuple<std::size_t, int>, 6> REQUIRED_BYTES {
@@ -259,16 +283,24 @@ look_up_difficulty(const std::array<std::tuple<int, int, SightRead::Difficulty>,
 }
 
 std::optional<SightRead::Difficulty>
-difficulty_from_key(std::uint8_t key, SightRead::TrackType track_type)
+difficulty_from_key(std::uint8_t key, SightRead::TrackType track_type,
+                    bool enable_enhanced_opens)
 {
     std::array<std::tuple<int, int, SightRead::Difficulty>, 4> diff_ranges;
     switch (track_type) {
     case SightRead::TrackType::FiveFret:
     case SightRead::TrackType::FortniteFestival:
-        diff_ranges = {{{96, 102, SightRead::Difficulty::Expert}, // NOLINT
-                        {84, 90, SightRead::Difficulty::Hard}, // NOLINT
-                        {72, 78, SightRead::Difficulty::Medium}, // NOLINT
-                        {60, 66, SightRead::Difficulty::Easy}}}; // NOLINT
+        if (enable_enhanced_opens) {
+            diff_ranges = {{{95, 102, SightRead::Difficulty::Expert}, // NOLINT
+                            {83, 90, SightRead::Difficulty::Hard}, // NOLINT
+                            {71, 78, SightRead::Difficulty::Medium}, // NOLINT
+                            {59, 66, SightRead::Difficulty::Easy}}}; // NOLINT
+        } else {
+            diff_ranges = {{{96, 102, SightRead::Difficulty::Expert}, // NOLINT
+                            {84, 90, SightRead::Difficulty::Hard}, // NOLINT
+                            {72, 78, SightRead::Difficulty::Medium}, // NOLINT
+                            {60, 66, SightRead::Difficulty::Easy}}}; // NOLINT
+        }
         break;
     case SightRead::TrackType::SixFret:
         diff_ranges = {{{94, 102, SightRead::Difficulty::Expert}, // NOLINT
@@ -301,18 +333,32 @@ T colour_from_key_and_bounds(std::uint8_t key,
 }
 
 int colour_from_key(std::uint8_t key, SightRead::TrackType track_type,
-                    bool from_five_lane)
+                    bool from_five_lane, bool enable_enhanced_opens)
 {
+    constexpr std::array FIVE_FRET_WITHOUT_OPENS_NOTE_COLOURS {
+        SightRead::FIVE_FRET_GREEN, SightRead::FIVE_FRET_RED,
+        SightRead::FIVE_FRET_YELLOW, SightRead::FIVE_FRET_BLUE,
+        SightRead::FIVE_FRET_ORANGE};
+    constexpr std::array FIVE_FRET_WITH_OPENS_NOTE_COLOURS {
+        SightRead::FIVE_FRET_OPEN, SightRead::FIVE_FRET_GREEN,
+        SightRead::FIVE_FRET_RED,  SightRead::FIVE_FRET_YELLOW,
+        SightRead::FIVE_FRET_BLUE, SightRead::FIVE_FRET_ORANGE};
+    constexpr std::array FIVE_FRET_WITHOUT_OPENS_DIFF_RANGES {96U, 84U, 72U,
+                                                              60U};
+    constexpr std::array FIVE_FRET_WITH_OPENS_DIFF_RANGES {95U, 83U, 71U, 59U};
+
     std::array<unsigned int, 4> diff_ranges {};
     switch (track_type) {
     case SightRead::TrackType::FiveFret:
     case SightRead::TrackType::FortniteFestival: {
-        diff_ranges = {96, 84, 72, 60}; // NOLINT
-        constexpr std::array NOTE_COLOURS {
-            SightRead::FIVE_FRET_GREEN, SightRead::FIVE_FRET_RED,
-            SightRead::FIVE_FRET_YELLOW, SightRead::FIVE_FRET_BLUE,
-            SightRead::FIVE_FRET_ORANGE};
-        return colour_from_key_and_bounds(key, diff_ranges, NOTE_COLOURS);
+        if (enable_enhanced_opens) {
+            return colour_from_key_and_bounds(
+                key, FIVE_FRET_WITH_OPENS_DIFF_RANGES,
+                FIVE_FRET_WITH_OPENS_NOTE_COLOURS);
+        }
+        return colour_from_key_and_bounds(key,
+                                          FIVE_FRET_WITHOUT_OPENS_DIFF_RANGES,
+                                          FIVE_FRET_WITHOUT_OPENS_NOTE_COLOURS);
     }
     case SightRead::TrackType::SixFret: {
         diff_ranges = {94, 82, 70, 58}; // NOLINT
@@ -588,6 +634,7 @@ bool force_strum_key(std::uint8_t key, SightRead::TrackType track_type)
 void add_note_off_event(InstrumentMidiTrack& track,
                         const std::array<std::uint8_t, 2>& data, int time,
                         int rank, bool from_five_lane,
+                        bool enable_enhanced_opens,
                         SightRead::TrackType track_type)
 {
     constexpr int YELLOW_TOM_ID = 110;
@@ -598,15 +645,16 @@ void add_note_off_event(InstrumentMidiTrack& track,
     constexpr int TAP_NOTE_ID = 104;
     constexpr int DRUM_FILL_ID = 120;
 
-    const auto diff = difficulty_from_key(data.at(0), track_type);
+    const auto diff
+        = difficulty_from_key(data.at(0), track_type, enable_enhanced_opens);
     if (diff.has_value()) {
         if (force_hopo_key(data.at(0), track_type)) {
             track.force_hopo_off_events[*diff].emplace_back(time, rank);
         } else if (force_strum_key(data.at(0), track_type)) {
             track.force_strum_off_events[*diff].emplace_back(time, rank);
         } else {
-            const auto colour
-                = colour_from_key(data.at(0), track_type, from_five_lane);
+            const auto colour = colour_from_key(
+                data.at(0), track_type, from_five_lane, enable_enhanced_opens);
             track.note_off_events[{*diff, colour}].emplace_back(time, rank);
         }
     } else {
@@ -641,6 +689,7 @@ void add_note_off_event(InstrumentMidiTrack& track,
 void add_note_on_event(InstrumentMidiTrack& track,
                        const std::array<std::uint8_t, 2>& data, int time,
                        int rank, bool from_five_lane, bool parse_dynamics,
+                       bool enable_enhanced_opens,
                        SightRead::TrackType track_type)
 {
     constexpr int YELLOW_TOM_ID = 110;
@@ -653,19 +702,21 @@ void add_note_on_event(InstrumentMidiTrack& track,
 
     // Velocity 0 Note On events are counted as Note Off events.
     if (data.at(1) == 0) {
-        add_note_off_event(track, data, time, rank, from_five_lane, track_type);
+        add_note_off_event(track, data, time, rank, from_five_lane,
+                           enable_enhanced_opens, track_type);
         return;
     }
 
-    const auto diff = difficulty_from_key(data.at(0), track_type);
+    const auto diff
+        = difficulty_from_key(data.at(0), track_type, enable_enhanced_opens);
     if (diff.has_value()) {
         if (force_hopo_key(data.at(0), track_type)) {
             track.force_hopo_on_events[*diff].emplace_back(time, rank);
         } else if (force_strum_key(data.at(0), track_type)) {
             track.force_strum_on_events[*diff].emplace_back(time, rank);
         } else {
-            auto colour
-                = colour_from_key(data.at(0), track_type, from_five_lane);
+            auto colour = colour_from_key(
+                data.at(0), track_type, from_five_lane, enable_enhanced_opens);
             auto flags = flags_from_track_type(track_type);
             if (track_type == SightRead::TrackType::Drums) {
                 if (is_cymbal_key(data.at(0), from_five_lane)) {
@@ -724,6 +775,9 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
         && has_five_lane_green_notes(midi_track);
     const bool parse_dynamics = track_type == SightRead::TrackType::Drums
         && has_enable_chart_dynamics(midi_track);
+    const bool enable_enhanced_opens
+        = track_type == SightRead::TrackType::FiveFret
+        && has_enhanced_opens(midi_track);
 
     InstrumentMidiTrack event_track;
     for (auto d : DIFFICULTIES) {
@@ -761,11 +815,13 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
         switch (midi_event->status & UPPER_NIBBLE_MASK) {
         case NOTE_OFF_ID:
             add_note_off_event(event_track, midi_event->data, event.time, rank,
-                               from_five_lane, track_type);
+                               from_five_lane, enable_enhanced_opens,
+                               track_type);
             break;
         case NOTE_ON_ID:
             add_note_on_event(event_track, midi_event->data, event.time, rank,
-                              from_five_lane, parse_dynamics, track_type);
+                              from_five_lane, parse_dynamics,
+                              enable_enhanced_opens, track_type);
             break;
         default:
             break;
