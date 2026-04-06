@@ -106,6 +106,26 @@ BOOST_AUTO_TEST_CASE(open_and_non_open_notes_of_same_pos_and_length_are_merged)
                                   required_notes.cend());
 }
 
+BOOST_AUTO_TEST_CASE(
+    open_and_non_open_notes_of_same_pos_are_not_merged_if_open_chords_allowed)
+{
+    std::vector<SightRead::Note> notes {
+        make_note(768, 0, SightRead::FIVE_FRET_GREEN),
+        make_note(768, 0, SightRead::FIVE_FRET_OPEN)};
+    SightRead::NoteTrack track {notes,
+                                {},
+                                SightRead::TrackType::FiveFret,
+                                std::make_shared<SightRead::SongGlobalData>(),
+                                true};
+    std::vector<SightRead::Note> required_notes {make_chord(
+        768,
+        {{SightRead::FIVE_FRET_GREEN, 0}, {SightRead::FIVE_FRET_OPEN, 0}})};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
+                                  required_notes.cbegin(),
+                                  required_notes.cend());
+}
+
 BOOST_AUTO_TEST_CASE(resolution_is_positive)
 {
     SightRead::SongGlobalData data;

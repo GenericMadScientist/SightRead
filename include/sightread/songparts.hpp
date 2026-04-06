@@ -236,6 +236,7 @@ private:
 public:
     NoteTrack(std::vector<Note> notes, const std::vector<StarPower>& sp_phrases,
               TrackType track_type, std::shared_ptr<SongGlobalData> global_data,
+              bool allow_open_chords = false,
               SightRead::Tick max_hopo_gap
               = SightRead::Tick {DEFAULT_MAX_HOPO_GAP});
     void generate_drum_fills(const SightRead::TempoMap& tempo_map);

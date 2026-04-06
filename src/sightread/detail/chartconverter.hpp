@@ -18,12 +18,14 @@ private:
     SightRead::HopoThreshold m_hopo_threshold;
     std::set<SightRead::Instrument> m_permitted_instruments;
     bool m_permit_solos;
+    bool m_allow_open_chords;
 
 public:
     explicit ChartConverter(SightRead::Metadata metadata);
     ChartConverter&
     permit_instruments(std::set<SightRead::Instrument> permitted_instruments);
     ChartConverter& parse_solos(bool permit_solos);
+    ChartConverter& allow_open_chords(bool allow_open_chords);
     [[nodiscard]] SightRead::Song
     convert(const SightRead::Detail::Chart& chart) const;
 };

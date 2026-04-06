@@ -7,6 +7,7 @@ SightRead::MidiParser::MidiParser(SightRead::Metadata metadata)
     : m_metadata {std::move(metadata)}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
+    , m_allow_open_chords {false}
 {
 }
 
@@ -20,6 +21,13 @@ SightRead::MidiParser& SightRead::MidiParser::permit_instruments(
 SightRead::MidiParser& SightRead::MidiParser::parse_solos(bool permit_solos)
 {
     m_permit_solos = permit_solos;
+    return *this;
+}
+
+SightRead::MidiParser&
+SightRead::MidiParser::allow_open_chords(bool allow_open_chords)
+{
+    m_allow_open_chords = allow_open_chords;
     return *this;
 }
 

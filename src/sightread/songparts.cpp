@@ -210,6 +210,7 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes,
                                 const std::vector<StarPower>& sp_phrases,
                                 TrackType track_type,
                                 std::shared_ptr<SongGlobalData> global_data,
+                                bool allow_open_chords,
                                 SightRead::Tick max_hopo_gap)
     : m_track_type {track_type}
     , m_global_data {std::move(global_data)}
@@ -262,8 +263,10 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes,
 
     // We handle open note merging at the end because in v23 the removed
     // notes still affect the base score.
-    for (auto& note : m_notes) {
-        note.merge_non_opens_into_open();
+    if (!allow_open_chords) {
+        for (auto& note : m_notes) {
+            note.merge_non_opens_into_open();
+        }
     }
 
     add_hopos(max_hopo_gap);

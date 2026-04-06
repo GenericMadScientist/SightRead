@@ -941,7 +941,8 @@ notes_from_event_track(
 std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
-    const SightRead::HopoThreshold& hopo_threshold, bool permit_solos)
+    const SightRead::HopoThreshold& hopo_threshold, bool permit_solos,
+    bool allow_open_chords)
 {
     const auto event_track
         = read_instrument_midi_track(midi_track, SightRead::TrackType::SixFret);
@@ -974,7 +975,11 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
             solos.clear();
         }
         SightRead::NoteTrack note_track {
-            note_set, sp_phrases, SightRead::TrackType::SixFret, global_data,
+            note_set,
+            sp_phrases,
+            SightRead::TrackType::SixFret,
+            global_data,
+            allow_open_chords,
             hopo_threshold.midi_max_hopo_gap(global_data->resolution())};
         note_track.solos(std::move(solos));
         note_tracks.emplace(diff, std::move(note_track));
@@ -1223,7 +1228,7 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
     const SightRead::HopoThreshold& hopo_threshold, bool permit_solos,
-    std::optional<SightRead::Tick> coda_event_time)
+    bool allow_open_chords, std::optional<SightRead::Tick> coda_event_time)
 {
     const auto event_track = read_instrument_midi_track(
         midi_track, SightRead::TrackType::FiveFret);
@@ -1277,7 +1282,11 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
             solos.clear();
         }
         SightRead::NoteTrack note_track {
-            note_set, sp_phrases, SightRead::TrackType::FiveFret, global_data,
+            note_set,
+            sp_phrases,
+            SightRead::TrackType::FiveFret,
+            global_data,
+            allow_open_chords,
             hopo_threshold.midi_max_hopo_gap(global_data->resolution())};
         note_track.solos(std::move(solos));
         note_track.bres(bres);
@@ -1295,6 +1304,7 @@ SightRead::Detail::MidiConverter::MidiConverter(SightRead::Metadata metadata)
     , m_hopo_threshold {metadata.hopo_threshold}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
+    , m_allow_open_chords {false}
 {
 }
 
@@ -1310,6 +1320,13 @@ SightRead::Detail::MidiConverter&
 SightRead::Detail::MidiConverter::parse_solos(bool permit_solos)
 {
     m_permit_solos = permit_solos;
+    return *this;
+}
+
+SightRead::Detail::MidiConverter&
+SightRead::Detail::MidiConverter::allow_open_chords(bool allow_open_chords)
+{
+    m_allow_open_chords = allow_open_chords;
     return *this;
 }
 
@@ -1368,7 +1385,8 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
         }
     } else if (SightRead::Detail::is_six_fret_instrument(*inst)) {
         auto tracks = ghl_note_tracks_from_midi(
-            track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos);
+            track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos,
+            m_allow_open_chords);
         for (auto& [diff, note_track] : tracks) {
             song.add_note_track(*inst, diff, std::move(note_track));
         }
@@ -1379,9 +1397,9 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
             song.add_note_track(*inst, diff, std::move(note_track));
         }
     } else {
-        auto tracks = note_tracks_from_midi(track, song.global_data_ptr(),
-                                            m_hopo_threshold, m_permit_solos,
-                                            coda_event_time);
+        auto tracks = note_tracks_from_midi(
+            track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos,
+            m_allow_open_chords, coda_event_time);
         for (auto& [diff, note_track] : tracks) {
             song.add_note_track(*inst, diff, std::move(note_track));
         }

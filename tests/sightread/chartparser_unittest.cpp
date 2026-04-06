@@ -957,6 +957,44 @@ BOOST_AUTO_TEST_CASE(solos_ignored_from_charts_if_not_permitted)
     BOOST_TEST(parsed_solos.empty());
 }
 
+BOOST_AUTO_TEST_CASE(open_chords_disallowed_by_default)
+{
+    const auto chart_file
+        = section_string("ExpertSingle",
+                         {{.position = 100, .fret = 0, .length = 0},
+                          {.position = 100, .fret = 7, .length = 0}},
+                         {}, {});
+
+    const auto parser = SightRead::ChartParser({});
+    const auto song = parser.parse(chart_file);
+
+    BOOST_CHECK_EQUAL(
+        song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
+            .notes()
+            .front()
+            .colours(),
+        32);
+}
+
+BOOST_AUTO_TEST_CASE(open_chords_allowed_if_allow_open_chords_set)
+{
+    const auto chart_file
+        = section_string("ExpertSingle",
+                         {{.position = 100, .fret = 0, .length = 0},
+                          {.position = 100, .fret = 7, .length = 0}},
+                         {}, {});
+
+    const auto parser = SightRead::ChartParser({}).allow_open_chords(true);
+    const auto song = parser.parse(chart_file);
+
+    BOOST_CHECK_EQUAL(
+        song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
+            .notes()
+            .front()
+            .colours(),
+        33);
+}
+
 BOOST_AUTO_TEST_SUITE(chart_hopos_and_taps)
 
 BOOST_AUTO_TEST_CASE(automatically_set_based_on_distance)

@@ -19,6 +19,7 @@ private:
     SightRead::HopoThreshold m_hopo_threshold;
     std::set<SightRead::Instrument> m_permitted_instruments;
     bool m_permit_solos;
+    bool m_allow_open_chords;
 
     [[nodiscard]] std::optional<SightRead::Instrument>
     midi_section_instrument(const std::string& track_name) const;
@@ -32,6 +33,7 @@ public:
     MidiConverter&
     permit_instruments(std::set<SightRead::Instrument> permitted_instruments);
     MidiConverter& parse_solos(bool permit_solos);
+    MidiConverter& allow_open_chords(bool allow_open_chords);
     [[nodiscard]] SightRead::Song
     convert(const SightRead::Detail::Midi& midi) const;
 };

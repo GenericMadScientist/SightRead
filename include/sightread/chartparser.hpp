@@ -14,12 +14,14 @@ private:
     SightRead::Metadata m_metadata;
     std::set<SightRead::Instrument> m_permitted_instruments;
     bool m_permit_solos;
+    bool m_allow_open_chords;
 
 public:
     explicit ChartParser(SightRead::Metadata metadata);
     ChartParser&
     permit_instruments(std::set<SightRead::Instrument> permitted_instruments);
     ChartParser& parse_solos(bool permit_solos);
+    ChartParser& allow_open_chords(bool allow_open_chords);
     [[nodiscard]] SightRead::Song parse(std::string_view data) const;
 };
 }
