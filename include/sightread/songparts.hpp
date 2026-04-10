@@ -234,6 +234,7 @@ private:
     TrackType m_track_type;
     std::shared_ptr<SongGlobalData> m_global_data;
     int m_base_score_ticks;
+    std::vector<SightRead::Tick> m_prohibited_disco_flip_positions;
 
     void compute_base_score_ticks();
     void merge_same_time_notes();

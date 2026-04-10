@@ -445,6 +445,10 @@ void SightRead::NoteTrack::apply_disco_flips()
             })) {
             continue;
         }
+        if (std::ranges::binary_search(m_prohibited_disco_flip_positions,
+                                       note.position)) {
+            continue;
+        }
 
         if (note.lengths.at(SightRead::DRUM_RED) != SightRead::Tick {-1}) {
             note.lengths.at(SightRead::DRUM_RED) = SightRead::Tick {-1};
@@ -508,6 +512,7 @@ void SightRead::NoteTrack::apply_flam_markers()
             && (it->colours() == (1 << SightRead::DRUM_BLUE))) {
             std::swap(it->lengths.at(SightRead::DRUM_BLUE),
                       it->lengths.at(SightRead::DRUM_YELLOW));
+            m_prohibited_disco_flip_positions.push_back(it->position);
         }
     }
 
@@ -519,4 +524,5 @@ void SightRead::NoteTrack::apply_flam_markers()
         return std::tuple {x.position, x.colours()}
         < std::tuple {y.position, y.colours()};
     });
+    std::ranges::sort(m_prohibited_disco_flip_positions);
 }
