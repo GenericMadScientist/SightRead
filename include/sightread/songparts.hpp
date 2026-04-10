@@ -249,6 +249,7 @@ public:
     void disable_cymbals();
     void disable_dynamics();
     void apply_disco_flips();
+    void apply_flam_markers();
     [[nodiscard]] const std::vector<Note>& notes() const { return m_notes; }
     [[nodiscard]] const std::vector<StarPower>& sp_phrases() const
     {

@@ -462,3 +462,61 @@ void SightRead::NoteTrack::apply_disco_flips()
 
     m_disco_flips.clear();
 }
+
+void SightRead::NoteTrack::apply_flam_markers()
+{
+    constexpr auto FLAM_SWAP_LOOKUP
+        = std::array {std::tuple {SightRead::DRUM_RED, SightRead::DRUM_YELLOW},
+                      std::tuple {SightRead::DRUM_YELLOW, SightRead::DRUM_BLUE},
+                      std::tuple {SightRead::DRUM_BLUE, SightRead::DRUM_GREEN},
+                      std::tuple {SightRead::DRUM_GREEN, SightRead::DRUM_BLUE}};
+
+    std::vector<SightRead::Note> new_notes;
+    auto next_pos_it = m_notes.begin();
+    for (auto it = m_notes.begin(); it < m_notes.end(); it = next_pos_it) {
+        if (((it->flags & SightRead::FLAGS_DRUMS) == 0) || it->is_kick_note()) {
+            next_pos_it = std::next(it);
+            continue;
+        }
+        next_pos_it
+            = std::find_if_not(it, m_notes.end(), [=](const auto& note) {
+                  return note.position == it->position;
+              });
+        if (std::count_if(it, next_pos_it,
+                          [](const auto& note) { return !note.is_kick_note(); })
+            > 1) {
+            continue;
+        }
+        if (std::ranges::none_of(m_flam_markers, [=](const auto& flam) {
+                return (flam.position <= it->position)
+                    && (flam.position + flam.length >= it->position);
+            })) {
+            continue;
+        }
+
+        auto new_note = *it;
+        for (const auto& [orig_col, new_col] : FLAM_SWAP_LOOKUP) {
+            if (new_note.lengths.at(orig_col) != SightRead::Tick {-1}) {
+                std::swap(new_note.lengths.at(orig_col),
+                          new_note.lengths.at(new_col));
+                break;
+            }
+        }
+        new_notes.push_back(new_note);
+
+        if (((it->flags & SightRead::FLAGS_CYMBAL) == 0)
+            && (it->colours() == (1 << SightRead::DRUM_BLUE))) {
+            std::swap(it->lengths.at(SightRead::DRUM_BLUE),
+                      it->lengths.at(SightRead::DRUM_YELLOW));
+        }
+    }
+
+    for (auto note : new_notes) {
+        m_notes.push_back(note);
+    }
+
+    std::ranges::sort(m_notes, [](const auto& x, const auto& y) {
+        return std::tuple {x.position, x.colours()}
+        < std::tuple {y.position, y.colours()};
+    });
+}
