@@ -151,6 +151,11 @@ struct PracticeSection {
     SightRead::Tick start;
 };
 
+struct FlamMarker {
+    SightRead::Tick position;
+    SightRead::Tick length;
+};
+
 // Invariants:
 // resolution() > 0.
 class SongGlobalData {
@@ -225,6 +230,7 @@ private:
     std::vector<DrumFill> m_drum_fills;
     std::vector<DiscoFlip> m_disco_flips;
     std::vector<BigRockEnding> m_bres;
+    std::vector<FlamMarker> m_flam_markers;
     TrackType m_track_type;
     std::shared_ptr<SongGlobalData> m_global_data;
     int m_base_score_ticks;
@@ -276,6 +282,15 @@ public:
         return m_bres;
     }
     void bres(std::vector<BigRockEnding> bres) { m_bres = std::move(bres); }
+
+    [[nodiscard]] const std::vector<FlamMarker>& flam_markers() const
+    {
+        return m_flam_markers;
+    }
+    void flam_markers(std::vector<FlamMarker> flam_markers)
+    {
+        m_flam_markers = std::move(flam_markers);
+    }
 
     [[nodiscard]] TrackType track_type() const { return m_track_type; }
     [[nodiscard]] const SongGlobalData& global_data() const

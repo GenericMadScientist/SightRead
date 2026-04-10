@@ -93,6 +93,18 @@ inline std::ostream& operator<<(std::ostream& stream, const BigRockEnding& bre)
     return stream;
 }
 
+inline bool operator==(const FlamMarker& lhs, const FlamMarker& rhs)
+{
+    return std::tie(lhs.position, lhs.length)
+        == std::tie(rhs.position, rhs.length);
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const FlamMarker& flam)
+{
+    stream << "{Pos " << flam.position << ", Length " << flam.length << '}';
+    return stream;
+}
+
 inline std::ostream& operator<<(std::ostream& stream, Instrument instrument)
 {
     stream << static_cast<int>(instrument);

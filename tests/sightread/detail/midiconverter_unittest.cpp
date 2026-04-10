@@ -1854,6 +1854,36 @@ BOOST_AUTO_TEST_CASE(drum_five_lane_to_four_lane_conversion_is_done_from_mid)
                                   notes.cbegin(), notes.cend());
 }
 
+BOOST_AUTO_TEST_CASE(flam_sections_are_read_correctly)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 45,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {109, 64}}}},
+         {.time = 45,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {109, 0}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+    const auto song = drums_only_converter().convert(midi);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    std::vector<SightRead::FlamMarker> flams {
+        {.position = SightRead::Tick {45}, .length = SightRead::Tick {20}}};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.flam_markers().cbegin(),
+                                  track.flam_markers().cend(), flams.cbegin(),
+                                  flams.cend());
+}
+
 BOOST_AUTO_TEST_SUITE(dynamics_parsing)
 
 BOOST_AUTO_TEST_CASE(dynamics_are_parsed_from_mid)

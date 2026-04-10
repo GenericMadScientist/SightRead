@@ -487,6 +487,8 @@ public:
     std::vector<std::tuple<int, int>> sp_off_events;
     std::vector<std::tuple<int, int>> tap_on_events;
     std::vector<std::tuple<int, int>> tap_off_events;
+    std::vector<std::tuple<int, int>> flam_on_events;
+    std::vector<std::tuple<int, int>> flam_off_events;
     std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
         force_hopo_on_events;
     std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
@@ -644,6 +646,7 @@ void add_note_off_event(InstrumentMidiTrack& track,
     constexpr int SP_NOTE_ID = 116;
     constexpr int TAP_NOTE_ID = 104;
     constexpr int DRUM_FILL_ID = 120;
+    constexpr int FLAM_MARKER_ID = 109;
 
     const auto diff
         = difficulty_from_key(data.at(0), track_type, enable_enhanced_opens);
@@ -680,6 +683,9 @@ void add_note_off_event(InstrumentMidiTrack& track,
         case DRUM_FILL_ID:
             track.fill_off_events.emplace_back(time, rank);
             break;
+        case FLAM_MARKER_ID:
+            track.flam_off_events.emplace_back(time, rank);
+            break;
         default:
             break;
         }
@@ -699,6 +705,7 @@ void add_note_on_event(InstrumentMidiTrack& track,
     constexpr int SP_NOTE_ID = 116;
     constexpr int TAP_NOTE_ID = 104;
     constexpr int DRUM_FILL_ID = 120;
+    constexpr int FLAM_MARKER_ID = 109;
 
     // Velocity 0 Note On events are counted as Note Off events.
     if (data.at(1) == 0) {
@@ -753,6 +760,9 @@ void add_note_on_event(InstrumentMidiTrack& track,
             break;
         case DRUM_FILL_ID:
             track.fill_on_events.emplace_back(time, rank);
+            break;
+        case FLAM_MARKER_ID:
+            track.flam_on_events.emplace_back(time, rank);
             break;
         default:
             break;
@@ -1111,6 +1121,13 @@ drum_note_tracks_from_midi(
         }
     }
 
+    std::vector<SightRead::FlamMarker> flam_markers;
+    for (const auto& [start, end] : combine_note_on_off_events(
+             event_track.flam_on_events, event_track.flam_off_events)) {
+        flam_markers.push_back({.position = SightRead::Tick {start},
+                                .length = SightRead::Tick {end - start}});
+    }
+
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
     for (const auto& [diff, note_set] : notes) {
         std::vector<int> solo_ons;
@@ -1141,6 +1158,7 @@ drum_note_tracks_from_midi(
         note_track.bres(bres);
         note_track.drum_fills(drum_fills);
         note_track.disco_flips(std::move(disco_flips));
+        note_track.flam_markers(flam_markers);
         note_tracks.emplace(diff, std::move(note_track));
     }
 
