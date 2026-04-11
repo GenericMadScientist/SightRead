@@ -528,13 +528,15 @@ BOOST_AUTO_TEST_CASE(no_kicks_gives_correct_answer)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_CASE(trim_sustains_is_correct)
+BOOST_AUTO_TEST_SUITE(trim_sustains)
+
+BOOST_AUTO_TEST_CASE(correct_with_no_threshold)
 {
     const std::vector<SightRead::Note> notes {
         make_note(0, 65), make_note(200, 70), make_note(400, 140)};
     const SightRead::NoteTrack track {
         notes, {}, SightRead::TrackType::FiveFret, make_resolution(200)};
-    const auto new_track = track.trim_sustains();
+    const auto new_track = track.trim_sustains({});
     const auto& new_notes = new_track.notes();
 
     BOOST_CHECK_EQUAL(new_notes.at(0).lengths.at(0), SightRead::Tick {0});
@@ -542,6 +544,22 @@ BOOST_AUTO_TEST_CASE(trim_sustains_is_correct)
     BOOST_CHECK_EQUAL(new_notes.at(2).lengths.at(0), SightRead::Tick {140});
     BOOST_CHECK_EQUAL(new_track.base_score(), 177);
 }
+
+BOOST_AUTO_TEST_CASE(correct_with_threshold)
+{
+    const std::vector<SightRead::Note> notes {
+        make_note(0, 99), make_note(200, 100), make_note(400, 101)};
+    const SightRead::NoteTrack track {
+        notes, {}, SightRead::TrackType::FiveFret, make_resolution(200)};
+    const auto new_track = track.trim_sustains(100);
+    const auto& new_notes = new_track.notes();
+
+    BOOST_CHECK_EQUAL(new_notes.at(0).lengths.at(0), SightRead::Tick {0});
+    BOOST_CHECK_EQUAL(new_notes.at(1).lengths.at(0), SightRead::Tick {0});
+    BOOST_CHECK_EQUAL(new_notes.at(2).lengths.at(0), SightRead::Tick {101});
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(snap_chords_is_correct)
 
