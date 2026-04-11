@@ -16,7 +16,8 @@ guitar_only_converter(SightRead::HopoThreshold hopo_threshold = {})
     return SightRead::Detail::MidiConverter({.name = "",
                                              .artist = "",
                                              .charter = "",
-                                             .hopo_threshold = hopo_threshold})
+                                             .hopo_threshold = hopo_threshold,
+                                             .sustain_cutoff_threshold = {}})
         .permit_instruments({SightRead::Instrument::Guitar});
 }
 
@@ -202,7 +203,8 @@ BOOST_AUTO_TEST_CASE(ini_values_are_used_when_converting_mid_files)
     const SightRead::Metadata metadata {.name = "TestName",
                                         .artist = "GMS",
                                         .charter = "NotGMS",
-                                        .hopo_threshold = {}};
+                                        .hopo_threshold = {},
+                                        .sustain_cutoff_threshold = {}};
 
     const auto song = SightRead::Detail::MidiConverter(metadata).convert(midi);
 

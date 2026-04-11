@@ -288,7 +288,8 @@ BOOST_AUTO_TEST_CASE(ini_values_are_used_for_converting_from_chart_files)
     const SightRead::Metadata metadata {.name = "TestName",
                                         .artist = "GMS",
                                         .charter = "NotGMS",
-                                        .hopo_threshold = {}};
+                                        .hopo_threshold = {},
+                                        .sustain_cutoff_threshold = {}};
 
     const auto song = SightRead::ChartParser(metadata).parse(chart_file);
 
@@ -1176,7 +1177,8 @@ BOOST_AUTO_TEST_CASE(custom_hopo_threshold_is_handled_correctly)
                .charter = "",
                .hopo_threshold
                = {.threshold_type = SightRead::HopoThresholdType::HopoFrequency,
-                  .hopo_frequency = SightRead::Tick {96}}})
+                  .hopo_frequency = SightRead::Tick {96}},
+               .sustain_cutoff_threshold = {}})
               .parse(chart_file);
     const auto notes = song.track(SightRead::Instrument::Guitar,
                                   SightRead::Difficulty::Expert)

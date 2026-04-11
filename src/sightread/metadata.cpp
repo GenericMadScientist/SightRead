@@ -72,14 +72,20 @@ void assign_value(SightRead::Metadata& metadata, std::string_view key,
             metadata.hopo_threshold.threshold_type
                 = SightRead::HopoThresholdType::EighthNote;
         }
+    } else if (key == "sustain_cutoff_threshold") {
+        const auto int_value = string_view_to_int(value);
+        if (!int_value.has_value()) {
+            return;
+        }
+        metadata.sustain_cutoff_threshold = int_value;
     }
 }
 
 SightRead::Metadata parse_ini(std::string_view data)
 {
-    constexpr std::array<std::string_view, 6> INI_KEYS {
-        "artist", "charter",        "eighthnote_hopo",
-        "frets",  "hopo_frequency", "name"};
+    constexpr std::array<std::string_view, 7> INI_KEYS {
+        "artist",         "charter", "eighthnote_hopo",         "frets",
+        "hopo_frequency", "name",    "sustain_cutoff_threshold"};
 
     std::string u8_string = to_utf8_string(data);
     data = u8_string;

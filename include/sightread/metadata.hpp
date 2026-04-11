@@ -1,6 +1,7 @@
 #ifndef SIGHTREAD_METADATA_HPP
 #define SIGHTREAD_METADATA_HPP
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -26,6 +27,7 @@ struct Metadata {
     std::string artist;
     std::string charter;
     HopoThreshold hopo_threshold;
+    std::optional<int> sustain_cutoff_threshold;
 };
 
 Metadata parse_ini(std::string_view data);
