@@ -1320,9 +1320,11 @@ SightRead::Detail::MidiConverter::MidiConverter(SightRead::Metadata metadata)
     , m_artist {std::move(metadata.artist)}
     , m_charter {std::move(metadata.charter)}
     , m_hopo_threshold {metadata.hopo_threshold}
+    , m_sustain_cutoff_threshold {metadata.sustain_cutoff_threshold}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
     , m_allow_open_chords {false}
+    , m_use_sustain_cutoff_threshold {false}
 {
 }
 
@@ -1346,6 +1348,23 @@ SightRead::Detail::MidiConverter::allow_open_chords(bool allow_open_chords)
 {
     m_allow_open_chords = allow_open_chords;
     return *this;
+}
+
+SightRead::Detail::MidiConverter&
+SightRead::Detail::MidiConverter::use_sustain_cutoff_threshold(
+    bool use_sustain_cutoff_threshold)
+{
+    m_use_sustain_cutoff_threshold = use_sustain_cutoff_threshold;
+    return *this;
+}
+
+std::optional<int>
+SightRead::Detail::MidiConverter::sustain_cutoff_threshold() const
+{
+    if (m_use_sustain_cutoff_threshold) {
+        return m_sustain_cutoff_threshold;
+    }
+    return std::nullopt;
 }
 
 std::optional<SightRead::Instrument>
@@ -1398,28 +1417,36 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
     if (is_fortnite_instrument(*inst)) {
         auto tracks = fortnite_note_tracks_from_midi(
             track, song.global_data_ptr(), m_permit_solos, coda_event_time);
-        for (auto& [diff, note_track] : tracks) {
-            song.add_note_track(*inst, diff, std::move(note_track));
+        for (const auto& [diff, note_track] : tracks) {
+            auto new_track
+                = note_track.trim_sustains(sustain_cutoff_threshold());
+            song.add_note_track(*inst, diff, std::move(new_track));
         }
     } else if (SightRead::Detail::is_six_fret_instrument(*inst)) {
         auto tracks = ghl_note_tracks_from_midi(
             track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos,
             m_allow_open_chords);
-        for (auto& [diff, note_track] : tracks) {
-            song.add_note_track(*inst, diff, std::move(note_track));
+        for (const auto& [diff, note_track] : tracks) {
+            auto new_track
+                = note_track.trim_sustains(sustain_cutoff_threshold());
+            song.add_note_track(*inst, diff, std::move(new_track));
         }
     } else if (*inst == SightRead::Instrument::Drums) {
         auto tracks = drum_note_tracks_from_midi(
             track, song.global_data_ptr(), m_permit_solos, coda_event_time);
-        for (auto& [diff, note_track] : tracks) {
-            song.add_note_track(*inst, diff, std::move(note_track));
+        for (const auto& [diff, note_track] : tracks) {
+            auto new_track
+                = note_track.trim_sustains(sustain_cutoff_threshold());
+            song.add_note_track(*inst, diff, std::move(new_track));
         }
     } else {
         auto tracks = note_tracks_from_midi(
             track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos,
             m_allow_open_chords, coda_event_time);
-        for (auto& [diff, note_track] : tracks) {
-            song.add_note_track(*inst, diff, std::move(note_track));
+        for (const auto& [diff, note_track] : tracks) {
+            auto new_track
+                = note_track.trim_sustains(sustain_cutoff_threshold());
+            song.add_note_track(*inst, diff, std::move(new_track));
         }
     }
 }

@@ -8,6 +8,7 @@ SightRead::MidiParser::MidiParser(SightRead::Metadata metadata)
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
     , m_allow_open_chords {false}
+    , m_use_sustain_cutoff_threshold {false}
 {
 }
 
@@ -31,13 +32,22 @@ SightRead::MidiParser::allow_open_chords(bool allow_open_chords)
     return *this;
 }
 
+SightRead::MidiParser& SightRead::MidiParser::use_sustain_cutoff_threshold(
+    bool use_sustain_cutoff_threshold)
+{
+    m_use_sustain_cutoff_threshold = use_sustain_cutoff_threshold;
+    return *this;
+}
+
 SightRead::Song
 SightRead::MidiParser::parse(std::span<const std::uint8_t> data) const
 {
     const auto midi = SightRead::Detail::parse_midi(data);
 
-    const auto converter = SightRead::Detail::MidiConverter(m_metadata)
-                               .permit_instruments(m_permitted_instruments)
-                               .parse_solos(m_permit_solos);
+    const auto converter
+        = SightRead::Detail::MidiConverter(m_metadata)
+              .permit_instruments(m_permitted_instruments)
+              .parse_solos(m_permit_solos)
+              .use_sustain_cutoff_threshold(m_use_sustain_cutoff_threshold);
     return converter.convert(midi);
 }

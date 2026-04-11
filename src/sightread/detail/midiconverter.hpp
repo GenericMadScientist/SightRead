@@ -17,9 +17,11 @@ private:
     std::string m_artist;
     std::string m_charter;
     SightRead::HopoThreshold m_hopo_threshold;
+    std::optional<int> m_sustain_cutoff_threshold;
     std::set<SightRead::Instrument> m_permitted_instruments;
     bool m_permit_solos;
     bool m_allow_open_chords;
+    bool m_use_sustain_cutoff_threshold;
 
     [[nodiscard]] std::optional<SightRead::Instrument>
     midi_section_instrument(const std::string& track_name) const;
@@ -27,6 +29,7 @@ private:
         const std::string& track_name,
         const SightRead::Detail::MidiTrack& track, SightRead::Song& song,
         std::optional<SightRead::Tick> coda_event_time) const;
+    [[nodiscard]] std::optional<int> sustain_cutoff_threshold() const;
 
 public:
     explicit MidiConverter(SightRead::Metadata metadata);
@@ -34,6 +37,8 @@ public:
     permit_instruments(std::set<SightRead::Instrument> permitted_instruments);
     MidiConverter& parse_solos(bool permit_solos);
     MidiConverter& allow_open_chords(bool allow_open_chords);
+    MidiConverter&
+    use_sustain_cutoff_threshold(bool use_sustain_cutoff_threshold);
     [[nodiscard]] SightRead::Song
     convert(const SightRead::Detail::Midi& midi) const;
 };

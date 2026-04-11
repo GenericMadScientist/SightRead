@@ -11,13 +11,15 @@ SightRead::Detail::MidiConverter drums_only_converter()
 }
 
 SightRead::Detail::MidiConverter
-guitar_only_converter(SightRead::HopoThreshold hopo_threshold = {})
+guitar_only_converter(SightRead::HopoThreshold hopo_threshold = {},
+                      std::optional<int> sustain_cutoff_threshold = {})
 {
-    return SightRead::Detail::MidiConverter({.name = "",
-                                             .artist = "",
-                                             .charter = "",
-                                             .hopo_threshold = hopo_threshold,
-                                             .sustain_cutoff_threshold = {}})
+    return SightRead::Detail::MidiConverter(
+               {.name = "",
+                .artist = "",
+                .charter = "",
+                .hopo_threshold = hopo_threshold,
+                .sustain_cutoff_threshold = sustain_cutoff_threshold})
         .permit_instruments({SightRead::Instrument::Guitar});
 }
 
@@ -898,8 +900,9 @@ BOOST_AUTO_TEST_CASE(mids_with_multiple_solos_and_no_sp_have_solos_read_as_sp)
     BOOST_CHECK_EQUAL(track.sp_phrases().size(), 2U);
 }
 
-// This should be done by NoteTrack's trim_sustains method.
-BOOST_AUTO_TEST_CASE(short_midi_sustains_are_not_trimmed)
+BOOST_AUTO_TEST_SUITE(sustain_trimming)
+
+BOOST_AUTO_TEST_CASE(short_midi_sustains_are_trimmed)
 {
     SightRead::Detail::MidiTrack note_track {
         {{.time = 0, .event = {part_event("PART GUITAR")}},
@@ -922,9 +925,53 @@ BOOST_AUTO_TEST_CASE(short_midi_sustains_are_not_trimmed)
                                    SightRead::Difficulty::Expert)
                             .notes();
 
-    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {65});
+    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {0});
     BOOST_CHECK_EQUAL(notes.at(1).lengths.at(0), SightRead::Tick {70});
 }
+
+BOOST_AUTO_TEST_CASE(metadata_cutoff_is_ignored_by_default)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 100,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 170,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 200,
+                                        .tracks = {note_track}};
+    const auto song = guitar_only_converter({}, 100).convert(midi);
+    const auto& notes = song.track(SightRead::Instrument::Guitar,
+                                   SightRead::Difficulty::Expert)
+                            .notes();
+
+    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {70});
+}
+
+BOOST_AUTO_TEST_CASE(metadata_cutoff_is_used_if_flagged_to_use)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 100,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 170,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 200,
+                                        .tracks = {note_track}};
+    const auto song = guitar_only_converter({}, 100)
+                          .use_sustain_cutoff_threshold(true)
+                          .convert(midi);
+    const auto& notes = song.track(SightRead::Instrument::Guitar,
+                                   SightRead::Difficulty::Expert)
+                            .notes();
+
+    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {0});
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(bres_are_read_correctly_on_non_drum_instruments)
 {
