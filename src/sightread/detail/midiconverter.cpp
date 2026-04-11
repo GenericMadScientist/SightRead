@@ -1316,11 +1316,7 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
 }
 
 SightRead::Detail::MidiConverter::MidiConverter(SightRead::Metadata metadata)
-    : m_song_name {std::move(metadata.name)}
-    , m_artist {std::move(metadata.artist)}
-    , m_charter {std::move(metadata.charter)}
-    , m_hopo_threshold {metadata.hopo_threshold}
-    , m_sustain_cutoff_threshold {metadata.sustain_cutoff_threshold}
+    : m_metadata {std::move(metadata)}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
     , m_allow_open_chords {false}
@@ -1362,7 +1358,7 @@ std::optional<int>
 SightRead::Detail::MidiConverter::sustain_cutoff_threshold() const
 {
     if (m_use_sustain_cutoff_threshold) {
-        return m_sustain_cutoff_threshold;
+        return m_metadata.sustain_cutoff_threshold;
     }
     return std::nullopt;
 }
@@ -1424,8 +1420,8 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
         }
     } else if (SightRead::Detail::is_six_fret_instrument(*inst)) {
         auto tracks = ghl_note_tracks_from_midi(
-            track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos,
-            m_allow_open_chords);
+            track, song.global_data_ptr(), m_metadata.hopo_threshold,
+            m_permit_solos, m_allow_open_chords);
         for (const auto& [diff, note_track] : tracks) {
             auto new_track
                 = note_track.trim_sustains(sustain_cutoff_threshold());
@@ -1441,8 +1437,8 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
         }
     } else {
         auto tracks = note_tracks_from_midi(
-            track, song.global_data_ptr(), m_hopo_threshold, m_permit_solos,
-            m_allow_open_chords, coda_event_time);
+            track, song.global_data_ptr(), m_metadata.hopo_threshold,
+            m_permit_solos, m_allow_open_chords, coda_event_time);
         for (const auto& [diff, note_track] : tracks) {
             auto new_track
                 = note_track.trim_sustains(sustain_cutoff_threshold());
@@ -1462,9 +1458,9 @@ SightRead::Song SightRead::Detail::MidiConverter::convert(
 
     song.global_data().is_from_midi(true);
     song.global_data().resolution(midi.ticks_per_quarter_note);
-    song.global_data().name(m_song_name);
-    song.global_data().artist(m_artist);
-    song.global_data().charter(m_charter);
+    song.global_data().name(m_metadata.name);
+    song.global_data().artist(m_metadata.artist);
+    song.global_data().charter(m_metadata.charter);
 
     if (midi.tracks.empty()) {
         return song;

@@ -13,11 +13,7 @@
 namespace SightRead::Detail {
 class MidiConverter {
 private:
-    std::string m_song_name;
-    std::string m_artist;
-    std::string m_charter;
-    SightRead::HopoThreshold m_hopo_threshold;
-    std::optional<int> m_sustain_cutoff_threshold;
+    SightRead::Metadata m_metadata;
     std::set<SightRead::Instrument> m_permitted_instruments;
     bool m_permit_solos;
     bool m_allow_open_chords;
