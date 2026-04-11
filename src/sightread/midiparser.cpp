@@ -48,6 +48,7 @@ SightRead::MidiParser::parse(std::span<const std::uint8_t> data) const
         = SightRead::Detail::MidiConverter(m_metadata)
               .permit_instruments(m_permitted_instruments)
               .parse_solos(m_permit_solos)
+              .allow_open_chords(m_allow_open_chords)
               .use_sustain_cutoff_threshold(m_use_sustain_cutoff_threshold);
     return converter.convert(midi);
 }
