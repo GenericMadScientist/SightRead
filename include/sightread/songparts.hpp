@@ -231,7 +231,6 @@ private:
     std::vector<Solo> m_solos;
     std::vector<DrumFill> m_drum_fills;
     std::vector<BigRockEnding> m_bres;
-    std::vector<FlamMarker> m_flam_markers;
     TrackType m_track_type;
     std::shared_ptr<SongGlobalData> m_global_data;
     int m_base_score_ticks;
@@ -271,18 +270,13 @@ public:
     }
 
     void disco_flips(const std::vector<DiscoFlip>& disco_flips);
+    void flam_markers(const std::vector<FlamMarker>& flam_markers);
 
     [[nodiscard]] const std::vector<BigRockEnding>& bres() const
     {
         return m_bres;
     }
     void bres(std::vector<BigRockEnding> bres) { m_bres = std::move(bres); }
-
-    [[nodiscard]] const std::vector<FlamMarker>& flam_markers() const
-    {
-        return m_flam_markers;
-    }
-    void flam_markers(std::vector<FlamMarker> flam_markers);
 
     [[nodiscard]] TrackType track_type() const { return m_track_type; }
     [[nodiscard]] const SongGlobalData& global_data() const

@@ -1927,13 +1927,11 @@ BOOST_AUTO_TEST_CASE(flam_sections_are_read_correctly)
     const auto song = drums_only_converter().convert(midi);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
+    const auto& note = track.notes().at(0);
 
-    std::vector<SightRead::FlamMarker> flams {
-        {.position = SightRead::Tick {45}, .length = SightRead::Tick {20}}};
-
-    BOOST_CHECK_EQUAL_COLLECTIONS(track.flam_markers().cbegin(),
-                                  track.flam_markers().cend(), flams.cbegin(),
-                                  flams.cend());
+    BOOST_CHECK_EQUAL(note.flags,
+                      SightRead::FLAGS_CYMBAL | SightRead::FLAGS_DRUMS
+                          | SightRead::FLAGS_FLAM);
 }
 
 BOOST_AUTO_TEST_SUITE(dynamics_parsing)
