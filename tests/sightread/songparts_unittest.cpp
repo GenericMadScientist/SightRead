@@ -776,6 +776,54 @@ BOOST_AUTO_TEST_CASE(other_instruments_are_unaffected)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(flam_flags)
+
+BOOST_AUTO_TEST_CASE(notes_in_flam_markers_are_flagged)
+{
+    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_RED)},
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.flam_markers(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.flags,
+                      SightRead::FLAGS_FLAM | SightRead::FLAGS_DRUMS);
+}
+
+BOOST_AUTO_TEST_CASE(notes_outside_of_flam_markers_are_not_flagged)
+{
+    SightRead::NoteTrack track {{make_drum_note(192, SightRead::DRUM_RED)},
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.flam_markers(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.flags, SightRead::FLAGS_DRUMS);
+}
+
+BOOST_AUTO_TEST_CASE(clears_previously_present_flam_flags)
+{
+    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_RED)},
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.flam_markers(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
+    track.flam_markers({});
+
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.flags, SightRead::FLAGS_DRUMS);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(apply_flam_markers)
 
 BOOST_AUTO_TEST_CASE(red_toms_are_converted)
@@ -844,7 +892,8 @@ BOOST_AUTO_TEST_CASE(compound_notes_are_not_converted)
         std::make_shared<SightRead::SongGlobalData>()};
     track.flam_markers(
         {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
-    std::vector<SightRead::Note> expected_notes = track.notes();
+    std::vector<SightRead::Note> expected_notes {
+        make_drum_note(0), make_drum_note(0, SightRead::DRUM_YELLOW)};
 
     track.apply_flam_markers();
 

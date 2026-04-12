@@ -459,6 +459,28 @@ void SightRead::NoteTrack::apply_disco_flips()
     }
 }
 
+void SightRead::NoteTrack::flam_markers(std::vector<FlamMarker> flam_markers)
+{
+    m_flam_markers = std::move(flam_markers);
+
+    for (auto& note : m_notes) {
+        note.flags = static_cast<SightRead::NoteFlags>(
+            note.flags & ~SightRead::FLAGS_FLAM);
+        if ((note.flags & SightRead::FLAGS_DRUMS) == 0) {
+            continue;
+        }
+        if (std::ranges::none_of(m_flam_markers, [&](const auto& flam) {
+                return (flam.position <= note.position)
+                    && (flam.position + flam.length >= note.position);
+            })) {
+            continue;
+        }
+
+        note.flags = static_cast<SightRead::NoteFlags>(note.flags
+                                                       | SightRead::FLAGS_FLAM);
+    }
+}
+
 void SightRead::NoteTrack::apply_flam_markers()
 {
     constexpr auto FLAM_SWAP_LOOKUP
@@ -509,6 +531,11 @@ void SightRead::NoteTrack::apply_flam_markers()
 
     for (auto note : new_notes) {
         m_notes.push_back(note);
+    }
+
+    for (auto& note : m_notes) {
+        note.flags = static_cast<SightRead::NoteFlags>(
+            note.flags & ~SightRead::FLAGS_FLAM);
     }
 
     std::ranges::sort(m_notes, [](const auto& x, const auto& y) {

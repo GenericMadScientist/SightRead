@@ -60,6 +60,7 @@ enum NoteFlags : std::uint32_t {
     FLAGS_FORCE_HOPO = 1U << 6,
     FLAGS_FORCE_STRUM = 1U << 7,
     FLAGS_DISCO = 1U << 8,
+    FLAGS_FLAM = 1U << 9,
     FLAGS_DRUMS = 1U << 29,
     FLAGS_SIX_FRET_GUITAR = 1U << 30,
     FLAGS_FIVE_FRET_GUITAR = 1U << 31
@@ -281,10 +282,7 @@ public:
     {
         return m_flam_markers;
     }
-    void flam_markers(std::vector<FlamMarker> flam_markers)
-    {
-        m_flam_markers = std::move(flam_markers);
-    }
+    void flam_markers(std::vector<FlamMarker> flam_markers);
 
     [[nodiscard]] TrackType track_type() const { return m_track_type; }
     [[nodiscard]] const SongGlobalData& global_data() const
