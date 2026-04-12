@@ -163,10 +163,10 @@ void SightRead::NoteTrack::merge_same_time_notes()
 
     std::vector<Note> notes;
     for (auto p = m_notes.cbegin(); p < m_notes.cend();) {
-        auto q = p;
-        while (q < m_notes.cend() && p->position == q->position) {
-            ++q;
-        }
+        const auto q
+            = std::find_if_not(p, m_notes.cend(), [=](const auto& note) {
+                  return note.position == p->position;
+              });
         notes.push_back(combined_note(p, q));
         p = q;
     }
