@@ -911,6 +911,21 @@ BOOST_AUTO_TEST_CASE(disco_flips_with_brackets_are_read_from_chart)
                       SightRead::FLAGS_DISCO | SightRead::FLAGS_DRUMS);
 }
 
+BOOST_AUTO_TEST_CASE(disco_flips_without_closing_events_still_take_effect)
+{
+    const auto chart_file = section_string(
+        "ExpertDrums", {{.position = 192, .fret = 1, .length = 0}}, {},
+        {{.position = 192, .data = "[mix_3_drums0d]"}});
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+    const auto& note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.flags,
+                      SightRead::FLAGS_DISCO | SightRead::FLAGS_DRUMS);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(instruments_not_permitted_are_dropped_from_charts)

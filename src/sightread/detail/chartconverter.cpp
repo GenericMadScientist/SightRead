@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <climits>
+#include <limits>
 #include <map>
 #include <optional>
 #include <tuple>
@@ -488,6 +489,7 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
     }
     std::ranges::sort(disco_flip_on_events);
     std::ranges::sort(disco_flip_off_events);
+    disco_flip_off_events.push_back(std::numeric_limits<int>::max());
     std::vector<SightRead::DiscoFlip> disco_flips;
     for (auto [start, end] : SightRead::Detail::combine_solo_events(
              disco_flip_on_events, disco_flip_off_events)) {
