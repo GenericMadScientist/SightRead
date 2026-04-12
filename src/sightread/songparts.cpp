@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <tuple>
 
+#include "sightread/detail/intervalset.hpp"
 #include "sightread/songparts.hpp"
 
 namespace {
@@ -413,16 +414,20 @@ SightRead::NoteTrack::snap_chords(SightRead::Tick snap_gap) const
 void SightRead::NoteTrack::disco_flips(
     const std::vector<DiscoFlip>& disco_flips)
 {
+    std::vector<std::tuple<SightRead::Tick, SightRead::Tick>> flips;
+    flips.reserve(disco_flips.size());
+    for (const auto& flip : disco_flips) {
+        flips.emplace_back(flip.position, flip.position + flip.length);
+    }
+    const ClosedIntervalSet<SightRead::Tick> flip_intervals {std::move(flips)};
+
     for (auto& note : m_notes) {
         note.flags = static_cast<SightRead::NoteFlags>(
             note.flags & ~SightRead::FLAGS_DISCO);
         if ((note.flags & SightRead::FLAGS_DRUMS) == 0) {
             continue;
         }
-        if (std::ranges::none_of(disco_flips, [&](const auto& flip) {
-                return (flip.position <= note.position)
-                    && (flip.position + flip.length >= note.position);
-            })) {
+        if (!flip_intervals.contains(note.position)) {
             continue;
         }
 
@@ -462,16 +467,20 @@ void SightRead::NoteTrack::apply_disco_flips()
 void SightRead::NoteTrack::flam_markers(
     const std::vector<FlamMarker>& flam_markers)
 {
+    std::vector<std::tuple<SightRead::Tick, SightRead::Tick>> flams;
+    flams.reserve(flam_markers.size());
+    for (const auto& flam : flam_markers) {
+        flams.emplace_back(flam.position, flam.position + flam.length);
+    }
+    const ClosedIntervalSet<SightRead::Tick> flam_intervals {std::move(flams)};
+
     for (auto& note : m_notes) {
         note.flags = static_cast<SightRead::NoteFlags>(
             note.flags & ~SightRead::FLAGS_FLAM);
         if ((note.flags & SightRead::FLAGS_DRUMS) == 0) {
             continue;
         }
-        if (std::ranges::none_of(flam_markers, [&](const auto& flam) {
-                return (flam.position <= note.position)
-                    && (flam.position + flam.length >= note.position);
-            })) {
+        if (!flam_intervals.contains(note.position)) {
             continue;
         }
 
