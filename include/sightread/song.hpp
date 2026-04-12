@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "sightread/songparts.hpp"
-#include "sightread/time.hpp"
 
 namespace SightRead {
 class Song {

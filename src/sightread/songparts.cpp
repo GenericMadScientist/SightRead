@@ -395,30 +395,6 @@ int SightRead::NoteTrack::base_score(
     return BASE_NOTE_VALUE * note_count + m_base_score_ticks;
 }
 
-SightRead::NoteTrack SightRead::NoteTrack::trim_sustains(
-    std::optional<int> sustain_cutoff_threshold) const
-{
-    const auto resolution = m_global_data->resolution();
-    SightRead::Tick sust_cutoff {resolution / 3};
-    if (sustain_cutoff_threshold.has_value()) {
-        sust_cutoff = SightRead::Tick {*sustain_cutoff_threshold};
-    }
-
-    auto trimmed_track = *this;
-
-    for (auto& note : trimmed_track.m_notes) {
-        for (auto& length : note.lengths) {
-            if (length != SightRead::Tick {-1} && length <= sust_cutoff) {
-                length = SightRead::Tick {0};
-            }
-        }
-    }
-
-    trimmed_track.compute_base_score_ticks();
-
-    return trimmed_track;
-}
-
 SightRead::NoteTrack
 SightRead::NoteTrack::snap_chords(SightRead::Tick snap_gap) const
 {

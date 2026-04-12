@@ -25,7 +25,7 @@ private:
         const std::string& track_name,
         const SightRead::Detail::MidiTrack& track, SightRead::Song& song,
         std::optional<SightRead::Tick> coda_event_time) const;
-    [[nodiscard]] std::optional<int> sustain_cutoff_threshold() const;
+    [[nodiscard]] int sustain_cutoff_threshold(int resolution) const;
 
 public:
     explicit MidiConverter(SightRead::Metadata metadata);

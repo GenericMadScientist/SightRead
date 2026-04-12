@@ -4,7 +4,6 @@
 #include <array>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -303,8 +302,6 @@ public:
     [[nodiscard]] int
     base_score(SightRead::DrumSettings drum_settings
                = SightRead::DrumSettings::default_settings()) const;
-    [[nodiscard]] NoteTrack
-    trim_sustains(std::optional<int> sustain_cutoff_threshold) const;
     [[nodiscard]] NoteTrack snap_chords(SightRead::Tick snap_gap) const;
 };
 }

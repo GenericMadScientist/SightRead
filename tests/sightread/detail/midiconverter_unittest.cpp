@@ -953,10 +953,16 @@ BOOST_AUTO_TEST_CASE(metadata_cutoff_is_used_if_flagged_to_use)
 {
     SightRead::Detail::MidiTrack note_track {
         {{.time = 0, .event = {part_event("PART GUITAR")}},
-         {.time = 100,
+         {.time = 0,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {.time = 170,
+         {.time = 100,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 200,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 301,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 200,
@@ -969,6 +975,7 @@ BOOST_AUTO_TEST_CASE(metadata_cutoff_is_used_if_flagged_to_use)
                             .notes();
 
     BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {0});
+    BOOST_CHECK_EQUAL(notes.at(1).lengths.at(0), SightRead::Tick {101});
 }
 
 BOOST_AUTO_TEST_SUITE_END()
