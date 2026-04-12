@@ -59,6 +59,7 @@ enum NoteFlags : std::uint32_t {
     FLAGS_FORCE_FLIP = 1U << 5,
     FLAGS_FORCE_HOPO = 1U << 6,
     FLAGS_FORCE_STRUM = 1U << 7,
+    FLAGS_DISCO = 1U << 8,
     FLAGS_DRUMS = 1U << 29,
     FLAGS_SIX_FRET_GUITAR = 1U << 30,
     FLAGS_FIVE_FRET_GUITAR = 1U << 31
@@ -274,10 +275,7 @@ public:
     {
         return m_disco_flips;
     }
-    void disco_flips(std::vector<DiscoFlip> disco_flips)
-    {
-        m_disco_flips = std::move(disco_flips);
-    }
+    void disco_flips(std::vector<DiscoFlip> disco_flips);
 
     [[nodiscard]] const std::vector<BigRockEnding>& bres() const
     {

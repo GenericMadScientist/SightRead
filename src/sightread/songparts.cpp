@@ -410,6 +410,30 @@ SightRead::NoteTrack::snap_chords(SightRead::Tick snap_gap) const
     return new_track;
 }
 
+void SightRead::NoteTrack::disco_flips(std::vector<DiscoFlip> disco_flips)
+{
+    m_disco_flips = std::move(disco_flips);
+
+    for (auto& note : m_notes) {
+        if ((note.flags & SightRead::FLAGS_DRUMS) == 0) {
+            continue;
+        }
+        if (std::ranges::none_of(m_disco_flips, [&](const auto& flip) {
+                return (flip.position <= note.position)
+                    && (flip.position + flip.length >= note.position);
+            })) {
+            continue;
+        }
+
+        if ((note.lengths.at(SightRead::DRUM_RED) != SightRead::Tick {-1})
+            || (note.lengths.at(SightRead::DRUM_YELLOW)
+                != SightRead::Tick {-1})) {
+            note.flags = static_cast<SightRead::NoteFlags>(
+                note.flags | SightRead::FLAGS_DISCO);
+        }
+    }
+}
+
 void SightRead::NoteTrack::apply_disco_flips()
 {
     for (auto& note : m_notes) {
@@ -439,6 +463,8 @@ void SightRead::NoteTrack::apply_disco_flips()
             note.flags = static_cast<SightRead::NoteFlags>(
                 note.flags & ~SightRead::FLAGS_CYMBAL);
         }
+        note.flags = static_cast<SightRead::NoteFlags>(
+            note.flags & ~SightRead::FLAGS_DISCO);
     }
 
     m_disco_flips.clear();
