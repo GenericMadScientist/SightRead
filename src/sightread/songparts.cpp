@@ -415,6 +415,8 @@ void SightRead::NoteTrack::disco_flips(std::vector<DiscoFlip> disco_flips)
     m_disco_flips = std::move(disco_flips);
 
     for (auto& note : m_notes) {
+        note.flags = static_cast<SightRead::NoteFlags>(
+            note.flags & ~SightRead::FLAGS_DISCO);
         if ((note.flags & SightRead::FLAGS_DRUMS) == 0) {
             continue;
         }
