@@ -1161,7 +1161,7 @@ drum_note_tracks_from_midi(
         note_track.solos(std::move(solos));
         note_track.bres(bres);
         note_track.drum_fills(drum_fills);
-        note_track.disco_flips(std::move(disco_flips));
+        note_track.disco_flips(disco_flips);
         note_track.flam_markers(flam_markers);
         note_tracks.emplace(diff, std::move(note_track));
     }

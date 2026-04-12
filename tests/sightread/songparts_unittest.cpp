@@ -774,20 +774,6 @@ BOOST_AUTO_TEST_CASE(other_instruments_are_unaffected)
     BOOST_CHECK_EQUAL(note.colours(), 1 << SightRead::FIVE_FRET_GREEN);
 }
 
-BOOST_AUTO_TEST_CASE(disco_flips_are_cleared)
-{
-    SightRead::NoteTrack track {{make_drum_note(0)},
-                                {},
-                                SightRead::TrackType::Drums,
-                                std::make_shared<SightRead::SongGlobalData>()};
-    track.disco_flips(
-        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
-
-    track.apply_disco_flips();
-
-    BOOST_CHECK(track.disco_flips().empty());
-}
-
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(apply_flam_markers)

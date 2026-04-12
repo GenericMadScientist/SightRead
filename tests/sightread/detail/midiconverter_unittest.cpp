@@ -1827,16 +1827,15 @@ BOOST_AUTO_TEST_CASE(disco_flips_are_read_correctly_from_mid)
     const auto song = drums_only_converter().convert(midi);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
+    const auto& note = track.notes().at(0);
 
-    std::vector<SightRead::DiscoFlip> flips {
-        {.position = SightRead::Tick {15}, .length = SightRead::Tick {60}}};
-
-    BOOST_CHECK_EQUAL_COLLECTIONS(track.disco_flips().cbegin(),
-                                  track.disco_flips().cend(), flips.cbegin(),
-                                  flips.cend());
+    BOOST_CHECK_EQUAL(note.flags,
+                      SightRead::FLAGS_CYMBAL | SightRead::FLAGS_DISCO
+                          | SightRead::FLAGS_DRUMS);
 }
 
-BOOST_AUTO_TEST_CASE(missing_disco_flip_end_event_just_ends_at_max_int)
+BOOST_AUTO_TEST_CASE(
+    missing_disco_flip_end_event_causes_all_subsequent_notes_to_flip)
 {
     SightRead::Detail::MidiTrack note_track {
         {{.time = 0, .event = {part_event("PART DRUMS")}},
@@ -1856,14 +1855,11 @@ BOOST_AUTO_TEST_CASE(missing_disco_flip_end_event_just_ends_at_max_int)
     const auto song = drums_only_converter().convert(midi);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
+    const auto& note = track.notes().at(0);
 
-    std::vector<SightRead::DiscoFlip> flips {
-        {.position = SightRead::Tick {15},
-         .length = SightRead::Tick {2147483632}}};
-
-    BOOST_CHECK_EQUAL_COLLECTIONS(track.disco_flips().cbegin(),
-                                  track.disco_flips().cend(), flips.cbegin(),
-                                  flips.cend());
+    BOOST_CHECK_EQUAL(note.flags,
+                      SightRead::FLAGS_CYMBAL | SightRead::FLAGS_DISCO
+                          | SightRead::FLAGS_DRUMS);
 }
 
 BOOST_AUTO_TEST_CASE(drum_five_lane_to_four_lane_conversion_is_done_from_mid)

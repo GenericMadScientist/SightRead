@@ -410,17 +410,16 @@ SightRead::NoteTrack::snap_chords(SightRead::Tick snap_gap) const
     return new_track;
 }
 
-void SightRead::NoteTrack::disco_flips(std::vector<DiscoFlip> disco_flips)
+void SightRead::NoteTrack::disco_flips(
+    const std::vector<DiscoFlip>& disco_flips)
 {
-    m_disco_flips = std::move(disco_flips);
-
     for (auto& note : m_notes) {
         note.flags = static_cast<SightRead::NoteFlags>(
             note.flags & ~SightRead::FLAGS_DISCO);
         if ((note.flags & SightRead::FLAGS_DRUMS) == 0) {
             continue;
         }
-        if (std::ranges::none_of(m_disco_flips, [&](const auto& flip) {
+        if (std::ranges::none_of(disco_flips, [&](const auto& flip) {
                 return (flip.position <= note.position)
                     && (flip.position + flip.length >= note.position);
             })) {
@@ -439,17 +438,7 @@ void SightRead::NoteTrack::disco_flips(std::vector<DiscoFlip> disco_flips)
 void SightRead::NoteTrack::apply_disco_flips()
 {
     for (auto& note : m_notes) {
-        if ((note.flags & SightRead::FLAGS_DRUMS) == 0) {
-            continue;
-        }
-        if (std::ranges::none_of(m_disco_flips, [&](const auto& flip) {
-                return (flip.position <= note.position)
-                    && (flip.position + flip.length >= note.position);
-            })) {
-            continue;
-        }
-        if (std::ranges::binary_search(m_prohibited_disco_flip_positions,
-                                       note.position)) {
+        if ((note.flags & SightRead::FLAGS_DISCO) == 0) {
             continue;
         }
 
@@ -468,8 +457,6 @@ void SightRead::NoteTrack::apply_disco_flips()
         note.flags = static_cast<SightRead::NoteFlags>(
             note.flags & ~SightRead::FLAGS_DISCO);
     }
-
-    m_disco_flips.clear();
 }
 
 void SightRead::NoteTrack::apply_flam_markers()
@@ -517,7 +504,6 @@ void SightRead::NoteTrack::apply_flam_markers()
             && (it->colours() == (1 << SightRead::DRUM_BLUE))) {
             std::swap(it->lengths.at(SightRead::DRUM_BLUE),
                       it->lengths.at(SightRead::DRUM_YELLOW));
-            m_prohibited_disco_flip_positions.push_back(it->position);
         }
     }
 
@@ -529,5 +515,4 @@ void SightRead::NoteTrack::apply_flam_markers()
         return std::tuple {x.position, x.colours()}
         < std::tuple {y.position, y.colours()};
     });
-    std::ranges::sort(m_prohibited_disco_flip_positions);
 }

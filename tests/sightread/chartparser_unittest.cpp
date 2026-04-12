@@ -883,34 +883,32 @@ BOOST_AUTO_TEST_CASE(disco_flips_without_brackets_are_read_from_chart)
 {
     const auto chart_file = section_string(
         "ExpertDrums", {{.position = 192, .fret = 1, .length = 0}}, {},
-        {{.position = 100, .data = "mix_3_drums0d"},
-         {.position = 105, .data = "mix_3_drums0"}});
-    const SightRead::DiscoFlip flip {.position = SightRead::Tick {100},
-                                     .length = SightRead::Tick {5}};
+        {{.position = 192, .data = "mix_3_drums0d"},
+         {.position = 384, .data = "mix_3_drums0"}});
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
+    const auto& note = track.notes().at(0);
 
-    BOOST_CHECK_EQUAL(track.disco_flips().size(), 1U);
-    BOOST_CHECK_EQUAL(track.disco_flips().at(0), flip);
+    BOOST_CHECK_EQUAL(note.flags,
+                      SightRead::FLAGS_DISCO | SightRead::FLAGS_DRUMS);
 }
 
 BOOST_AUTO_TEST_CASE(disco_flips_with_brackets_are_read_from_chart)
 {
     const auto chart_file = section_string(
         "ExpertDrums", {{.position = 192, .fret = 1, .length = 0}}, {},
-        {{.position = 100, .data = "[mix_3_drums0d]"},
-         {.position = 105, .data = "[mix_3_drums0]"}});
-    const SightRead::DiscoFlip flip {.position = SightRead::Tick {100},
-                                     .length = SightRead::Tick {5}};
+        {{.position = 192, .data = "[mix_3_drums0d]"},
+         {.position = 384, .data = "[mix_3_drums0]"}});
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
+    const auto& note = track.notes().at(0);
 
-    BOOST_CHECK_EQUAL(track.disco_flips().size(), 1U);
-    BOOST_CHECK_EQUAL(track.disco_flips().at(0), flip);
+    BOOST_CHECK_EQUAL(note.flags,
+                      SightRead::FLAGS_DISCO | SightRead::FLAGS_DRUMS);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

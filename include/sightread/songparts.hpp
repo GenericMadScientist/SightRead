@@ -229,13 +229,11 @@ private:
     std::vector<StarPower> m_sp_phrases;
     std::vector<Solo> m_solos;
     std::vector<DrumFill> m_drum_fills;
-    std::vector<DiscoFlip> m_disco_flips;
     std::vector<BigRockEnding> m_bres;
     std::vector<FlamMarker> m_flam_markers;
     TrackType m_track_type;
     std::shared_ptr<SongGlobalData> m_global_data;
     int m_base_score_ticks;
-    std::vector<SightRead::Tick> m_prohibited_disco_flip_positions;
 
     void compute_base_score_ticks();
     void merge_same_time_notes();
@@ -271,11 +269,7 @@ public:
         m_drum_fills = std::move(drum_fills);
     }
 
-    [[nodiscard]] const std::vector<DiscoFlip>& disco_flips() const
-    {
-        return m_disco_flips;
-    }
-    void disco_flips(std::vector<DiscoFlip> disco_flips);
+    void disco_flips(const std::vector<DiscoFlip>& disco_flips);
 
     [[nodiscard]] const std::vector<BigRockEnding>& bres() const
     {

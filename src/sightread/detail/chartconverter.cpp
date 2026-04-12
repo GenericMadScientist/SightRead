@@ -499,7 +499,7 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
                                      allow_open_chords, max_hopo_gap};
     note_track.solos(std::move(solos));
     note_track.drum_fills(std::move(fills));
-    note_track.disco_flips(std::move(disco_flips));
+    note_track.disco_flips(disco_flips);
     return note_track;
 }
 
