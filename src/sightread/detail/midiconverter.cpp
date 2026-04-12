@@ -859,17 +859,18 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
 void apply_forcing(
     std::map<SightRead::Difficulty, std::vector<SightRead::Note>>& notes,
     const InstrumentMidiTrack& event_track,
-    const std::map<SightRead::Difficulty, IntervalSet>& tap_events)
+    const std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>& tap_events)
 {
     constexpr std::array DIFFICULTIES {
         SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
         SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
 
-    const IntervalSet tap_note_events {combine_note_on_off_events(
+    const HalfOpenIntervalSet<int> tap_note_events {combine_note_on_off_events(
         event_track.tap_on_events, event_track.tap_off_events)};
 
-    std::map<SightRead::Difficulty, IntervalSet> force_hopo_events;
-    std::map<SightRead::Difficulty, IntervalSet> force_strum_events;
+    std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>> force_hopo_events;
+    std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>
+        force_strum_events;
     for (auto d : DIFFICULTIES) {
         force_hopo_events.emplace(d,
                                   combine_note_on_off_events(
@@ -910,8 +911,9 @@ void apply_forcing(
 std::map<SightRead::Difficulty, std::vector<SightRead::Note>>
 notes_from_event_track(
     const InstrumentMidiTrack& event_track,
-    const std::map<SightRead::Difficulty, IntervalSet>& open_events,
-    const std::map<SightRead::Difficulty, IntervalSet>& tap_events,
+    const std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>&
+        open_events,
+    const std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>& tap_events,
     SightRead::TrackType track_type, int sustain_cutoff_threshold)
 {
     std::map<SightRead::Difficulty, std::vector<SightRead::Note>> notes;
@@ -1259,7 +1261,7 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
         midi_track, SightRead::TrackType::FiveFret);
     const auto bres = read_bres(event_track, coda_event_time);
 
-    std::map<SightRead::Difficulty, IntervalSet> open_events;
+    std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>> open_events;
     for (const auto& [diff, open_ons] : event_track.open_on_events) {
         if (!event_track.open_off_events.contains(diff)) {
             throw SightRead::ParseError("No open Note Off events");
@@ -1269,7 +1271,7 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
                             combine_note_on_off_events(open_ons, open_offs));
     }
 
-    std::map<SightRead::Difficulty, IntervalSet> tap_events;
+    std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>> tap_events;
     for (const auto& [diff, tap_ons] : event_track.tap_on_sysex_events) {
         if (!event_track.tap_off_sysex_events.contains(diff)) {
             throw SightRead::ParseError("No tap Note Off events");

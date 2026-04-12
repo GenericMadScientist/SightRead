@@ -1,6 +1,7 @@
 #ifndef SIGHTREAD_METADATA_HPP
 #define SIGHTREAD_METADATA_HPP
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>

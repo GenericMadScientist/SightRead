@@ -2,7 +2,6 @@
 #define SIGHTREAD_TIME_HPP
 
 #include <compare>
-#include <cstdint>
 #include <ostream>
 
 namespace SightRead {
