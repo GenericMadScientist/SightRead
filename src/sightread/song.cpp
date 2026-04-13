@@ -3,7 +3,6 @@
 #include <stdexcept>
 #include <utility>
 
-#include "sightread/detail/parserutil.hpp"
 #include "sightread/song.hpp"
 
 void SightRead::Song::add_note_track(SightRead::Instrument instrument,
@@ -75,21 +74,31 @@ std::vector<SightRead::StarPower> SightRead::Song::unison_phrases() const
 
     std::vector<SightRead::StarPower> phrases;
     auto unison_start_phrase = all_phrases.cbegin();
+    auto end_of_candidates = all_phrases.cbegin();
     const SightRead::Tick tolerance {m_global_data->resolution() / 4};
     for (auto it = all_phrases.cbegin(); it < all_phrases.cend();) {
         unison_start_phrase
             = std::find_if(unison_start_phrase, it, [=](const auto& phrase) {
                   return phrase.position + tolerance > it->position;
               });
-        if (std::next(unison_start_phrase) == all_phrases.cend()) {
-            break;
-        }
-        if (it == unison_start_phrase
-            && it->position + tolerance <= std::next(it)->position) {
+        end_of_candidates = std::find_if_not(
+            end_of_candidates, all_phrases.cend(), [=](const auto& sp) {
+                return it->position + tolerance > sp.position;
+            });
+        if (std::distance(unison_start_phrase, end_of_candidates) < 2) {
             ++it;
             continue;
         }
-        if (it->length < unison_start_phrase->length + tolerance) {
+        const auto benchmark_end
+            = unison_start_phrase->position + unison_start_phrase->length;
+        const auto other_participant
+            = std::find_if(std::next(unison_start_phrase), end_of_candidates,
+                           [=](const auto& sp) {
+                               const auto sp_end = sp.position + sp.length;
+                               return sp_end < benchmark_end + tolerance
+                                   && benchmark_end < sp_end + tolerance;
+                           });
+        if (other_participant != end_of_candidates) {
             phrases.push_back(*it);
         }
         it = std::find_if_not(it, all_phrases.cend(), [=](const auto& phrase) {

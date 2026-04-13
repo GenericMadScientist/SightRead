@@ -173,6 +173,29 @@ BOOST_AUTO_TEST_CASE(phrases_with_slightly_different_starts_still_combined)
         expected_phrases.cbegin(), expected_phrases.cend());
 }
 
+BOOST_AUTO_TEST_CASE(phrases_need_similar_lengths_to_be_combined)
+{
+    SightRead::NoteTrack guitar_track {
+        {make_note(768), make_note(1024)},
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::NoteTrack bass_track {
+        {make_note(768), make_note(2048)},
+        {{.position = SightRead::Tick {767}, .length = SightRead::Tick {501}}},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::Song song;
+    song.add_note_track(SightRead::Instrument::Guitar,
+                        SightRead::Difficulty::Expert, guitar_track);
+    song.add_note_track(SightRead::Instrument::Bass,
+                        SightRead::Difficulty::Expert, bass_track);
+
+    const auto unison_phrases = song.unison_phrases();
+
+    BOOST_CHECK(unison_phrases.empty());
+}
+
 BOOST_AUTO_TEST_CASE(only_highest_difficulties_affect_unisons)
 {
     SightRead::NoteTrack hard_guitar_track {
