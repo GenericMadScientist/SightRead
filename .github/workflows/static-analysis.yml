@@ -56,3 +56,17 @@ jobs:
         run: |
           clang-format-22 -i include/sightread/*.hpp src/sightread/*.cpp src/sightread/detail/*.cpp src/sightread/detail/*.hpp tests/sightread/*.cpp tests/sightread/*.hpp tests/sightread/detail/*.cpp
           git diff --color --exit-code
+
+  gersemi:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install gersemi
+        run: pip install gersemi
+
+      - name: Format
+        run: |
+          gersemi . --in-place --indent 2 --no-warn-about-unknown-commands
+          git diff --color --exit-code

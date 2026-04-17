@@ -1,7 +1,9 @@
 # Enable the selected sanitisers; only supports GCC and Clang
 function(_sightread_enable_sanitisers target)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES
-                                             ".*Clang")
+  if(
+    CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+    OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang"
+  )
     set(sanitisers "")
 
     option(ENABLE_SANITISER_ADDRESS "Enable address sanitiser" OFF)
@@ -14,8 +16,11 @@ function(_sightread_enable_sanitisers target)
       list(APPEND sanitisers "leak")
     endif()
 
-    option(ENABLE_SANITISER_UNDEFINED_BEHAVIOR
-           "Enable undefined behavior sanitiser" OFF)
+    option(
+      ENABLE_SANITISER_UNDEFINED_BEHAVIOR
+      "Enable undefined behavior sanitiser"
+      OFF
+    )
     if(ENABLE_SANITISER_UNDEFINED_BEHAVIOR)
       list(APPEND sanitisers "undefined")
     endif()
@@ -31,9 +36,11 @@ function(_sightread_enable_sanitisers target)
 
     option(ENABLE_SANITISER_MEMORY "Enable memory sanitiser" OFF)
     if(ENABLE_SANITISER_MEMORY AND CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-      if("address" IN_LIST sanitisers
-         OR "thread" IN_LIST sanitisers
-         OR "leak" IN_LIST sanitisers)
+      if(
+        "address" IN_LIST sanitisers
+        OR "thread" IN_LIST sanitisers
+        OR "leak" IN_LIST sanitisers
+      )
         message(WARNING "MSan does not work with ASan, LSan, or TSan enabled")
       else()
         list(APPEND sanitisers "memory")

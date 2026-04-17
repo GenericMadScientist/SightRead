@@ -4,61 +4,74 @@ cmake_policy(SET CMP0091 NEW)
 cmake_policy(SET CMP0167 NEW)
 
 project(
-    sightread
-    VERSION 0.13.0
-    DESCRIPTION "A library to read .mid and .chart files for GH/RB-style games"
-    LANGUAGES CXX)
+  sightread
+  VERSION 0.13.0
+  DESCRIPTION "A library to read .mid and .chart files for GH/RB-style games"
+  LANGUAGES CXX
+)
 
 # Require standard C++20 at minimum
 function(_sightread_set_minimum_cpp_standard target)
-    target_compile_features(${target} PUBLIC cxx_std_20)
+  target_compile_features(${target} PUBLIC cxx_std_20)
 endfunction()
 
 function(_sightread_add_warnings target)
-    if("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
-        target_compile_options(
-            ${target} PRIVATE
-            /W4
-            /WX)
-    elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang AND "x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
-        target_compile_options(
-            ${target} PRIVATE
-            /W4
-            /WX
-            -Wimplicit-int-float-conversion
-            -Wmissing-noreturn
-            -Wnewline-eof
-            -Wsign-conversion
-            -Wswitch-enum)
-    else()
-        target_compile_options(
-            ${target} PRIVATE
-            -Wall
-            -Wextra
-            -Werror
-            -Wno-c++98-compat
-            -Wno-unknown-warning-option)
-    endif()
+  if("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
+    target_compile_options(${target} PRIVATE /W4 /WX)
+  elseif(
+    CMAKE_CXX_COMPILER_ID STREQUAL Clang
+    AND "x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC"
+  )
+    target_compile_options(
+      ${target}
+      PRIVATE
+        /W4
+        /WX
+        -Wimplicit-int-float-conversion
+        -Wmissing-noreturn
+        -Wnewline-eof
+        -Wsign-conversion
+        -Wswitch-enum
+    )
+  else()
+    target_compile_options(
+      ${target}
+      PRIVATE
+        -Wall
+        -Wextra
+        -Werror
+        -Wno-c++98-compat
+        -Wno-unknown-warning-option
+    )
+  endif()
 endfunction()
 
-find_package(Boost 1.82 REQUIRED COMPONENTS locale OPTIONAL_COMPONENTS unit_test_framework)
+find_package(
+  Boost
+  1.82
+  REQUIRED
+  COMPONENTS locale
+  OPTIONAL_COMPONENTS unit_test_framework
+)
 
-add_library(sightread
-    src/sightread/chartparser.cpp
-    src/sightread/metadata.cpp
-    src/sightread/midiparser.cpp
-    src/sightread/qbmidiparser.cpp
-    src/sightread/song.cpp
-    src/sightread/songparts.cpp
-    src/sightread/tempomap.cpp
-    src/sightread/detail/chart.cpp
-    src/sightread/detail/chartconverter.cpp
-    src/sightread/detail/midi.cpp
-    src/sightread/detail/midiconverter.cpp
-    src/sightread/detail/parserutil.cpp
-    src/sightread/detail/qbmidi.cpp
-    src/sightread/detail/qbmidiconverter.cpp
-    src/sightread/detail/stringutil.cpp)
+add_library(
+  sightread
+  src/sightread/chartparser.cpp
+  src/sightread/metadata.cpp
+  src/sightread/midiparser.cpp
+  src/sightread/qbmidiparser.cpp
+  src/sightread/song.cpp
+  src/sightread/songparts.cpp
+  src/sightread/tempomap.cpp
+  src/sightread/detail/chart.cpp
+  src/sightread/detail/chartconverter.cpp
+  src/sightread/detail/midi.cpp
+  src/sightread/detail/midiconverter.cpp
+  src/sightread/detail/parserutil.cpp
+  src/sightread/detail/qbmidi.cpp
+  src/sightread/detail/qbmidiconverter.cpp
+  src/sightread/detail/stringutil.cpp
+)
 
 target_include_directories(sightread PUBLIC include PRIVATE src)
 target_link_directories(sightread PRIVATE ${Boost_LIBRARY_DIRS})
@@ -68,49 +81,56 @@ _sightread_set_minimum_cpp_standard(sightread)
 option(SIGHTREAD_ENABLE_WARNINGS "Build SightRead with warnings" OFF)
 
 if(SIGHTREAD_ENABLE_WARNINGS)
-    _sightread_add_warnings(sightread)
+  _sightread_add_warnings(sightread)
 endif()
 
 option(SIGHTREAD_BUILD_TESTS "Build SightRead tests" OFF)
 
 if(SIGHTREAD_BUILD_TESTS)
-    enable_testing()
-    add_executable(
-        sightread_tests
-        tests/sightread/test_main.cpp
-        tests/sightread/chartparser_unittest.cpp
-        tests/sightread/metadata_unittest.cpp
-        tests/sightread/song_unittest.cpp
-        tests/sightread/songparts_unittest.cpp
-        tests/sightread/tempomap_unittest.cpp
-        tests/sightread/time_unittest.cpp
-        tests/sightread/detail/chart_unittest.cpp
-        tests/sightread/detail/intervalset_unittest.cpp
-        tests/sightread/detail/midi_unittest.cpp
-        tests/sightread/detail/midiconverter_unittest.cpp
-        tests/sightread/detail/stringutil_unittest.cpp
-        src/sightread/chartparser.cpp
-        src/sightread/metadata.cpp
-        src/sightread/song.cpp
-        src/sightread/songparts.cpp
-        src/sightread/tempomap.cpp
-        src/sightread/detail/chart.cpp
-        src/sightread/detail/chartconverter.cpp
-        src/sightread/detail/midi.cpp
-        src/sightread/detail/midiconverter.cpp
-        src/sightread/detail/parserutil.cpp
-        src/sightread/detail/stringutil.cpp)
+  enable_testing()
+  add_executable(
+    sightread_tests
+    tests/sightread/test_main.cpp
+    tests/sightread/chartparser_unittest.cpp
+    tests/sightread/metadata_unittest.cpp
+    tests/sightread/song_unittest.cpp
+    tests/sightread/songparts_unittest.cpp
+    tests/sightread/tempomap_unittest.cpp
+    tests/sightread/time_unittest.cpp
+    tests/sightread/detail/chart_unittest.cpp
+    tests/sightread/detail/intervalset_unittest.cpp
+    tests/sightread/detail/midi_unittest.cpp
+    tests/sightread/detail/midiconverter_unittest.cpp
+    tests/sightread/detail/stringutil_unittest.cpp
+    src/sightread/chartparser.cpp
+    src/sightread/metadata.cpp
+    src/sightread/song.cpp
+    src/sightread/songparts.cpp
+    src/sightread/tempomap.cpp
+    src/sightread/detail/chart.cpp
+    src/sightread/detail/chartconverter.cpp
+    src/sightread/detail/midi.cpp
+    src/sightread/detail/midiconverter.cpp
+    src/sightread/detail/parserutil.cpp
+    src/sightread/detail/stringutil.cpp
+  )
 
-    target_include_directories(sightread_tests PRIVATE include src tests/sightread)
-    target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
-    target_link_libraries(sightread_tests PRIVATE Boost::locale Boost::unit_test_framework)
-    add_test(NAME sightread_tests COMMAND sightread_tests)
-    _sightread_set_minimum_cpp_standard(sightread_tests)
-    if(SIGHTREAD_ENABLE_WARNINGS)
-        _sightread_add_warnings(sightread_tests)
-    endif()
+  target_include_directories(
+    sightread_tests
+    PRIVATE include src tests/sightread
+  )
+  target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
+  target_link_libraries(
+    sightread_tests
+    PRIVATE Boost::locale Boost::unit_test_framework
+  )
+  add_test(NAME sightread_tests COMMAND sightread_tests)
+  _sightread_set_minimum_cpp_standard(sightread_tests)
+  if(SIGHTREAD_ENABLE_WARNINGS)
+    _sightread_add_warnings(sightread_tests)
+  endif()
 
-    set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
-    include(cmake/Sanitisers.cmake)
-    _sightread_enable_sanitisers(sightread_tests)
+  set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+  include(cmake/Sanitisers.cmake)
+  _sightread_enable_sanitisers(sightread_tests)
 endif()
