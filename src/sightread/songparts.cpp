@@ -419,7 +419,8 @@ void SightRead::NoteTrack::disco_flips(
     for (const auto& flip : disco_flips) {
         flips.emplace_back(flip.position, flip.position + flip.length);
     }
-    const ClosedIntervalSet<SightRead::Tick> flip_intervals {std::move(flips)};
+    const HalfOpenIntervalSet<SightRead::Tick> flip_intervals {
+        std::move(flips)};
 
     for (auto& note : m_notes) {
         note.flags = static_cast<SightRead::NoteFlags>(

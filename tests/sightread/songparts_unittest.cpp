@@ -759,6 +759,21 @@ BOOST_AUTO_TEST_CASE(notes_outside_of_disco_flips_are_unaffected)
     BOOST_CHECK_EQUAL(note.colours(), 1 << SightRead::DRUM_RED);
 }
 
+BOOST_AUTO_TEST_CASE(notes_at_the_very_end_of_a_disco_flip_are_unaffected)
+{
+    SightRead::NoteTrack track {{make_drum_note(192, SightRead::DRUM_RED)},
+                                {},
+                                SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.disco_flips(
+        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {192}}});
+
+    track.apply_disco_flips();
+    const auto note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.colours(), 1 << SightRead::DRUM_RED);
+}
+
 BOOST_AUTO_TEST_CASE(other_instruments_are_unaffected)
 {
     SightRead::NoteTrack track {{make_note(0)},
