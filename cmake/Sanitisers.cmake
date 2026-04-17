@@ -1,5 +1,5 @@
 # Enable the selected sanitisers; only supports GCC and Clang
-function(enable_sanitisers target)
+function(_sightread_enable_sanitisers target)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES
                                              ".*Clang")
     set(sanitisers "")

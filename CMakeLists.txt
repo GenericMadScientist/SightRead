@@ -10,7 +10,7 @@ project(
     LANGUAGES CXX)
 
 # Require standard C++20
-function(set_cpp_standard target)
+function(_sightread_set_cpp_standard target)
     set_target_properties(
         ${target}
         PROPERTIES CXX_STANDARD 20
@@ -18,7 +18,7 @@ function(set_cpp_standard target)
         CXX_EXTENSIONS OFF)
 endfunction()
 
-function(add_warnings target)
+function(_sightread_add_warnings target)
     if("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
         target_compile_options(
             ${target} PRIVATE
@@ -67,12 +67,12 @@ add_library(sightread
 target_include_directories(sightread PUBLIC include PRIVATE src)
 target_link_directories(sightread PRIVATE ${Boost_LIBRARY_DIRS})
 target_link_libraries(sightread PRIVATE Boost::locale)
-set_cpp_standard(sightread)
+_sightread_set_cpp_standard(sightread)
 
 option(SIGHTREAD_ENABLE_WARNINGS "Build SightRead with warnings" OFF)
 
 if(SIGHTREAD_ENABLE_WARNINGS)
-    add_warnings(sightread)
+    _sightread_add_warnings(sightread)
 endif()
 
 option(SIGHTREAD_BUILD_TESTS "Build SightRead tests" OFF)
@@ -109,10 +109,12 @@ if(SIGHTREAD_BUILD_TESTS)
     target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
     target_link_libraries(sightread_tests PRIVATE Boost::locale Boost::unit_test_framework)
     add_test(NAME sightread_tests COMMAND sightread_tests)
-    set_cpp_standard(sightread_tests)
-    add_warnings(sightread_tests)
+    _sightread_set_cpp_standard(sightread_tests)
+    if(SIGHTREAD_ENABLE_WARNINGS)
+        _sightread_add_warnings(sightread_tests)
+    endif()
 
     set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
     include(cmake/Sanitisers.cmake)
-    enable_sanitisers(sightread_tests)
+    _sightread_enable_sanitisers(sightread_tests)
 endif()
