@@ -9,13 +9,9 @@ project(
     DESCRIPTION "A library to read .mid and .chart files for GH/RB-style games"
     LANGUAGES CXX)
 
-# Require standard C++20
-function(_sightread_set_cpp_standard target)
-    set_target_properties(
-        ${target}
-        PROPERTIES CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED ON
-        CXX_EXTENSIONS OFF)
+# Require standard C++20 at minimum
+function(_sightread_set_minimum_cpp_standard target)
+    target_compile_features(${target} PUBLIC cxx_std_20)
 endfunction()
 
 function(_sightread_add_warnings target)
@@ -67,7 +63,7 @@ add_library(sightread
 target_include_directories(sightread PUBLIC include PRIVATE src)
 target_link_directories(sightread PRIVATE ${Boost_LIBRARY_DIRS})
 target_link_libraries(sightread PRIVATE Boost::locale)
-_sightread_set_cpp_standard(sightread)
+_sightread_set_minimum_cpp_standard(sightread)
 
 option(SIGHTREAD_ENABLE_WARNINGS "Build SightRead with warnings" OFF)
 
@@ -109,7 +105,7 @@ if(SIGHTREAD_BUILD_TESTS)
     target_link_directories(sightread_tests PRIVATE ${Boost_LIBRARY_DIRS})
     target_link_libraries(sightread_tests PRIVATE Boost::locale Boost::unit_test_framework)
     add_test(NAME sightread_tests COMMAND sightread_tests)
-    _sightread_set_cpp_standard(sightread_tests)
+    _sightread_set_minimum_cpp_standard(sightread_tests)
     if(SIGHTREAD_ENABLE_WARNINGS)
         _sightread_add_warnings(sightread_tests)
     endif()
