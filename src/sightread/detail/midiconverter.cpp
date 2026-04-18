@@ -1006,9 +1006,9 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
 
 class TomEvents {
 private:
-    std::vector<std::tuple<int, int>> m_yellow_tom_events;
-    std::vector<std::tuple<int, int>> m_blue_tom_events;
-    std::vector<std::tuple<int, int>> m_green_tom_events;
+    HalfOpenIntervalSet<int> m_yellow_tom_events;
+    HalfOpenIntervalSet<int> m_blue_tom_events;
+    HalfOpenIntervalSet<int> m_green_tom_events;
 
 public:
     explicit TomEvents(const InstrumentMidiTrack& events)
@@ -1023,26 +1023,16 @@ public:
 
     [[nodiscard]] bool force_tom(int colour, int pos) const
     {
-        if (colour == SightRead::DRUM_YELLOW) {
-            for (const auto& [open_start, open_end] : m_yellow_tom_events) {
-                if (pos >= open_start && pos < open_end) {
-                    return true;
-                }
-            }
-        } else if (colour == SightRead::DRUM_BLUE) {
-            for (const auto& [open_start, open_end] : m_blue_tom_events) {
-                if (pos >= open_start && pos < open_end) {
-                    return true;
-                }
-            }
-        } else if (colour == SightRead::DRUM_GREEN) {
-            for (const auto& [open_start, open_end] : m_green_tom_events) {
-                if (pos >= open_start && pos < open_end) {
-                    return true;
-                }
-            }
+        switch (colour) {
+        case SightRead::DRUM_YELLOW:
+            return m_yellow_tom_events.contains(pos);
+        case SightRead::DRUM_BLUE:
+            return m_blue_tom_events.contains(pos);
+        case SightRead::DRUM_GREEN:
+            return m_green_tom_events.contains(pos);
+        default:
+            return false;
         }
-        return false;
     }
 };
 
