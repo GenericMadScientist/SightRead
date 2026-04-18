@@ -433,9 +433,13 @@ SightRead::NoteFlags dynamics_flags_from_velocity(std::uint8_t velocity)
 // The tuples are a pair of the form (position, rank), where events later in the
 // file have a higher rank. This is in case of the Note Off event being right
 // after the corresponding Note On event in the file, but at the same tick.
+//
+// expand_length_zero_events is because some drum events have the length
+// increased by 1 if the start and end are at the same time.
 std::vector<std::tuple<int, int>>
 combine_note_on_off_events(const std::vector<std::tuple<int, int>>& on_events,
-                           const std::vector<std::tuple<int, int>>& off_events)
+                           const std::vector<std::tuple<int, int>>& off_events,
+                           bool expand_length_zero_events = false)
 {
     std::vector<std::tuple<int, int>> ranges;
 
@@ -447,7 +451,12 @@ combine_note_on_off_events(const std::vector<std::tuple<int, int>>& on_events,
             ++off_iter;
             continue;
         }
-        ranges.emplace_back(std::get<0>(*on_iter), std::get<0>(*off_iter));
+        const auto start = std::get<0>(*on_iter);
+        auto end = std::get<0>(*off_iter);
+        if (start == end && expand_length_zero_events) {
+            ++end;
+        }
+        ranges.emplace_back(start, end);
         ++on_iter;
         ++off_iter;
     }
@@ -1013,11 +1022,11 @@ private:
 public:
     explicit TomEvents(const InstrumentMidiTrack& events)
         : m_yellow_tom_events {combine_note_on_off_events(
-              events.yellow_tom_on_events, events.yellow_tom_off_events)}
+              events.yellow_tom_on_events, events.yellow_tom_off_events, true)}
         , m_blue_tom_events {combine_note_on_off_events(
-              events.blue_tom_on_events, events.blue_tom_off_events)}
+              events.blue_tom_on_events, events.blue_tom_off_events, true)}
         , m_green_tom_events {combine_note_on_off_events(
-              events.green_tom_on_events, events.green_tom_off_events)}
+              events.green_tom_on_events, events.green_tom_off_events, true)}
     {
     }
 

@@ -1747,6 +1747,33 @@ BOOST_AUTO_TEST_CASE(notes_at_end_of_tom_markers_are_cymbals)
                       SightRead::FLAGS_DRUMS | SightRead::FLAGS_CYMBAL);
 }
 
+BOOST_AUTO_TEST_CASE(notes_at_end_of_zero_length_tom_markers_are_toms)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 480,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {110, 64}}}},
+         {.time = 480,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {110, 0}}}},
+         {.time = 480,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 481,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
+                                        .tracks = {note_track}};
+    const auto song = drums_only_converter().convert(midi);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    const auto& note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.flags, SightRead::FLAGS_DRUMS);
+}
+
 BOOST_AUTO_TEST_CASE(double_kicks_are_read_correctly_from_mid)
 {
     SightRead::Detail::MidiTrack note_track {
