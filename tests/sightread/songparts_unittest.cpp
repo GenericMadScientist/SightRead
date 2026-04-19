@@ -182,6 +182,22 @@ BOOST_AUTO_TEST_CASE(sp_phrases_do_not_overlap)
         required_phrases.cbegin(), required_phrases.cend());
 }
 
+BOOST_AUTO_TEST_CASE(duplicate_sp_phrases_are_removed)
+{
+    std::vector<SightRead::Note> notes {make_note(768)};
+    std::vector<SightRead::StarPower> phrases {
+        {.position = SightRead::Tick {768}, .length = SightRead::Tick {192}},
+        {.position = SightRead::Tick {768}, .length = SightRead::Tick {192}}};
+    SightRead::NoteTrack track {notes, phrases, SightRead::TrackType::FiveFret,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    std::vector<SightRead::StarPower> required_phrases {
+        {.position = SightRead::Tick {768}, .length = SightRead::Tick {192}}};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        track.sp_phrases().cbegin(), track.sp_phrases().cend(),
+        required_phrases.cbegin(), required_phrases.cend());
+}
+
 BOOST_AUTO_TEST_CASE(solos_are_sorted)
 {
     std::vector<SightRead::Note> notes {make_note(0), make_note(768)};

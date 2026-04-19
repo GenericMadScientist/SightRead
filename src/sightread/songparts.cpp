@@ -251,6 +251,10 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes,
 
     m_sp_phrases.reserve(sp_phrases.size());
     for (auto i = 0U; i < sp_phrases.size(); ++i) {
+        if (i > 0 && sp_starts.at(i) == sp_starts.at(i - 1)
+            && sp_ends.at(i) == sp_ends.at(i - 1)) {
+            continue;
+        }
         auto start = sp_starts.at(i);
         if (i > 0) {
             start = std::max(sp_starts.at(i), sp_ends.at(i - 1));
