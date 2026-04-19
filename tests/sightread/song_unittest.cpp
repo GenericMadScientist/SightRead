@@ -15,12 +15,10 @@ BOOST_AUTO_TEST_CASE(instruments_returns_the_supported_instruments)
 {
     SightRead::NoteTrack guitar_track {
         {make_note(192)},
-        {},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
     SightRead::NoteTrack drum_track {
         {make_drum_note(192)},
-        {},
         SightRead::TrackType::Drums,
         std::make_shared<SightRead::SongGlobalData>()};
     SightRead::Song song;
@@ -43,12 +41,10 @@ BOOST_AUTO_TEST_CASE(difficulties_returns_the_difficulties_for_an_instrument)
 {
     SightRead::NoteTrack guitar_track {
         {make_note(192)},
-        {},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
     SightRead::NoteTrack drum_track {
         {make_drum_note(192)},
-        {},
         SightRead::TrackType::Drums,
         std::make_shared<SightRead::SongGlobalData>()};
     SightRead::Song song;
@@ -84,21 +80,29 @@ BOOST_AUTO_TEST_CASE(not_all_instruments_need_to_participate)
 {
     SightRead::NoteTrack guitar_track {
         {make_note(768), make_note(1024)},
-        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}},
-         {.position = SightRead::Tick {1024}, .length = SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    guitar_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}},
+         {.position = SightRead::Tick {1024},
+          .length = SightRead::Tick {100}}});
+
     SightRead::NoteTrack bass_track {
         {make_note(768), make_note(2048)},
-        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}},
-         {.position = SightRead::Tick {2048}, .length = SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    bass_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}},
+         {.position = SightRead::Tick {2048},
+          .length = SightRead::Tick {100}}});
+
     SightRead::NoteTrack drum_track {
         {make_drum_note(768), make_drum_note(4096)},
-        {{.position = SightRead::Tick {4096}, .length = SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    drum_track.sp_phrases({{.position = SightRead::Tick {4096},
+                            .length = SightRead::Tick {100}}});
+
     SightRead::Song song;
     song.add_note_track(SightRead::Instrument::Guitar,
                         SightRead::Difficulty::Expert, guitar_track);
@@ -119,16 +123,22 @@ BOOST_AUTO_TEST_CASE(phrases_with_slightly_different_ends_still_combined)
 {
     SightRead::NoteTrack guitar_track {
         {make_note(768), make_note(1024)},
-        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}},
-         {.position = SightRead::Tick {1024}, .length = SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    guitar_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}},
+         {.position = SightRead::Tick {1024},
+          .length = SightRead::Tick {100}}});
+
     SightRead::NoteTrack bass_track {
         {make_note(768), make_note(2048)},
-        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {99}},
-         {.position = SightRead::Tick {2048}, .length = SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    bass_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {99}},
+         {.position = SightRead::Tick {2048},
+          .length = SightRead::Tick {100}}});
+
     SightRead::Song song;
     song.add_note_track(SightRead::Instrument::Guitar,
                         SightRead::Difficulty::Expert, guitar_track);
@@ -149,14 +159,18 @@ BOOST_AUTO_TEST_CASE(phrases_with_slightly_different_starts_still_combined)
 {
     SightRead::NoteTrack guitar_track {
         {make_note(768), make_note(1024)},
-        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    guitar_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}});
+
     SightRead::NoteTrack bass_track {
         {make_note(768), make_note(2048)},
-        {{.position = SightRead::Tick {767}, .length = SightRead::Tick {101}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    bass_track.sp_phrases(
+        {{.position = SightRead::Tick {767}, .length = SightRead::Tick {101}}});
+
     SightRead::Song song;
     song.add_note_track(SightRead::Instrument::Guitar,
                         SightRead::Difficulty::Expert, guitar_track);
@@ -177,14 +191,18 @@ BOOST_AUTO_TEST_CASE(phrases_need_similar_lengths_to_be_combined)
 {
     SightRead::NoteTrack guitar_track {
         {make_note(768), make_note(1024)},
-        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    guitar_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}});
+
     SightRead::NoteTrack bass_track {
         {make_note(768), make_note(2048)},
-        {{.position = SightRead::Tick {767}, .length = SightRead::Tick {501}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    bass_track.sp_phrases(
+        {{.position = SightRead::Tick {767}, .length = SightRead::Tick {501}}});
+
     SightRead::Song song;
     song.add_note_track(SightRead::Instrument::Guitar,
                         SightRead::Difficulty::Expert, guitar_track);
@@ -200,19 +218,23 @@ BOOST_AUTO_TEST_CASE(only_highest_difficulties_affect_unisons)
 {
     SightRead::NoteTrack hard_guitar_track {
         {make_note(768)},
-        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    hard_guitar_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}});
+
     SightRead::NoteTrack expert_guitar_track {
         {make_note(768)},
-        {},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+
     SightRead::NoteTrack bass_track {
         {make_note(768)},
-        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}},
         SightRead::TrackType::FiveFret,
         std::make_shared<SightRead::SongGlobalData>()};
+    bass_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}});
+
     SightRead::Song song;
     song.add_note_track(SightRead::Instrument::Guitar,
                         SightRead::Difficulty::Hard, hard_guitar_track);

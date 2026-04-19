@@ -240,8 +240,8 @@ private:
     void add_hopos(SightRead::Tick max_hopo_gap);
 
 public:
-    NoteTrack(std::vector<Note> notes, const std::vector<StarPower>& sp_phrases,
-              TrackType track_type, std::shared_ptr<SongGlobalData> global_data,
+    NoteTrack(std::vector<Note> notes, TrackType track_type,
+              std::shared_ptr<SongGlobalData> global_data,
               bool allow_open_chords = false,
               SightRead::Tick max_hopo_gap
               = SightRead::Tick {DEFAULT_MAX_HOPO_GAP});
@@ -251,6 +251,8 @@ public:
     void apply_disco_flips();
     void apply_flam_markers();
     [[nodiscard]] const std::vector<Note>& notes() const { return m_notes; }
+
+    void sp_phrases(const std::vector<StarPower>& sp_phrases);
     [[nodiscard]] const std::vector<StarPower>& sp_phrases() const
     {
         return m_sp_phrases;

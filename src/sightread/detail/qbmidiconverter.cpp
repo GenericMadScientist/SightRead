@@ -3295,8 +3295,11 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
             {.position = position, .length = end_position - position});
     }
 
-    return {{std::move(notes), sp_phrases, SightRead::TrackType::FiveFret,
-             std::move(global_data)}};
+    SightRead::NoteTrack track {std::move(notes),
+                                SightRead::TrackType::FiveFret,
+                                std::move(global_data)};
+    track.sp_phrases(sp_phrases);
+    return track;
 }
 
 std::optional<SightRead::PracticeSection>

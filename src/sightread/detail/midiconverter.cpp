@@ -1000,12 +1000,10 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
             solos.clear();
         }
         SightRead::NoteTrack note_track {
-            note_set,
-            sp_phrases,
-            SightRead::TrackType::SixFret,
-            global_data,
+            note_set, SightRead::TrackType::SixFret, global_data,
             allow_open_chords,
             hopo_threshold.midi_max_hopo_gap(global_data->resolution())};
+        note_track.sp_phrases(sp_phrases);
         note_track.solos(std::move(solos));
         note_tracks.emplace(diff, std::move(note_track));
     }
@@ -1157,8 +1155,9 @@ drum_note_tracks_from_midi(
         if (!permit_solos) {
             solos.clear();
         }
-        SightRead::NoteTrack note_track {
-            note_set, sp_phrases, SightRead::TrackType::Drums, global_data};
+        SightRead::NoteTrack note_track {note_set, SightRead::TrackType::Drums,
+                                         global_data};
+        note_track.sp_phrases(sp_phrases);
         note_track.solos(std::move(solos));
         note_track.bres(bres);
         note_track.drum_fills(drum_fills);
@@ -1238,9 +1237,9 @@ fortnite_note_tracks_from_midi(
         if (!permit_solos) {
             solos.clear();
         }
-        SightRead::NoteTrack note_track {note_set, sp_phrases,
-                                         SightRead::TrackType::FortniteFestival,
-                                         global_data};
+        SightRead::NoteTrack note_track {
+            note_set, SightRead::TrackType::FortniteFestival, global_data};
+        note_track.sp_phrases(sp_phrases);
         note_track.solos(std::move(solos));
         note_track.bres(bres);
         note_tracks.emplace(diff, std::move(note_track));
@@ -1309,12 +1308,10 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
             solos.clear();
         }
         SightRead::NoteTrack note_track {
-            note_set,
-            sp_phrases,
-            SightRead::TrackType::FiveFret,
-            global_data,
+            note_set, SightRead::TrackType::FiveFret, global_data,
             allow_open_chords,
             hopo_threshold.midi_max_hopo_gap(global_data->resolution())};
+        note_track.sp_phrases(sp_phrases);
         note_track.solos(std::move(solos));
         note_track.bres(bres);
         note_tracks.emplace(diff, std::move(note_track));
