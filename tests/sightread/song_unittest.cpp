@@ -248,6 +248,25 @@ BOOST_AUTO_TEST_CASE(only_highest_difficulties_affect_unisons)
     BOOST_CHECK(unison_phrases.empty());
 }
 
+BOOST_AUTO_TEST_CASE(similar_instruments_cant_unison_together)
+{
+    SightRead::NoteTrack track {{make_note(768)},
+                                SightRead::TrackType::FiveFret,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {192}}});
+
+    SightRead::Song song;
+    song.add_note_track(SightRead::Instrument::Guitar,
+                        SightRead::Difficulty::Expert, track);
+    song.add_note_track(SightRead::Instrument::Rhythm,
+                        SightRead::Difficulty::Expert, track);
+
+    const auto unison_phrases = song.unison_phrases();
+
+    BOOST_CHECK(unison_phrases.empty());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(speedup)
