@@ -214,6 +214,36 @@ BOOST_AUTO_TEST_CASE(phrases_need_similar_lengths_to_be_combined)
     BOOST_CHECK(unison_phrases.empty());
 }
 
+BOOST_AUTO_TEST_CASE(instruments_own_phrase_takes_priority_over_shortest_length)
+{
+    SightRead::NoteTrack guitar_track {
+        {make_note(768)},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    guitar_track.sp_phrases({{.position = SightRead::Tick {768},
+                              .length = SightRead::Tick {1920}}});
+
+    SightRead::NoteTrack drums_track {
+        {make_drum_note(768)},
+        SightRead::TrackType::Drums,
+        std::make_shared<SightRead::SongGlobalData>()};
+    drums_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {192}}});
+
+    SightRead::Song song;
+    song.add_note_track(SightRead::Instrument::Guitar,
+                        SightRead::Difficulty::Expert, guitar_track);
+    song.add_note_track(SightRead::Instrument::Bass,
+                        SightRead::Difficulty::Expert, guitar_track);
+    song.add_note_track(SightRead::Instrument::Drums,
+                        SightRead::Difficulty::Expert, drums_track);
+
+    const auto unison_phrases = song.unison_phrases();
+
+    BOOST_CHECK_EQUAL(unison_phrases.size(), 1U);
+    BOOST_CHECK_EQUAL(unison_phrases.at(0).length, SightRead::Tick {1920});
+}
+
 BOOST_AUTO_TEST_CASE(only_highest_difficulties_affect_unisons)
 {
     SightRead::NoteTrack hard_guitar_track {
