@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(not_all_instruments_need_to_participate)
     song.add_note_track(SightRead::Instrument::Drums,
                         SightRead::Difficulty::Expert, drum_track);
 
-    const auto unison_phrases = song.unison_phrases();
+    const auto unison_phrases = song.rb3_unison_phrases();
     const SightRead::StarPower expected_phrase {
         .position = SightRead::Tick {768}, .length = SightRead::Tick {100}};
 
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(phrases_with_slightly_different_ends_still_combined)
     song.add_note_track(SightRead::Instrument::Bass,
                         SightRead::Difficulty::Expert, bass_track);
 
-    const auto unison_phrases = song.unison_phrases();
+    const auto unison_phrases = song.rb3_unison_phrases();
     const std::vector<SightRead::StarPower> expected_phrases {
         {.position = SightRead::Tick {768}, .length = SightRead::Tick {99}},
         {.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}};
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(phrases_with_slightly_different_starts_still_combined)
     song.add_note_track(SightRead::Instrument::Bass,
                         SightRead::Difficulty::Expert, bass_track);
 
-    const auto unison_phrases = song.unison_phrases();
+    const auto unison_phrases = song.rb3_unison_phrases();
     const std::vector<SightRead::StarPower> expected_phrases {
         {.position = SightRead::Tick {767}, .length = SightRead::Tick {101}},
         {.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}};
@@ -209,9 +209,40 @@ BOOST_AUTO_TEST_CASE(phrases_need_similar_lengths_to_be_combined)
     song.add_note_track(SightRead::Instrument::Bass,
                         SightRead::Difficulty::Expert, bass_track);
 
-    const auto unison_phrases = song.unison_phrases();
+    const auto unison_phrases = song.rb3_unison_phrases();
 
     BOOST_CHECK(unison_phrases.empty());
+}
+
+// This is checking SightRead reproduces a bug in YARG 0.14.0. As of writing
+// this is the latest stable release so we replicate it, even though it's fixed
+// in nightly.
+BOOST_AUTO_TEST_CASE(
+    phrases_can_have_very_different_ends_on_yarg_if_they_have_same_starts)
+{
+    SightRead::NoteTrack guitar_track {
+        {make_note(768), make_note(1024)},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    guitar_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {100}}});
+
+    SightRead::NoteTrack bass_track {
+        {make_note(768), make_note(2048)},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+    bass_track.sp_phrases(
+        {{.position = SightRead::Tick {768}, .length = SightRead::Tick {501}}});
+
+    SightRead::Song song;
+    song.add_note_track(SightRead::Instrument::Guitar,
+                        SightRead::Difficulty::Expert, guitar_track);
+    song.add_note_track(SightRead::Instrument::Bass,
+                        SightRead::Difficulty::Expert, bass_track);
+
+    const auto unison_phrases = song.yarg_unison_phrases();
+
+    BOOST_CHECK(!unison_phrases.empty());
 }
 
 BOOST_AUTO_TEST_CASE(instruments_own_phrase_takes_priority_over_shortest_length)
@@ -238,7 +269,7 @@ BOOST_AUTO_TEST_CASE(instruments_own_phrase_takes_priority_over_shortest_length)
     song.add_note_track(SightRead::Instrument::Drums,
                         SightRead::Difficulty::Expert, drums_track);
 
-    const auto unison_phrases = song.unison_phrases();
+    const auto unison_phrases = song.rb3_unison_phrases();
 
     BOOST_CHECK_EQUAL(unison_phrases.size(), 1U);
     BOOST_CHECK_EQUAL(unison_phrases.at(0).length, SightRead::Tick {1920});
@@ -273,7 +304,7 @@ BOOST_AUTO_TEST_CASE(only_highest_difficulties_affect_unisons)
     song.add_note_track(SightRead::Instrument::Bass,
                         SightRead::Difficulty::Expert, bass_track);
 
-    const auto unison_phrases = song.unison_phrases();
+    const auto unison_phrases = song.rb3_unison_phrases();
 
     BOOST_CHECK(unison_phrases.empty());
 }
@@ -292,7 +323,7 @@ BOOST_AUTO_TEST_CASE(similar_instruments_cant_unison_together)
     song.add_note_track(SightRead::Instrument::Rhythm,
                         SightRead::Difficulty::Expert, track);
 
-    const auto unison_phrases = song.unison_phrases();
+    const auto unison_phrases = song.rb3_unison_phrases();
 
     BOOST_CHECK(unison_phrases.empty());
 }

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <utility>
@@ -11,8 +12,9 @@ struct UnisonLookup {
     std::vector<SightRead::StarPower> other_phrases;
 };
 
-std::vector<SightRead::StarPower> lookup_phrases(const UnisonLookup& lookup,
-                                                 int resolution)
+template <typename P>
+std::vector<SightRead::StarPower>
+lookup_phrases(const UnisonLookup& lookup, int resolution, P has_similar_end)
 {
     const SightRead::Tick tolerance {resolution / 4};
 
@@ -37,15 +39,10 @@ std::vector<SightRead::StarPower> lookup_phrases(const UnisonLookup& lookup,
             }
         }
 
-        auto nearby_phrases = 0;
-        const auto benchmark_end = benchmark.position + benchmark.length;
-        for (const auto& candidate : candidates) {
-            const auto candidate_end = candidate.position + candidate.length;
-            if (candidate_end + tolerance > benchmark_end
-                && benchmark_end + tolerance > candidate_end) {
-                ++nearby_phrases;
-            }
-        }
+        const auto nearby_phrases
+            = std::ranges::count_if(candidates, [&](const auto& candidate) {
+                  return has_similar_end(benchmark, candidate, tolerance);
+              });
 
         if (nearby_phrases >= 2) {
             unison_phrases.push_back(phrase);
@@ -66,6 +63,69 @@ void sort_and_uniqify_phrases(std::vector<SightRead::StarPower>& phrases)
                   == std::tie(y.position, y.length);
           });
     phrases.erase(first, last);
+}
+
+std::optional<SightRead::Difficulty> max_difficulty(
+    const std::map<std::tuple<SightRead::Instrument, SightRead::Difficulty>,
+                   SightRead::NoteTrack>& tracks,
+    SightRead::Instrument instrument)
+{
+    constexpr std::array<SightRead::Difficulty, 4> DIFFICULTIES {
+        {SightRead::Difficulty::Expert, SightRead::Difficulty::Hard,
+         SightRead::Difficulty::Medium, SightRead::Difficulty::Easy}};
+
+    for (auto difficulty : DIFFICULTIES) {
+        if (tracks.contains({instrument, difficulty})) {
+            return difficulty;
+        }
+    }
+
+    return {};
+}
+
+template <typename P>
+std::vector<SightRead::StarPower> unison_phrases(
+    const std::map<std::tuple<SightRead::Instrument, SightRead::Difficulty>,
+                   SightRead::NoteTrack>& tracks,
+    int resolution, P has_similar_end)
+{
+    const std::array<std::vector<SightRead::Instrument>, 4> INSTRUMENT_GROUPS {
+        {{SightRead::Instrument::Guitar, SightRead::Instrument::GHLGuitar,
+          SightRead::Instrument::GuitarCoop, SightRead::Instrument::Rhythm},
+         {SightRead::Instrument::Bass, SightRead::Instrument::GHLBass},
+         {SightRead::Instrument::Drums},
+         {SightRead::Instrument::Keys}}};
+
+    std::array<UnisonLookup, 4> unison_lookups;
+    for (auto i = 0U; i < INSTRUMENT_GROUPS.size(); ++i) {
+        for (const auto instrument : INSTRUMENT_GROUPS.at(i)) {
+            const auto difficulty = max_difficulty(tracks, instrument);
+            if (!difficulty.has_value()) {
+                continue;
+            }
+            const auto& track = tracks.at({instrument, *difficulty});
+            for (const auto& phrase : track.sp_phrases()) {
+                for (auto j = 0U; j < INSTRUMENT_GROUPS.size(); ++j) {
+                    if (i == j) {
+                        unison_lookups.at(j).phrases.push_back(phrase);
+                    } else {
+                        unison_lookups.at(j).other_phrases.push_back(phrase);
+                    }
+                }
+            }
+        }
+    }
+
+    std::vector<SightRead::StarPower> phrases;
+    for (const auto& lookup : unison_lookups) {
+        for (const auto& phrase :
+             lookup_phrases(lookup, resolution, has_similar_end)) {
+            phrases.push_back(phrase);
+        }
+    }
+
+    sort_and_uniqify_phrases(phrases);
+    return phrases;
 }
 }
 
@@ -121,46 +181,35 @@ SightRead::Song::track(SightRead::Instrument instrument,
     return m_tracks.at({instrument, difficulty});
 }
 
-std::vector<SightRead::StarPower> SightRead::Song::unison_phrases() const
+std::vector<SightRead::StarPower> SightRead::Song::rb3_unison_phrases() const
 {
-    const std::array<std::vector<SightRead::Instrument>, 4> INSTRUMENT_GROUPS {
-        {{SightRead::Instrument::Guitar, SightRead::Instrument::GHLGuitar,
-          SightRead::Instrument::GuitarCoop, SightRead::Instrument::Rhythm},
-         {SightRead::Instrument::Bass, SightRead::Instrument::GHLBass},
-         {SightRead::Instrument::Drums},
-         {SightRead::Instrument::Keys}}};
+    const auto has_similar_end =
+        [](const auto& benchmark, const auto& candidate, const auto tolerance) {
+            const auto benchmark_end = benchmark.position + benchmark.length;
+            const auto candidate_end = candidate.position + candidate.length;
+            return candidate_end + tolerance > benchmark_end
+                && benchmark_end + tolerance > candidate_end;
+        };
+    return unison_phrases(m_tracks, m_global_data->resolution(),
+                          has_similar_end);
+}
 
-    std::array<UnisonLookup, 4> unison_lookups;
-    for (auto i = 0U; i < INSTRUMENT_GROUPS.size(); ++i) {
-        for (const auto instrument : INSTRUMENT_GROUPS.at(i)) {
-            const auto diffs = difficulties(instrument);
-            if (diffs.empty()) {
-                continue;
+std::vector<SightRead::StarPower> SightRead::Song::yarg_unison_phrases() const
+{
+    // This counter-intuitive logic is to replicate a bug in YARG v0.14.0.
+    const auto has_similar_end =
+        [](const auto& benchmark, const auto& candidate, const auto tolerance) {
+            if (benchmark.position >= candidate.position
+                && benchmark.position < candidate.position + tolerance) {
+                return true;
             }
-            const auto difficulty = *std::ranges::max_element(diffs);
-            const auto& track = m_tracks.at({instrument, difficulty});
-            for (const auto& phrase : track.sp_phrases()) {
-                for (auto j = 0U; j < INSTRUMENT_GROUPS.size(); ++j) {
-                    if (i == j) {
-                        unison_lookups.at(j).phrases.push_back(phrase);
-                    } else {
-                        unison_lookups.at(j).other_phrases.push_back(phrase);
-                    }
-                }
-            }
-        }
-    }
-
-    std::vector<SightRead::StarPower> phrases;
-    for (const auto& lookup : unison_lookups) {
-        for (const auto& phrase :
-             lookup_phrases(lookup, m_global_data->resolution())) {
-            phrases.push_back(phrase);
-        }
-    }
-
-    sort_and_uniqify_phrases(phrases);
-    return phrases;
+            const auto benchmark_end = benchmark.position + benchmark.length;
+            const auto candidate_end = candidate.position + candidate.length;
+            return candidate_end >= benchmark_end
+                && candidate_end < benchmark_end + tolerance;
+        };
+    return unison_phrases(m_tracks, m_global_data->resolution(),
+                          has_similar_end);
 }
 
 void SightRead::Song::speedup(int speed)
