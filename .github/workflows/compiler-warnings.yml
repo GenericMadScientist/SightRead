@@ -177,7 +177,7 @@ jobs:
         env:
           BOOST_ROOT: ~/boost_1_86_0
           CXX: clang++-18
-        run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON -DCMAKE_CXX_EXTENSIONS=OFF ..
+        run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON -DSIGHTREAD_BUILD_FUZZERS=ON -DCMAKE_CXX_EXTENSIONS=OFF ..
 
       - name: Build
         working-directory: build

@@ -34,7 +34,7 @@ jobs:
         env:
           BOOST_ROOT: ~/boost_1_86_0
           CXX: g++-14
-        run: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSIGHTREAD_BUILD_TESTS=ON ..
+        run: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_BUILD_FUZZERS=ON ..
 
       - name: Run clang-tidy
         run: run-clang-tidy-22 -p=build/ -hide-progress -quiet
@@ -54,7 +54,7 @@ jobs:
 
       - name: Format
         run: |
-          clang-format-22 -i include/sightread/*.hpp src/sightread/*.cpp src/sightread/detail/*.cpp src/sightread/detail/*.hpp tests/sightread/*.cpp tests/sightread/*.hpp tests/sightread/detail/*.cpp
+          clang-format-22 -i include/sightread/*.hpp src/sightread/*.cpp src/sightread/detail/*.cpp src/sightread/detail/*.hpp tests/sightread/*.cpp tests/sightread/*.hpp tests/sightread/detail/*.cpp fuzzing_targets/*.cpp
           git diff --color --exit-code
 
   gersemi:
