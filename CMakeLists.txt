@@ -134,3 +134,8 @@ if(SIGHTREAD_BUILD_TESTS)
   include(cmake/Sanitisers.cmake)
   _sightread_enable_sanitisers(sightread_tests)
 endif()
+
+option(SIGHTREAD_BUILD_FUZZERS "Build the fuzzing targets" OFF)
+if(SIGHTREAD_BUILD_FUZZERS)
+  add_subdirectory(fuzzing_targets)
+endif()

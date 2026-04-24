@@ -2,10 +2,12 @@
 .vs/
 .vscode/
 build/
+fuzzing_targets/corpora/
 out/
 vcpkg_installed/
 CMakePresets.json
 CMakeUserPresets.json
 compile_commands.json
+crash-*
 vcpkg.json
 vcpkg-configuration.json
