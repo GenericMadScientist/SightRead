@@ -887,9 +887,9 @@ void apply_forcing(
                                       event_track.force_hopo_off_events.at(d)));
         force_strum_events.emplace(
             d,
-            combine_note_on_off_events(
-                event_track.force_strum_on_events.at(d),
-                event_track.force_strum_off_events.at(d)));
+            combine_note_on_off_events(event_track.force_strum_on_events.at(d),
+                                       event_track.force_strum_off_events.at(d),
+                                       true));
     }
 
     for (auto& [diff, note_array] : notes) {
