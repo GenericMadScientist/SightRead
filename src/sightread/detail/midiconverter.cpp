@@ -920,8 +920,7 @@ void apply_forcing(
 std::map<SightRead::Difficulty, std::vector<SightRead::Note>>
 notes_from_event_track(
     const InstrumentMidiTrack& event_track,
-    const std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>&
-        open_events,
+    const std::map<SightRead::Difficulty, ClosedIntervalSet<int>>& open_events,
     const std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>& tap_events,
     SightRead::TrackType track_type, int sustain_cutoff_threshold)
 {
@@ -1259,7 +1258,7 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
         midi_track, SightRead::TrackType::FiveFret);
     const auto bres = read_bres(event_track, coda_event_time);
 
-    std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>> open_events;
+    std::map<SightRead::Difficulty, ClosedIntervalSet<int>> open_events;
     for (const auto& [diff, open_ons] : event_track.open_on_events) {
         if (!event_track.open_off_events.contains(diff)) {
             throw SightRead::ParseError("No open Note Off events");
