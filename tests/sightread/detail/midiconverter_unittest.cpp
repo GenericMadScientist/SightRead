@@ -761,7 +761,7 @@ BOOST_AUTO_TEST_CASE(open_chords_permitted_with_allow_open_chords_true)
         (1 << SightRead::FIVE_FRET_OPEN) | (1 << SightRead::FIVE_FRET_GREEN));
 }
 
-BOOST_AUTO_TEST_CASE(open_chords_forbidden_by_default)
+BOOST_AUTO_TEST_CASE(open_chords_allowed_by_default)
 {
     SightRead::Detail::MidiTrack note_track {{
         {.time = 0, .event = {part_event("PART GUITAR")}},
@@ -789,7 +789,7 @@ BOOST_AUTO_TEST_CASE(open_chords_forbidden_by_default)
             .notes()
             .at(0)
             .colours(),
-        1 << SightRead::FIVE_FRET_OPEN);
+        33);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -958,7 +958,7 @@ BOOST_AUTO_TEST_CASE(short_midi_sustains_are_trimmed)
     BOOST_CHECK_EQUAL(notes.at(1).lengths.at(0), SightRead::Tick {70});
 }
 
-BOOST_AUTO_TEST_CASE(metadata_cutoff_is_ignored_by_default)
+BOOST_AUTO_TEST_CASE(metadata_cutoff_is_used_by_default)
 {
     SightRead::Detail::MidiTrack note_track {
         {{.time = 0, .event = {part_event("PART GUITAR")}},
@@ -975,10 +975,10 @@ BOOST_AUTO_TEST_CASE(metadata_cutoff_is_ignored_by_default)
                                    SightRead::Difficulty::Expert)
                             .notes();
 
-    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {70});
+    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {0});
 }
 
-BOOST_AUTO_TEST_CASE(metadata_cutoff_is_used_if_flagged_to_use)
+BOOST_AUTO_TEST_CASE(metadata_cutoff_is_ignored_if_flagged_to_not_use)
 {
     SightRead::Detail::MidiTrack note_track {
         {{.time = 0, .event = {part_event("PART GUITAR")}},
@@ -987,24 +987,17 @@ BOOST_AUTO_TEST_CASE(metadata_cutoff_is_used_if_flagged_to_use)
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
          {.time = 100,
           .event
-          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {.time = 200,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {.time = 301,
-          .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 200,
                                         .tracks = {note_track}};
     const auto song = guitar_only_converter({}, 100)
-                          .use_sustain_cutoff_threshold(true)
+                          .use_sustain_cutoff_threshold(false)
                           .convert(midi);
     const auto& notes = song.track(SightRead::Instrument::Guitar,
                                    SightRead::Difficulty::Expert)
                             .notes();
 
-    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {0});
-    BOOST_CHECK_EQUAL(notes.at(1).lengths.at(0), SightRead::Tick {101});
+    BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {100});
 }
 
 BOOST_AUTO_TEST_SUITE_END()

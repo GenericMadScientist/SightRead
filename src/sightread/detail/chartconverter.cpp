@@ -549,7 +549,7 @@ SightRead::Detail::ChartConverter::ChartConverter(SightRead::Metadata metadata)
     , m_hopo_threshold {metadata.hopo_threshold}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
-    , m_allow_open_chords {false}
+    , m_allow_open_chords {true}
 {
 }
 

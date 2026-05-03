@@ -1324,8 +1324,8 @@ SightRead::Detail::MidiConverter::MidiConverter(SightRead::Metadata metadata)
     : m_metadata {std::move(metadata)}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_permit_solos {true}
-    , m_allow_open_chords {false}
-    , m_use_sustain_cutoff_threshold {false}
+    , m_allow_open_chords {true}
+    , m_use_sustain_cutoff_threshold {true}
 {
 }
 
