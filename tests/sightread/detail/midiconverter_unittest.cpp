@@ -1815,6 +1815,29 @@ BOOST_AUTO_TEST_CASE(six_fret_guitar_coop_is_read_correctly)
                                   notes.cbegin(), notes.cend());
 }
 
+BOOST_AUTO_TEST_CASE(six_fret_keys_is_read_correctly)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART KEYS GHL")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+    const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
+    const auto& track = song.track(SightRead::Instrument::GHLKeys,
+                                   SightRead::Difficulty::Expert);
+
+    std::vector<SightRead::Note> notes {
+        make_ghl_note(0, 65, SightRead::SIX_FRET_OPEN)};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
+                                  notes.cbegin(), notes.cend());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(drums_are_read_correctly_from_mid)

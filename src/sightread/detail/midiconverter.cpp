@@ -1390,6 +1390,7 @@ SightRead::Detail::MidiConverter::midi_section_instrument(
             {"PART BASS GHL", {SightRead::Instrument::GHLBass}},
             {"PART RHYTHM GHL", {SightRead::Instrument::GHLRhythm}},
             {"PART GUITAR COOP GHL", {SightRead::Instrument::GHLGuitarCoop}},
+            {"PART KEYS GHL", {SightRead::Instrument::GHLKeys}},
             {"PART DRUMS",
              {SightRead::Instrument::Drums,
               SightRead::Instrument::FortniteDrums}},

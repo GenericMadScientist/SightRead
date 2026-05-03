@@ -750,6 +750,24 @@ BOOST_AUTO_TEST_CASE(six_fret_guitar_coop_is_read_correctly)
                                   notes.cbegin(), notes.cend());
 }
 
+BOOST_AUTO_TEST_CASE(six_fret_keys_is_read_correctly)
+{
+    const auto chart_file
+        = section_string("ExpertGHLKeys",
+                         {{.position = 192, .fret = 0, .length = 0},
+                          {.position = 384, .fret = 3, .length = 0}});
+    const std::vector<SightRead::Note> notes {
+        make_ghl_note(192, 0, SightRead::SIX_FRET_WHITE_LOW),
+        make_ghl_note(384, 0, SightRead::SIX_FRET_BLACK_LOW)};
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto& track = song.track(SightRead::Instrument::GHLKeys,
+                                   SightRead::Difficulty::Expert);
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
+                                  notes.cbegin(), notes.cend());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(drum_notes_are_read_correctly_from_chart)

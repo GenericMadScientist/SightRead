@@ -31,6 +31,7 @@ enum class Instrument : std::uint8_t {
     GHLBass,
     GHLRhythm,
     GHLGuitarCoop,
+    GHLKeys,
     Drums,
     FortniteGuitar,
     FortniteBass,

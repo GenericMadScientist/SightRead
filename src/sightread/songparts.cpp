@@ -12,27 +12,23 @@ combined_note(std::vector<SightRead::Note>::const_iterator begin,
               std::vector<SightRead::Note>::const_iterator end)
 {
     SightRead::Note note = *begin;
-    ++begin;
-    while (begin < end) {
+    for (auto it = std::next(begin); it < end; ++it) {
         for (auto i = 0U; i < note.lengths.size(); ++i) {
-            const auto new_length = begin->lengths.at(i);
+            const auto new_length = it->lengths.at(i);
             if (new_length != SightRead::Tick {-1}) {
                 note.lengths.at(i) = new_length;
             }
         }
-        ++begin;
     }
     return note;
 }
 
 bool is_chord(const SightRead::Note& note)
 {
-    auto count = 0;
-    for (auto length : note.lengths) {
-        if (length != SightRead::Tick {-1}) {
-            ++count;
-        }
-    }
+    const auto count
+        = std::ranges::count_if(note.lengths, [](const auto length) {
+              return length != SightRead::Tick {-1};
+          });
     return count >= 2;
 }
 }
@@ -49,6 +45,7 @@ std::set<Instrument> all_instruments()
             SightRead::Instrument::GHLBass,
             SightRead::Instrument::GHLRhythm,
             SightRead::Instrument::GHLGuitarCoop,
+            SightRead::Instrument::GHLKeys,
             SightRead::Instrument::Drums,
             SightRead::Instrument::FortniteGuitar,
             SightRead::Instrument::FortniteBass,

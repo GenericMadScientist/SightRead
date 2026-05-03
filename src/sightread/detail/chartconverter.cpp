@@ -82,7 +82,7 @@ diff_inst_from_header(const std::string& header)
                       {"Hard"sv, SightRead::Difficulty::Hard},
                       {"Expert"sv, SightRead::Difficulty::Expert}};
     constexpr std::array<std::tuple<std::string_view, SightRead::Instrument>,
-                         10>
+                         11>
         INSTRUMENTS {std::tuple {"Single"sv, SightRead::Instrument::Guitar},
                      {"DoubleGuitar"sv, SightRead::Instrument::GuitarCoop},
                      {"DoubleBass"sv, SightRead::Instrument::Bass},
@@ -92,22 +92,26 @@ diff_inst_from_header(const std::string& header)
                      {"GHLBass"sv, SightRead::Instrument::GHLBass},
                      {"GHLRhythm"sv, SightRead::Instrument::GHLRhythm},
                      {"GHLCoop"sv, SightRead::Instrument::GHLGuitarCoop},
+                     {"GHLKeys"sv, SightRead::Instrument::GHLKeys},
                      {"Drums"sv, SightRead::Instrument::Drums}};
+
     // NOLINT is required because following clang-tidy here causes the
     // VS2017 compile to fail.
-    auto diff_iter = std::find_if( // NOLINT
-        DIFFICULTIES.cbegin(), DIFFICULTIES.cend(), [&](const auto& pair) {
+    const auto diff_iter = std::ranges::find_if( // NOLINT
+        DIFFICULTIES, [&](const auto& pair) {
             return header.starts_with(std::get<0>(pair));
         });
-    if (diff_iter == DIFFICULTIES.cend()) {
+    if (diff_iter == std::ranges::end(DIFFICULTIES)) {
         return std::nullopt;
     }
-    auto inst_iter = std::find_if( // NOLINT
-        INSTRUMENTS.cbegin(), INSTRUMENTS.cend(),
+
+    const auto inst_iter = std::ranges::find_if( // NOLINT
+        INSTRUMENTS,
         [&](const auto& pair) { return header.ends_with(std::get<0>(pair)); });
-    if (inst_iter == INSTRUMENTS.cend()) {
+    if (inst_iter == std::ranges::end(INSTRUMENTS)) {
         return std::nullopt;
     }
+
     return std::tuple {std::get<1>(*diff_iter), std::get<1>(*inst_iter)};
 }
 
@@ -520,6 +524,7 @@ track_type_from_instrument(SightRead::Instrument instrument)
     case SightRead::Instrument::GHLBass:
     case SightRead::Instrument::GHLRhythm:
     case SightRead::Instrument::GHLGuitarCoop:
+    case SightRead::Instrument::GHLKeys:
         return SightRead::TrackType::SixFret;
     case SightRead::Instrument::Drums:
         return SightRead::TrackType::Drums;
