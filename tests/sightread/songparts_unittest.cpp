@@ -823,7 +823,7 @@ BOOST_AUTO_TEST_CASE(blue_toms_are_converted)
     track.flam_markers(
         {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
     std::vector<SightRead::Note> expected_notes {
-        make_drum_note(0, SightRead::DRUM_YELLOW),
+        make_drum_note(0, SightRead::DRUM_BLUE),
         make_drum_note(0, SightRead::DRUM_GREEN)};
 
     track.apply_flam_markers();
@@ -902,27 +902,6 @@ BOOST_AUTO_TEST_CASE(kick_notes_appearing_before_toms_do_not_break_conversion)
         make_drum_note(0, SightRead::DRUM_KICK)};
 
     track.apply_flam_markers();
-
-    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
-                                  expected_notes.cbegin(),
-                                  expected_notes.cend());
-}
-
-BOOST_AUTO_TEST_CASE(blue_toms_are_unaffected_by_disco_flip_after_flams)
-{
-    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_BLUE)},
-                                SightRead::TrackType::Drums,
-                                std::make_shared<SightRead::SongGlobalData>()};
-    track.flam_markers(
-        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
-    track.disco_flips(
-        {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
-    std::vector<SightRead::Note> expected_notes {
-        make_drum_note(0, SightRead::DRUM_YELLOW),
-        make_drum_note(0, SightRead::DRUM_GREEN)};
-
-    track.apply_flam_markers();
-    track.apply_disco_flips();
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   expected_notes.cbegin(),

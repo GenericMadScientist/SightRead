@@ -533,17 +533,9 @@ void SightRead::NoteTrack::apply_flam_markers()
             }
         }
         new_notes.push_back(new_note);
-
-        if (((it->flags & SightRead::FLAGS_CYMBAL) == 0)
-            && (it->colours() == (1 << SightRead::DRUM_BLUE))) {
-            std::swap(it->lengths.at(SightRead::DRUM_BLUE),
-                      it->lengths.at(SightRead::DRUM_YELLOW));
-        }
     }
 
-    for (auto note : new_notes) {
-        m_notes.push_back(note);
-    }
+    m_notes.insert(m_notes.end(), new_notes.cbegin(), new_notes.cend());
 
     for (auto& note : m_notes) {
         note.flags = static_cast<SightRead::NoteFlags>(
