@@ -383,20 +383,28 @@ int SightRead::NoteTrack::base_score(
     SightRead::DrumSettings drum_settings) const
 {
     constexpr int BASE_NOTE_VALUE = 50;
+    constexpr int CYMBAL_NOTE_VALUE = 65;
 
-    auto note_count = 0;
+    auto cymbal_count = 0;
+    auto other_note_count = 0;
     for (const auto& note : m_notes) {
         if (note.is_skipped_kick(drum_settings)) {
             continue;
         }
         for (auto l : note.lengths) {
             if (l != SightRead::Tick {-1}) {
-                ++note_count;
+                if (drum_settings.pro_drums
+                    && (note.flags & SightRead::FLAGS_CYMBAL) != 0U) {
+                    ++cymbal_count;
+                } else {
+                    ++other_note_count;
+                }
             }
         }
     }
 
-    return BASE_NOTE_VALUE * note_count + m_base_score_ticks;
+    return CYMBAL_NOTE_VALUE * cymbal_count + BASE_NOTE_VALUE * other_note_count
+        + m_base_score_ticks;
 }
 
 SightRead::NoteTrack

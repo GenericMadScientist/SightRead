@@ -502,6 +502,32 @@ BOOST_AUTO_TEST_CASE(no_kicks_gives_correct_answer)
     BOOST_CHECK_EQUAL(track.base_score(settings), 50);
 }
 
+BOOST_AUTO_TEST_CASE(correct_with_cymbals_on_pro_drums)
+{
+    std::vector<SightRead::Note> notes {
+        make_drum_note(0),
+        make_drum_note(0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)};
+
+    SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+
+    BOOST_CHECK_EQUAL(track.base_score(), 115);
+}
+
+BOOST_AUTO_TEST_CASE(correct_with_charted_cymbals_for_non_pro_drums)
+{
+    std::vector<SightRead::Note> notes {
+        make_drum_note(0),
+        make_drum_note(0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)};
+
+    SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    SightRead::DrumSettings non_pro_drums {
+        .enable_double_kick = true, .disable_kick = false, .pro_drums = false};
+
+    BOOST_CHECK_EQUAL(track.base_score(non_pro_drums), 100);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(snap_chords_is_correct)

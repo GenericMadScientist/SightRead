@@ -7,7 +7,12 @@ struct DrumSettings {
     bool disable_kick;
     bool pro_drums;
 
-    static DrumSettings default_settings() { return {true, false, true}; }
+    static DrumSettings default_settings()
+    {
+        return {.enable_double_kick = true,
+                .disable_kick = false,
+                .pro_drums = true};
+    }
 };
 }
 
