@@ -1,10 +1,10 @@
 #ifndef SIGHTREAD_TEMPOMAP_HPP
 #define SIGHTREAD_TEMPOMAP_HPP
 
-#include <cstdint>
 #include <stdexcept>
 #include <vector>
 
+#include "sightread/detail/timeconversionmap.hpp"
 #include "sightread/time.hpp"
 
 namespace SightRead {
@@ -33,7 +33,7 @@ struct BPM {
     // .chart files.
     double millibeats_per_minute;
 
-    double bpm() const { return millibeats_per_minute / 1000.0; }
+    [[nodiscard]] double bpm() const { return millibeats_per_minute / 1000.0; }
 };
 
 // Invariants:
@@ -45,29 +45,6 @@ struct BPM {
 // time_sigs() is never empty.
 class TempoMap {
 private:
-    struct BeatTimestamp {
-        SightRead::Beat beat;
-        SightRead::Second time;
-    };
-
-    struct FretbarTimestamp {
-        SightRead::Fretbar fretbar;
-        SightRead::Beat beat;
-    };
-
-    struct MeasureTimestamp {
-        SightRead::Measure measure;
-        SightRead::Beat beat;
-    };
-
-    struct OdBeatTimestamp {
-        SightRead::OdBeat od_beat;
-        SightRead::Beat beat;
-    };
-
-    static constexpr double DEFAULT_BEAT_RATE = 4.0;
-    static constexpr double DEFAULT_MILLIBEATS_PER_MINUTE = 120000.0;
-    static constexpr double DEFAULT_FRETBAR_RATE = 1.0;
     static constexpr int DEFAULT_RESOLUTION = 192;
 
     std::vector<TimeSignature> m_time_sigs;
@@ -75,17 +52,10 @@ private:
     std::vector<SightRead::Tick> m_od_beats;
     int m_resolution;
 
-    std::vector<BeatTimestamp> m_beat_timestamps;
-    double m_last_bpm;
-
-    std::vector<FretbarTimestamp> m_fretbar_timestamps;
-    double m_last_fretbar_rate;
-
-    std::vector<MeasureTimestamp> m_measure_timestamps;
-    double m_last_beat_rate;
-
-    std::vector<OdBeatTimestamp> m_od_beat_timestamps;
-    double m_last_od_beat_rate;
+    SightRead::Detail::TimeConversionMap m_beats_to_seconds;
+    SightRead::Detail::TimeConversionMap m_beats_to_fretbars;
+    SightRead::Detail::TimeConversionMap m_beats_to_measures;
+    SightRead::Detail::TimeConversionMap m_beats_to_od_beats;
 
 public:
     TempoMap()

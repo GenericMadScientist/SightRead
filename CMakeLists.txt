@@ -71,9 +71,10 @@ add_library(
   src/sightread/detail/qbmidi.cpp
   src/sightread/detail/qbmidiconverter.cpp
   src/sightread/detail/stringutil.cpp
+  src/sightread/detail/timeconversionmap.cpp
 )
 
-target_include_directories(sightread PUBLIC include PRIVATE src)
+target_include_directories(sightread PUBLIC include src)
 target_link_directories(sightread PRIVATE ${Boost_LIBRARY_DIRS})
 target_link_libraries(sightread PRIVATE Boost::locale)
 _sightread_set_minimum_cpp_standard(sightread)
@@ -102,6 +103,7 @@ if(SIGHTREAD_BUILD_TESTS)
     tests/sightread/detail/midi_unittest.cpp
     tests/sightread/detail/midiconverter_unittest.cpp
     tests/sightread/detail/stringutil_unittest.cpp
+    tests/sightread/detail/timeconversionmap_unittest.cpp
     src/sightread/chartparser.cpp
     src/sightread/metadata.cpp
     src/sightread/song.cpp
@@ -113,6 +115,7 @@ if(SIGHTREAD_BUILD_TESTS)
     src/sightread/detail/midiconverter.cpp
     src/sightread/detail/parserutil.cpp
     src/sightread/detail/stringutil.cpp
+    src/sightread/detail/timeconversionmap.cpp
   )
 
   target_include_directories(
