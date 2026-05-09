@@ -82,59 +82,60 @@ beats_to_od_beats_map(const std::vector<SightRead::Tick>& od_beats,
 
     return {DEFAULT_OD_BEATS_PER_BEAT, od_beat_gradients};
 }
+
+template <typename T>
+void normalise_time_events(std::vector<T>& time_events, T default_time_event)
+{
+    // The reversal is because we want later time events at the same time to win
+    // ties, which is the opposite behaviour to what unique provides. So we
+    // reverse before the stable sort.
+    std::ranges::reverse(time_events);
+    time_events.push_back(default_time_event);
+    std::ranges::stable_sort(time_events, {},
+                             [](const auto& event) { return event.position; });
+    const auto ignored_events = std::ranges::unique(
+        time_events, {}, [](const auto& event) { return event.position; });
+    time_events.erase(ignored_events.begin(), ignored_events.end());
+}
 }
 
 SightRead::TempoMap::TempoMap(std::vector<SightRead::TimeSignature> time_sigs,
                               std::vector<SightRead::BPM> bpms,
                               std::vector<SightRead::Tick> od_beats,
                               int resolution)
-    : m_od_beats {std::move(od_beats)}
+    : m_time_sigs {std::move(time_sigs)}
+    , m_bpms {std::move(bpms)}
+    , m_od_beats {std::move(od_beats)}
     , m_resolution {resolution}
-    , m_beats_to_seconds {beats_to_seconds_map(bpms, resolution)}
-    , m_beats_to_fretbars {beats_to_fretbars_map(time_sigs, resolution)}
-    , m_beats_to_measures {beats_to_measures_map(time_sigs, resolution)}
+    , m_beats_to_seconds {beats_to_seconds_map(m_bpms, resolution)}
+    , m_beats_to_fretbars {beats_to_fretbars_map(m_time_sigs, resolution)}
+    , m_beats_to_measures {beats_to_measures_map(m_time_sigs, resolution)}
     , m_beats_to_od_beats {beats_to_od_beats_map(m_od_beats, resolution)}
 {
     constexpr double DEFAULT_MILLIBEATS_PER_MINUTE = 120000.0;
 
-    if (resolution <= 0) {
+    if (m_resolution <= 0) {
         throw std::invalid_argument("Resolution must be positive");
     }
 
-    for (const auto& bpm : bpms) {
+    for (const auto& bpm : m_bpms) {
         if (bpm.millibeats_per_minute <= 0.0) {
             throw ParseError("BPMs must be positive");
         }
     }
-    for (const auto& ts : time_sigs) {
+    for (const auto& ts : m_time_sigs) {
         if (ts.numerator <= 0 || ts.denominator <= 0) {
             throw ParseError("Time signatures must be positive/positive");
         }
     }
 
-    std::ranges::stable_sort(bpms, {},
-                             [](const auto& x) { return x.position; });
-    BPM prev_bpm {.position = SightRead::Tick {0},
-                  .millibeats_per_minute = DEFAULT_MILLIBEATS_PER_MINUTE};
-    for (auto p = bpms.cbegin(); p < bpms.cend(); ++p) {
-        if (p->position != prev_bpm.position) {
-            m_bpms.push_back(prev_bpm);
-        }
-        prev_bpm = *p;
-    }
-    m_bpms.push_back(prev_bpm);
-
-    std::ranges::stable_sort(time_sigs, {},
-                             [](const auto& ts) { return ts.position; });
-    TimeSignature prev_ts {
-        .position = SightRead::Tick {0}, .numerator = 4, .denominator = 4};
-    for (auto p = time_sigs.cbegin(); p < time_sigs.cend(); ++p) {
-        if (p->position != prev_ts.position) {
-            m_time_sigs.push_back(prev_ts);
-        }
-        prev_ts = *p;
-    }
-    m_time_sigs.push_back(prev_ts);
+    normalise_time_events(
+        m_bpms,
+        {.position = SightRead::Tick {0},
+         .millibeats_per_minute = DEFAULT_MILLIBEATS_PER_MINUTE});
+    normalise_time_events(
+        m_time_sigs,
+        {.position = SightRead::Tick {0}, .numerator = 4, .denominator = 4});
 }
 
 SightRead::TempoMap SightRead::TempoMap::speedup(int speed) const
