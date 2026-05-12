@@ -135,7 +135,7 @@ SightRead::Detail::ChartSection read_section(std::string_view& input)
         }
         const auto separated_line = split_by_space(next_line);
         if (separated_line.size() < 3) {
-            throw SightRead::ParseError("Line incomplete");
+            continue;
         }
         const auto key = separated_line.at(0);
         const auto key_val = SightRead::Detail::string_view_to_int(key);

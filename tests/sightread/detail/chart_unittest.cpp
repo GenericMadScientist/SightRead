@@ -81,18 +81,17 @@ BOOST_AUTO_TEST_CASE(section_names_are_read)
 
 BOOST_AUTO_TEST_CASE(chart_can_end_without_newline)
 {
-    const char* text = "[Song]\n{\n}";
-
     BOOST_CHECK_NO_THROW(
-        [&] { return SightRead::Detail::parse_chart(text); }());
+        [] { return SightRead::Detail::parse_chart("[Song]\n{\n}"); }());
 }
 
 BOOST_AUTO_TEST_CASE(parser_does_not_infinite_loop_due_to_unfinished_section)
 {
-    const char* text = "[UnrecognisedSection]\n{\n";
-
-    BOOST_CHECK_THROW([&] { return SightRead::Detail::parse_chart(text); }(),
-                      SightRead::ParseError);
+    BOOST_CHECK_THROW(
+        [] {
+            return SightRead::Detail::parse_chart("[UnrecognisedSection]\n{\n");
+        }(),
+        SightRead::ParseError);
 }
 
 BOOST_AUTO_TEST_CASE(lone_carriage_return_does_not_break_line)
@@ -131,10 +130,12 @@ BOOST_AUTO_TEST_CASE(note_events_are_read)
 
 BOOST_AUTO_TEST_CASE(note_events_with_extra_spaces_throw)
 {
-    const char* text = "[Section]\n{\n768 = N  0 0\n}";
-
-    BOOST_CHECK_THROW([&] { return SightRead::Detail::parse_chart(text); }(),
-                      SightRead::ParseError);
+    BOOST_CHECK_THROW(
+        [] {
+            return SightRead::Detail::parse_chart(
+                "[Section]\n{\n768 = N  0 0\n}");
+        }(),
+        SightRead::ParseError);
 }
 
 BOOST_AUTO_TEST_CASE(bpm_events_are_read)
@@ -209,17 +210,19 @@ BOOST_AUTO_TEST_CASE(single_character_headers_should_throw)
                       SightRead::ParseError);
 }
 
-BOOST_AUTO_TEST_CASE(short_mid_section_lines_throw)
+BOOST_AUTO_TEST_CASE(truncated_note_event_line_throws)
 {
     BOOST_CHECK_THROW(
-        [&] {
-            return SightRead::Detail::parse_chart("[ExpertGuitar]\n{\n1 1\n}");
-        }(),
-        SightRead::ParseError);
-    BOOST_CHECK_THROW(
-        [&] {
+        [] {
             return SightRead::Detail::parse_chart(
                 "[ExpertGuitar]\n{\n1 = N 1\n}");
         }(),
         SightRead::ParseError);
+}
+
+BOOST_AUTO_TEST_CASE(errant_quote_character_in_song_does_not_cause_a_throw)
+{
+    BOOST_CHECK_NO_THROW([] {
+        return SightRead::Detail::parse_chart("[Song]\n{\nName=\"Days\n\"\n}");
+    }());
 }
