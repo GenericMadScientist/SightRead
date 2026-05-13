@@ -1845,10 +1845,10 @@ BOOST_AUTO_TEST_CASE(drums_track_read_correctly_from_mid)
          {.time = 0,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {110, 64}}}},
-         {.time = 65,
+         {.time = 1,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
-         {.time = 65,
+         {.time = 1,
           .event = {SightRead::Detail::MidiEvent {.status = 0x80,
                                                   .data = {110, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
@@ -1858,7 +1858,7 @@ BOOST_AUTO_TEST_CASE(drums_track_read_correctly_from_mid)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_YELLOW)};
+        make_drum_note(0, 0, SightRead::DRUM_YELLOW)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
@@ -1926,7 +1926,7 @@ BOOST_AUTO_TEST_CASE(double_kicks_are_read_correctly_from_mid)
          {.time = 0,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {95, 64}}}},
-         {.time = 65,
+         {.time = 1,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {95, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
@@ -1936,7 +1936,7 @@ BOOST_AUTO_TEST_CASE(double_kicks_are_read_correctly_from_mid)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_DOUBLE_KICK)};
+        make_drum_note(0, 0, SightRead::DRUM_DOUBLE_KICK)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
@@ -2099,10 +2099,10 @@ BOOST_AUTO_TEST_CASE(drum_five_lane_to_four_lane_conversion_is_done_from_mid)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_GREEN),
-        make_drum_note(2, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL),
-        make_drum_note(4, SightRead::DRUM_BLUE),
-        make_drum_note(4, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL)};
+        make_drum_note(0, 0, SightRead::DRUM_GREEN),
+        make_drum_note(2, 0, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL),
+        make_drum_note(4, 0, SightRead::DRUM_BLUE),
+        make_drum_note(4, 0, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
@@ -2134,6 +2134,29 @@ BOOST_AUTO_TEST_CASE(flam_sections_are_read_correctly)
     BOOST_CHECK_EQUAL(note.flags,
                       SightRead::FLAGS_CYMBAL | SightRead::FLAGS_DRUMS
                           | SightRead::FLAGS_FLAM);
+}
+
+BOOST_AUTO_TEST_CASE(drum_sustains_are_read_correctly)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+         {.time = 192,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {97, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+    const auto song = drums_only_converter().convert(midi);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    std::vector<SightRead::Note> notes {
+        make_drum_note(0, 192, SightRead::DRUM_RED)};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
+                                  notes.cbegin(), notes.cend());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -2170,9 +2193,9 @@ BOOST_AUTO_TEST_CASE(dynamics_are_parsed_from_mid)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_RED, SightRead::FLAGS_GHOST),
-        make_drum_note(2, SightRead::DRUM_RED),
-        make_drum_note(4, SightRead::DRUM_RED, SightRead::FLAGS_ACCENT)};
+        make_drum_note(0, 0, SightRead::DRUM_RED, SightRead::FLAGS_GHOST),
+        make_drum_note(2, 0, SightRead::DRUM_RED),
+        make_drum_note(4, 0, SightRead::DRUM_RED, SightRead::FLAGS_ACCENT)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
@@ -2194,7 +2217,8 @@ BOOST_AUTO_TEST_CASE(dynamics_not_parsed_from_mid_without_ENABLE_CHART_DYNAMICS)
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
 
-    std::vector<SightRead::Note> notes {make_drum_note(0, SightRead::DRUM_RED)};
+    std::vector<SightRead::Note> notes {
+        make_drum_note(0, 0, SightRead::DRUM_RED)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
@@ -2218,7 +2242,7 @@ BOOST_AUTO_TEST_CASE(ENABLE_CHART_DYNAMICS_works_without_braces)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {make_drum_note(
-        0, SightRead::DRUM_RED, SightRead::NoteFlags::FLAGS_GHOST)};
+        0, 0, SightRead::DRUM_RED, SightRead::NoteFlags::FLAGS_GHOST)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());

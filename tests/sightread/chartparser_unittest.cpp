@@ -779,9 +779,9 @@ BOOST_AUTO_TEST_CASE(drum_notes_are_read_correctly_from_chart)
                           {.position = 384, .fret = 66, .length = 0},
                           {.position = 768, .fret = 32, .length = 0}});
     std::vector<SightRead::Note> notes {
-        make_drum_note(192, SightRead::DRUM_RED),
-        make_drum_note(384, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL),
-        make_drum_note(768, SightRead::DRUM_DOUBLE_KICK)};
+        make_drum_note(192, 0, SightRead::DRUM_RED),
+        make_drum_note(384, 0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL),
+        make_drum_note(768, 0, SightRead::DRUM_DOUBLE_KICK)};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,
@@ -815,8 +815,8 @@ BOOST_AUTO_TEST_CASE(dynamics_are_read_correctly_from_chart)
                           {.position = 384, .fret = 1, .length = 0},
                           {.position = 384, .fret = 40, .length = 0}});
     std::vector<SightRead::Note> notes {
-        make_drum_note(192, SightRead::DRUM_RED, SightRead::FLAGS_ACCENT),
-        make_drum_note(384, SightRead::DRUM_RED, SightRead::FLAGS_GHOST)};
+        make_drum_note(192, 0, SightRead::DRUM_RED, SightRead::FLAGS_ACCENT),
+        make_drum_note(384, 0, SightRead::DRUM_RED, SightRead::FLAGS_GHOST)};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,
@@ -853,9 +853,9 @@ BOOST_AUTO_TEST_CASE(fifth_lane_notes_are_read_correctly_from_chart)
                           {.position = 384, .fret = 4, .length = 0},
                           {.position = 384, .fret = 5, .length = 0}});
     const std::vector<SightRead::Note> notes {
-        make_drum_note(192, SightRead::DRUM_GREEN),
-        make_drum_note(384, SightRead::DRUM_GREEN),
-        make_drum_note(384, SightRead::DRUM_BLUE)};
+        make_drum_note(192, 0, SightRead::DRUM_GREEN),
+        make_drum_note(384, 0, SightRead::DRUM_GREEN),
+        make_drum_note(384, 0, SightRead::DRUM_BLUE)};
 
     const auto song = SightRead::ChartParser({}).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,

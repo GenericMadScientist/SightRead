@@ -226,9 +226,9 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(solos_do_take_into_account_drum_settings)
 {
     std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_RED),
-        make_drum_note(0, SightRead::DRUM_DOUBLE_KICK),
-        make_drum_note(192, SightRead::DRUM_DOUBLE_KICK)};
+        make_drum_note(0, 0, SightRead::DRUM_RED),
+        make_drum_note(0, 0, SightRead::DRUM_DOUBLE_KICK),
+        make_drum_note(192, 0, SightRead::DRUM_DOUBLE_KICK)};
     std::vector<SightRead::Solo> solos {{.start = SightRead::Tick {0},
                                          .end = SightRead::Tick {1},
                                          .value = 200},
@@ -463,9 +463,9 @@ BOOST_AUTO_TEST_SUITE(base_score_is_correct_for_drums)
 BOOST_AUTO_TEST_CASE(all_kicks_gives_correct_answer)
 {
     std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_RED),
-        make_drum_note(192, SightRead::DRUM_KICK),
-        make_drum_note(384, SightRead::DRUM_DOUBLE_KICK)};
+        make_drum_note(0, 0, SightRead::DRUM_RED),
+        make_drum_note(192, 0, SightRead::DRUM_KICK),
+        make_drum_note(384, 0, SightRead::DRUM_DOUBLE_KICK)};
     SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     SightRead::DrumSettings settings {
@@ -477,9 +477,9 @@ BOOST_AUTO_TEST_CASE(all_kicks_gives_correct_answer)
 BOOST_AUTO_TEST_CASE(only_single_kicks_gives_correct_answer)
 {
     std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_RED),
-        make_drum_note(192, SightRead::DRUM_KICK),
-        make_drum_note(384, SightRead::DRUM_DOUBLE_KICK)};
+        make_drum_note(0, 0, SightRead::DRUM_RED),
+        make_drum_note(192, 0, SightRead::DRUM_KICK),
+        make_drum_note(384, 0, SightRead::DRUM_DOUBLE_KICK)};
     SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     SightRead::DrumSettings settings {
@@ -491,9 +491,9 @@ BOOST_AUTO_TEST_CASE(only_single_kicks_gives_correct_answer)
 BOOST_AUTO_TEST_CASE(no_kicks_gives_correct_answer)
 {
     std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_RED),
-        make_drum_note(192, SightRead::DRUM_KICK),
-        make_drum_note(384, SightRead::DRUM_DOUBLE_KICK)};
+        make_drum_note(0, 0, SightRead::DRUM_RED),
+        make_drum_note(192, 0, SightRead::DRUM_KICK),
+        make_drum_note(384, 0, SightRead::DRUM_DOUBLE_KICK)};
     SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     SightRead::DrumSettings settings {
@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE(correct_with_cymbals_on_pro_drums)
 {
     std::vector<SightRead::Note> notes {
         make_drum_note(0),
-        make_drum_note(0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)};
+        make_drum_note(0, 0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)};
 
     SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
@@ -518,7 +518,7 @@ BOOST_AUTO_TEST_CASE(correct_with_charted_cymbals_for_non_pro_drums)
 {
     std::vector<SightRead::Note> notes {
         make_drum_note(0),
-        make_drum_note(0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)};
+        make_drum_note(0, 0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)};
 
     SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
@@ -566,15 +566,16 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(disable_cymbals_is_correct)
 {
     const std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_YELLOW),
-        make_drum_note(192, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)};
+        make_drum_note(0, 0, SightRead::DRUM_YELLOW),
+        make_drum_note(192, 0, SightRead::DRUM_YELLOW,
+                       SightRead::FLAGS_CYMBAL)};
     SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     track.disable_cymbals();
 
     const std::vector<SightRead::Note> new_notes {
-        make_drum_note(0, SightRead::DRUM_YELLOW),
-        make_drum_note(192, SightRead::DRUM_YELLOW)};
+        make_drum_note(0, 0, SightRead::DRUM_YELLOW),
+        make_drum_note(192, 0, SightRead::DRUM_YELLOW)};
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   new_notes.cbegin(), new_notes.cend());
 }
@@ -582,17 +583,17 @@ BOOST_AUTO_TEST_CASE(disable_cymbals_is_correct)
 BOOST_AUTO_TEST_CASE(disable_dynamics_is_correct)
 {
     const std::vector<SightRead::Note> notes {
-        make_drum_note(0, SightRead::DRUM_RED),
-        make_drum_note(192, SightRead::DRUM_RED, SightRead::FLAGS_GHOST),
-        make_drum_note(384, SightRead::DRUM_RED, SightRead::FLAGS_ACCENT)};
+        make_drum_note(0, 0, SightRead::DRUM_RED),
+        make_drum_note(192, 0, SightRead::DRUM_RED, SightRead::FLAGS_GHOST),
+        make_drum_note(384, 0, SightRead::DRUM_RED, SightRead::FLAGS_ACCENT)};
     SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     track.disable_dynamics();
 
     const std::vector<SightRead::Note> new_notes {
-        make_drum_note(0, SightRead::DRUM_RED),
-        make_drum_note(192, SightRead::DRUM_RED),
-        make_drum_note(384, SightRead::DRUM_RED)};
+        make_drum_note(0, 0, SightRead::DRUM_RED),
+        make_drum_note(192, 0, SightRead::DRUM_RED),
+        make_drum_note(384, 0, SightRead::DRUM_RED)};
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   new_notes.cbegin(), new_notes.cend());
 }
@@ -629,7 +630,7 @@ BOOST_AUTO_TEST_CASE(yellows_are_flagged)
 
 BOOST_AUTO_TEST_CASE(other_colours_are_not_flagged)
 {
-    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_BLUE)},
+    SightRead::NoteTrack track {{make_drum_note(0, 0, SightRead::DRUM_BLUE)},
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     track.disco_flips(
@@ -689,7 +690,7 @@ BOOST_AUTO_TEST_CASE(red_toms_become_yellow_cymbals)
 
 BOOST_AUTO_TEST_CASE(yellow_toms_become_red_toms)
 {
-    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_YELLOW)},
+    SightRead::NoteTrack track {{make_drum_note(0, 0, SightRead::DRUM_YELLOW)},
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     track.disco_flips(
@@ -705,7 +706,7 @@ BOOST_AUTO_TEST_CASE(yellow_toms_become_red_toms)
 BOOST_AUTO_TEST_CASE(yellow_cymbals_become_red_toms)
 {
     SightRead::NoteTrack track {
-        {make_drum_note(0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)},
+        {make_drum_note(0, 0, SightRead::DRUM_YELLOW, SightRead::FLAGS_CYMBAL)},
         SightRead::TrackType::Drums,
         std::make_shared<SightRead::SongGlobalData>()};
     track.disco_flips(
@@ -720,7 +721,7 @@ BOOST_AUTO_TEST_CASE(yellow_cymbals_become_red_toms)
 
 BOOST_AUTO_TEST_CASE(other_notes_are_unaffected)
 {
-    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_BLUE)},
+    SightRead::NoteTrack track {{make_drum_note(0, 0, SightRead::DRUM_BLUE)},
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     track.disco_flips(
@@ -832,7 +833,7 @@ BOOST_AUTO_TEST_CASE(red_toms_are_converted)
     track.flam_markers(
         {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
     std::vector<SightRead::Note> expected_notes {
-        make_drum_note(0), make_drum_note(0, SightRead::DRUM_YELLOW)};
+        make_drum_note(0), make_drum_note(0, 0, SightRead::DRUM_YELLOW)};
 
     track.apply_flam_markers();
 
@@ -843,14 +844,14 @@ BOOST_AUTO_TEST_CASE(red_toms_are_converted)
 
 BOOST_AUTO_TEST_CASE(blue_toms_are_converted)
 {
-    SightRead::NoteTrack track {{make_drum_note(0, SightRead::DRUM_BLUE)},
+    SightRead::NoteTrack track {{make_drum_note(0, 0, SightRead::DRUM_BLUE)},
                                 SightRead::TrackType::Drums,
                                 std::make_shared<SightRead::SongGlobalData>()};
     track.flam_markers(
         {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
     std::vector<SightRead::Note> expected_notes {
-        make_drum_note(0, SightRead::DRUM_BLUE),
-        make_drum_note(0, SightRead::DRUM_GREEN)};
+        make_drum_note(0, 0, SightRead::DRUM_BLUE),
+        make_drum_note(0, 0, SightRead::DRUM_GREEN)};
 
     track.apply_flam_markers();
 
@@ -862,14 +863,14 @@ BOOST_AUTO_TEST_CASE(blue_toms_are_converted)
 BOOST_AUTO_TEST_CASE(blue_cymbals_are_converted)
 {
     SightRead::NoteTrack track {
-        {make_drum_note(0, SightRead::DRUM_BLUE, SightRead::FLAGS_CYMBAL)},
+        {make_drum_note(0, 0, SightRead::DRUM_BLUE, SightRead::FLAGS_CYMBAL)},
         SightRead::TrackType::Drums,
         std::make_shared<SightRead::SongGlobalData>()};
     track.flam_markers(
         {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
     std::vector<SightRead::Note> expected_notes {
-        make_drum_note(0, SightRead::DRUM_BLUE, SightRead::FLAGS_CYMBAL),
-        make_drum_note(0, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL)};
+        make_drum_note(0, 0, SightRead::DRUM_BLUE, SightRead::FLAGS_CYMBAL),
+        make_drum_note(0, 0, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL)};
 
     track.apply_flam_markers();
 
@@ -881,13 +882,13 @@ BOOST_AUTO_TEST_CASE(blue_cymbals_are_converted)
 BOOST_AUTO_TEST_CASE(compound_notes_are_not_converted)
 {
     SightRead::NoteTrack track {
-        {make_drum_note(0), make_drum_note(0, SightRead::DRUM_YELLOW)},
+        {make_drum_note(0), make_drum_note(0, 0, SightRead::DRUM_YELLOW)},
         SightRead::TrackType::Drums,
         std::make_shared<SightRead::SongGlobalData>()};
     track.flam_markers(
         {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
     std::vector<SightRead::Note> expected_notes {
-        make_drum_note(0), make_drum_note(0, SightRead::DRUM_YELLOW)};
+        make_drum_note(0), make_drum_note(0, 0, SightRead::DRUM_YELLOW)};
 
     track.apply_flam_markers();
 
@@ -899,14 +900,14 @@ BOOST_AUTO_TEST_CASE(compound_notes_are_not_converted)
 BOOST_AUTO_TEST_CASE(kick_notes_do_not_affect_conversion)
 {
     SightRead::NoteTrack track {
-        {make_drum_note(0), make_drum_note(0, SightRead::DRUM_KICK)},
+        {make_drum_note(0), make_drum_note(0, 0, SightRead::DRUM_KICK)},
         SightRead::TrackType::Drums,
         std::make_shared<SightRead::SongGlobalData>()};
     track.flam_markers(
         {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
     std::vector<SightRead::Note> expected_notes {
-        make_drum_note(0), make_drum_note(0, SightRead::DRUM_YELLOW),
-        make_drum_note(0, SightRead::DRUM_KICK)};
+        make_drum_note(0), make_drum_note(0, 0, SightRead::DRUM_YELLOW),
+        make_drum_note(0, 0, SightRead::DRUM_KICK)};
 
     track.apply_flam_markers();
 
@@ -918,14 +919,14 @@ BOOST_AUTO_TEST_CASE(kick_notes_do_not_affect_conversion)
 BOOST_AUTO_TEST_CASE(kick_notes_appearing_before_toms_do_not_break_conversion)
 {
     SightRead::NoteTrack track {
-        {make_drum_note(0, SightRead::DRUM_KICK), make_drum_note(0)},
+        {make_drum_note(0, 0, SightRead::DRUM_KICK), make_drum_note(0)},
         SightRead::TrackType::Drums,
         std::make_shared<SightRead::SongGlobalData>()};
     track.flam_markers(
         {{.position = SightRead::Tick {0}, .length = SightRead::Tick {1}}});
     std::vector<SightRead::Note> expected_notes {
-        make_drum_note(0), make_drum_note(0, SightRead::DRUM_YELLOW),
-        make_drum_note(0, SightRead::DRUM_KICK)};
+        make_drum_note(0), make_drum_note(0, 0, SightRead::DRUM_YELLOW),
+        make_drum_note(0, 0, SightRead::DRUM_KICK)};
 
     track.apply_flam_markers();
 

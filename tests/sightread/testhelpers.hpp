@@ -31,14 +31,15 @@ inline SightRead::Note make_ghl_note(int position, int length = 0,
 }
 
 inline SightRead::Note
-make_drum_note(int position, SightRead::DrumNotes colour = SightRead::DRUM_RED,
+make_drum_note(int position, int length = 0,
+               SightRead::DrumNotes colour = SightRead::DRUM_RED,
                SightRead::NoteFlags flags = SightRead::FLAGS_NONE)
 {
     SightRead::Note note;
     note.position = SightRead::Tick {position};
     note.flags
         = static_cast<SightRead::NoteFlags>(flags | SightRead::FLAGS_DRUMS);
-    note.lengths.at(colour) = SightRead::Tick {0};
+    note.lengths.at(colour) = SightRead::Tick {length};
 
     return note;
 }
