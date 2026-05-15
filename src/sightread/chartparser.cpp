@@ -8,7 +8,8 @@
 SightRead::ChartParser::ChartParser(SightRead::Metadata metadata)
     : m_metadata {std::move(metadata)}
     , m_permitted_instruments {SightRead::all_instruments()}
-    , m_permit_solos {true}
+    , m_solo_parsing_behaviour {SightRead::SoloParsingBehaviour::
+                                    PreferLaterStarts}
     , m_allow_open_chords {true}
 {
 }
@@ -20,9 +21,10 @@ SightRead::ChartParser& SightRead::ChartParser::permit_instruments(
     return *this;
 }
 
-SightRead::ChartParser& SightRead::ChartParser::parse_solos(bool permit_solos)
+SightRead::ChartParser& SightRead::ChartParser::solo_parsing_behaviour(
+    SightRead::SoloParsingBehaviour behaviour)
 {
-    m_permit_solos = permit_solos;
+    m_solo_parsing_behaviour = behaviour;
     return *this;
 }
 
@@ -39,7 +41,7 @@ SightRead::Song SightRead::ChartParser::parse(std::string_view data) const
     const auto chart = SightRead::Detail::parse_chart(utf8_string);
     const auto converter = SightRead::Detail::ChartConverter(m_metadata)
                                .permit_instruments(m_permitted_instruments)
-                               .parse_solos(m_permit_solos)
+                               .solo_parsing_behaviour(m_solo_parsing_behaviour)
                                .allow_open_chords(m_allow_open_chords);
     return converter.convert(chart);
 }

@@ -901,8 +901,9 @@ track_solos(const InstrumentMidiTrack& event_track,
         solo_offs.push_back(pos);
     }
 
-    return SightRead::Detail::form_solo_vector(solo_ons, solo_offs, notes,
-                                               track_type, true);
+    return SightRead::Detail::form_solo_vector(
+        solo_ons, solo_offs, notes, track_type,
+        SightRead::SoloParsingBehaviour::PreferEarlierStarts, true);
 }
 
 void apply_forcing(

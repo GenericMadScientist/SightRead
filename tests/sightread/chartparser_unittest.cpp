@@ -560,29 +560,6 @@ BOOST_AUTO_TEST_CASE(empty_solos_are_ignored)
             .empty());
 }
 
-BOOST_AUTO_TEST_CASE(repeated_solo_starts_and_ends_dont_matter)
-{
-    const auto chart_file = section_string(
-        "ExpertSingle", {{.position = 100, .fret = 0, .length = 0}}, {},
-        {{.position = 0, .data = "solo"},
-         {.position = 100, .data = "solo"},
-         {.position = 200, .data = "soloend"},
-         {.position = 300, .data = "soloend"}});
-    std::vector<SightRead::Solo> required_solos {{.start = SightRead::Tick {0},
-                                                  .end = SightRead::Tick {201},
-                                                  .value = 100}};
-
-    const auto song = SightRead::ChartParser({}).parse(chart_file);
-    const auto parsed_solos
-        = song.track(SightRead::Instrument::Guitar,
-                     SightRead::Difficulty::Expert)
-              .solos(SightRead::DrumSettings::default_settings());
-
-    BOOST_CHECK_EQUAL_COLLECTIONS(parsed_solos.cbegin(), parsed_solos.cend(),
-                                  required_solos.cbegin(),
-                                  required_solos.cend());
-}
-
 BOOST_AUTO_TEST_CASE(solo_markers_are_sorted)
 {
     const auto chart_file = section_string(
@@ -616,6 +593,42 @@ BOOST_AUTO_TEST_CASE(solos_with_no_soloend_event_are_ignored)
         song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
             .solos(SightRead::DrumSettings::default_settings())
             .empty());
+}
+
+BOOST_AUTO_TEST_CASE(solos_with_multiple_starts_start_with_the_later_beginning)
+{
+    const auto chart_file = section_string(
+        "ExpertSingle", {{.position = 192, .fret = 0, .length = 0}}, {},
+        {{.position = 0, .data = "solo"},
+         {.position = 100, .data = "solo"},
+         {.position = 200, .data = "soloend"}});
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto solos = song.track(SightRead::Instrument::Guitar,
+                                  SightRead::Difficulty::Expert)
+                           .solos(SightRead::DrumSettings::default_settings());
+
+    BOOST_CHECK_EQUAL(solos.at(0).start, SightRead::Tick {100});
+}
+
+BOOST_AUTO_TEST_CASE(earlier_start_is_chosen_with_solo_parsing_early_start)
+{
+    const auto chart_file = section_string(
+        "ExpertSingle", {{.position = 192, .fret = 0, .length = 0}}, {},
+        {{.position = 0, .data = "solo"},
+         {.position = 100, .data = "solo"},
+         {.position = 200, .data = "soloend"}});
+
+    const auto song
+        = SightRead::ChartParser({})
+              .solo_parsing_behaviour(
+                  SightRead::SoloParsingBehaviour::PreferEarlierStarts)
+              .parse(chart_file);
+    const auto solos = song.track(SightRead::Instrument::Guitar,
+                                  SightRead::Difficulty::Expert)
+                           .solos(SightRead::DrumSettings::default_settings());
+
+    BOOST_CHECK_EQUAL(solos.at(0).start, SightRead::Tick {0});
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -979,7 +992,8 @@ BOOST_AUTO_TEST_CASE(solos_ignored_from_charts_if_not_permitted)
                           {.position = 300, .data = "solo"},
                           {.position = 400, .data = "soloend"}});
 
-    const auto parser = SightRead::ChartParser({}).parse_solos(false);
+    const auto parser = SightRead::ChartParser({}).solo_parsing_behaviour(
+        SightRead::SoloParsingBehaviour::NoSolos);
     const auto song = parser.parse(chart_file);
     const auto parsed_solos
         = song.track(SightRead::Instrument::Guitar,

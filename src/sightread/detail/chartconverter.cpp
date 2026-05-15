@@ -431,7 +431,8 @@ bool is_event_disco_end(const std::string& data)
 SightRead::NoteTrack
 note_track_from_section(const SightRead::Detail::ChartSection& section,
                         std::shared_ptr<SightRead::SongGlobalData> global_data,
-                        SightRead::TrackType track_type, bool permit_solos,
+                        SightRead::TrackType track_type,
+                        SightRead::SoloParsingBehaviour solo_parsing_behaviour,
                         bool allow_open_chords, SightRead::Tick max_hopo_gap)
 {
     constexpr int DRUM_FILL_KEY = 64;
@@ -486,17 +487,16 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
     }
     std::ranges::sort(solo_on_events);
     std::ranges::sort(solo_off_events);
-    std::vector<SightRead::Solo> solos;
-    if (permit_solos) {
-        solos = SightRead::Detail::form_solo_vector(
-            solo_on_events, solo_off_events, notes, track_type, false);
-    }
+    auto solos = SightRead::Detail::form_solo_vector(
+        solo_on_events, solo_off_events, notes, track_type,
+        solo_parsing_behaviour, false);
     std::ranges::sort(disco_flip_on_events);
     std::ranges::sort(disco_flip_off_events);
     disco_flip_off_events.push_back(std::numeric_limits<int>::max());
     std::vector<SightRead::DiscoFlip> disco_flips;
     for (auto [start, end] : SightRead::Detail::combine_solo_events(
-             disco_flip_on_events, disco_flip_off_events)) {
+             disco_flip_on_events, disco_flip_off_events,
+             SightRead::SoloParsingBehaviour::PreferEarlierStarts)) {
         disco_flips.push_back({.position = start, .length = end - start});
     }
 
@@ -548,7 +548,8 @@ SightRead::Detail::ChartConverter::ChartConverter(SightRead::Metadata metadata)
     , m_charter {std::move(metadata.charter)}
     , m_hopo_threshold {metadata.hopo_threshold}
     , m_permitted_instruments {SightRead::all_instruments()}
-    , m_permit_solos {true}
+    , m_solo_parsing_behaviour {SightRead::SoloParsingBehaviour::
+                                    PreferLaterStarts}
     , m_allow_open_chords {true}
 {
 }
@@ -562,9 +563,10 @@ SightRead::Detail::ChartConverter::permit_instruments(
 }
 
 SightRead::Detail::ChartConverter&
-SightRead::Detail::ChartConverter::parse_solos(bool permit_solos)
+SightRead::Detail::ChartConverter::solo_parsing_behaviour(
+    SightRead::SoloParsingBehaviour behaviour)
 {
-    m_permit_solos = permit_solos;
+    m_solo_parsing_behaviour = behaviour;
     return *this;
 }
 
@@ -614,7 +616,7 @@ SightRead::Song SightRead::Detail::ChartConverter::convert(
             const auto resolution = song.global_data().resolution();
             auto note_track = note_track_from_section(
                 section, song.global_data_ptr(),
-                track_type_from_instrument(inst), m_permit_solos,
+                track_type_from_instrument(inst), m_solo_parsing_behaviour,
                 m_allow_open_chords,
                 m_hopo_threshold.chart_max_hopo_gap(resolution));
             song.add_note_track(inst, diff, std::move(note_track));

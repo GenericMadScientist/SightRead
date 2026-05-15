@@ -15,8 +15,9 @@ bool SightRead::Detail::is_six_fret_instrument(SightRead::Instrument instrument)
 }
 
 std::vector<std::tuple<SightRead::Tick, SightRead::Tick>>
-SightRead::Detail::combine_solo_events(const std::vector<int>& on_events,
-                                       const std::vector<int>& off_events)
+SightRead::Detail::combine_solo_events(
+    const std::vector<int>& on_events, const std::vector<int>& off_events,
+    SightRead::SoloParsingBehaviour solo_parsing_behaviour)
 {
     std::vector<std::tuple<SightRead::Tick, SightRead::Tick>> ranges;
 
@@ -28,28 +29,37 @@ SightRead::Detail::combine_solo_events(const std::vector<int>& on_events,
             ++off_iter;
             continue;
         }
-        ranges.emplace_back(*on_iter, *off_iter);
-        while (on_iter < on_events.cend() && *on_iter < *off_iter) {
-            ++on_iter;
+        if (solo_parsing_behaviour
+            == SightRead::SoloParsingBehaviour::PreferLaterStarts) {
+            on_iter
+                = std::find_if(on_iter, on_events.cend(),
+                               [=](const auto on) { return on >= *off_iter; });
+            --on_iter;
         }
+        ranges.emplace_back(*on_iter, *off_iter);
+        on_iter = std::find_if(on_iter, on_events.cend(),
+                               [=](const auto on) { return on >= *off_iter; });
     }
 
     return ranges;
 }
 
-std::vector<SightRead::Solo>
-SightRead::Detail::form_solo_vector(const std::vector<int>& solo_on_events,
-                                    const std::vector<int>& solo_off_events,
-                                    const std::vector<SightRead::Note>& notes,
-                                    SightRead::TrackType track_type,
-                                    bool is_midi)
+std::vector<SightRead::Solo> SightRead::Detail::form_solo_vector(
+    const std::vector<int>& solo_on_events,
+    const std::vector<int>& solo_off_events,
+    const std::vector<SightRead::Note>& notes, SightRead::TrackType track_type,
+    SightRead::SoloParsingBehaviour solo_parsing_behaviour, bool is_midi)
 {
     constexpr int SOLO_NOTE_VALUE = 100;
 
+    if (solo_parsing_behaviour == SightRead::SoloParsingBehaviour::NoSolos) {
+        return {};
+    }
+
     std::vector<SightRead::Solo> solos;
 
-    for (auto [start, end] :
-         combine_solo_events(solo_on_events, solo_off_events)) {
+    for (auto [start, end] : combine_solo_events(
+             solo_on_events, solo_off_events, solo_parsing_behaviour)) {
         std::set<SightRead::Tick> positions_in_solo;
         auto solo_struct_end = end;
         if (!is_midi) {
