@@ -114,7 +114,9 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Boost
-        run: brew install boost
+        run: |
+          export HOMEBREW_REQUIRE_TAP_TRUST=1
+          brew install boost
 
       - name: Make build directory
         run: mkdir build
