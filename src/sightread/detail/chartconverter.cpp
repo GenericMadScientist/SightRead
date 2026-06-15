@@ -503,7 +503,7 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
     SightRead::NoteTrack note_track {std::move(notes), track_type,
                                      std::move(global_data), allow_open_chords,
                                      max_hopo_gap};
-    note_track.sp_phrases(sp);
+    note_track.sp_phrases(std::move(sp));
     note_track.solos(std::move(solos));
     note_track.drum_fills(std::move(fills));
     note_track.disco_flips(disco_flips);

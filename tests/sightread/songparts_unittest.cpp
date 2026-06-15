@@ -196,8 +196,8 @@ BOOST_AUTO_TEST_CASE(sp_phrases_do_not_overlap)
                                 std::make_shared<SightRead::SongGlobalData>()};
     track.sp_phrases(phrases);
     std::vector<SightRead::StarPower> required_phrases {
-        {.position = SightRead::Tick {768}, .length = SightRead::Tick {282}},
-        {.position = SightRead::Tick {1050}, .length = SightRead::Tick {718}}};
+        {.position = SightRead::Tick {768}, .length = SightRead::Tick {132}},
+        {.position = SightRead::Tick {900}, .length = SightRead::Tick {150}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         track.sp_phrases().cbegin(), track.sp_phrases().cend(),

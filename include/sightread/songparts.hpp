@@ -253,7 +253,7 @@ public:
     void apply_flam_markers();
     [[nodiscard]] const std::vector<Note>& notes() const { return m_notes; }
 
-    void sp_phrases(const std::vector<StarPower>& sp_phrases);
+    void sp_phrases(std::vector<StarPower> sp_phrases);
     [[nodiscard]] const std::vector<StarPower>& sp_phrases() const
     {
         return m_sp_phrases;

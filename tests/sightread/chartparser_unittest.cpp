@@ -633,6 +633,27 @@ BOOST_AUTO_TEST_CASE(earlier_start_is_chosen_with_solo_parsing_early_start)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_CASE(overlapping_sps_are_read_correctly)
+{
+    const auto chart_file
+        = section_string("ExpertSingle",
+                         {{.position = 192, .fret = 0, .length = 0},
+                          {.position = 384, .fret = 0, .length = 0}},
+                         {{.position = 192, .key = 2, .length = 768},
+                          {.position = 384, .key = 2, .length = 576}});
+    std::vector<SightRead::StarPower> sp_phrases {
+        {.position = SightRead::Tick {192}, .length = SightRead::Tick {192}},
+        {.position = SightRead::Tick {384}, .length = SightRead::Tick {576}}};
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto& track = song.track(SightRead::Instrument::Guitar,
+                                   SightRead::Difficulty::Expert);
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.sp_phrases().cbegin(),
+                                  track.sp_phrases().cend(),
+                                  sp_phrases.cbegin(), sp_phrases.cend());
+}
+
 BOOST_AUTO_TEST_SUITE(other_five_fret_instruments_are_read_from_chart)
 
 BOOST_AUTO_TEST_CASE(guitar_coop_is_read)
