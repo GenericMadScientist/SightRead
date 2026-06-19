@@ -21,24 +21,32 @@ SightRead::Detail::combine_solo_events(
 {
     std::vector<std::tuple<SightRead::Tick, SightRead::Tick>> ranges;
 
-    auto on_iter = on_events.cbegin();
-    auto off_iter = off_events.cbegin();
-
-    while (on_iter < on_events.cend() && off_iter < off_events.cend()) {
-        if (*on_iter >= *off_iter) {
-            ++off_iter;
-            continue;
+    if (solo_parsing_behaviour
+        == SightRead::SoloParsingBehaviour::PreferLaterStarts) {
+        std::set<int> on_event_set {on_events.cbegin(), on_events.cend()};
+        for (auto off : off_events) {
+            auto matching_on = on_event_set.upper_bound(off);
+            if (matching_on == on_event_set.begin()) {
+                continue;
+            }
+            --matching_on;
+            ranges.emplace_back(*matching_on, off);
+            on_event_set.erase(matching_on);
         }
-        if (solo_parsing_behaviour
-            == SightRead::SoloParsingBehaviour::PreferLaterStarts) {
+    } else {
+        auto on_iter = on_events.cbegin();
+        auto off_iter = off_events.cbegin();
+
+        while (on_iter < on_events.cend() && off_iter < off_events.cend()) {
+            if (*on_iter >= *off_iter) {
+                ++off_iter;
+                continue;
+            }
+            ranges.emplace_back(*on_iter, *off_iter);
             on_iter
                 = std::find_if(on_iter, on_events.cend(),
                                [=](const auto on) { return on >= *off_iter; });
-            --on_iter;
         }
-        ranges.emplace_back(*on_iter, *off_iter);
-        on_iter = std::find_if(on_iter, on_events.cend(),
-                               [=](const auto on) { return on >= *off_iter; });
     }
 
     return ranges;
@@ -56,18 +64,29 @@ std::vector<SightRead::Solo> SightRead::Detail::form_solo_vector(
         return {};
     }
 
-    std::vector<SightRead::Solo> solos;
-
-    for (auto [start, end] : combine_solo_events(
-             solo_on_events, solo_off_events, solo_parsing_behaviour)) {
-        std::set<SightRead::Tick> positions_in_solo;
-        auto solo_struct_end = end;
-        if (!is_midi) {
-            solo_struct_end += SightRead::Tick {1};
+    auto ranges = combine_solo_events(solo_on_events, solo_off_events,
+                                      solo_parsing_behaviour);
+    if (!is_midi) {
+        for (auto& [start, end] : ranges) {
+            end += SightRead::Tick {1};
         }
+    }
+    std::ranges::stable_sort(ranges);
+    for (auto i = 0U; i + 1 < ranges.size(); ++i) {
+        auto& range = ranges.at(i);
+        auto& next_range = ranges.at(i + 1);
+        std::get<1>(next_range)
+            = std::max(std::get<1>(next_range), std::get<1>(range));
+        std::get<1>(range)
+            = std::min(std::get<1>(range), std::get<0>(next_range));
+    }
+
+    std::vector<SightRead::Solo> solos;
+    for (auto [start, end] : ranges) {
+        std::set<SightRead::Tick> positions_in_solo;
         auto note_count = 0;
         for (const auto& note : notes) {
-            if (note.position >= start && note.position < solo_struct_end) {
+            if (note.position >= start && note.position < end) {
                 positions_in_solo.insert(note.position);
                 ++note_count;
             }
@@ -79,7 +98,7 @@ std::vector<SightRead::Solo> SightRead::Detail::form_solo_vector(
             note_count = static_cast<int>(positions_in_solo.size());
         }
         solos.push_back({.start = start,
-                         .end = solo_struct_end,
+                         .end = end,
                          .value = SOLO_NOTE_VALUE * note_count});
     }
 

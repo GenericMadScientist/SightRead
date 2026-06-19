@@ -631,6 +631,35 @@ BOOST_AUTO_TEST_CASE(earlier_start_is_chosen_with_solo_parsing_early_start)
     BOOST_CHECK_EQUAL(solos.at(0).start, SightRead::Tick {0});
 }
 
+BOOST_AUTO_TEST_CASE(overlapping_solos_are_normalised_correctly)
+{
+    const auto chart_file
+        = section_string("ExpertSingle",
+                         {{.position = 192, .fret = 0, .length = 0},
+                          {.position = 384, .fret = 0, .length = 0}},
+                         {},
+                         {{.position = 0, .data = "solo"},
+                          {.position = 200, .data = "solo"},
+                          {.position = 300, .data = "soloend"},
+                          {.position = 400, .data = "soloend"}});
+    std::vector<SightRead::Solo> required_solos {
+        {.start = SightRead::Tick {0},
+         .end = SightRead::Tick {200},
+         .value = 100},
+        {.start = SightRead::Tick {200},
+         .end = SightRead::Tick {401},
+         .value = 100}};
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto solos = song.track(SightRead::Instrument::Guitar,
+                                  SightRead::Difficulty::Expert)
+                           .solos(SightRead::DrumSettings::default_settings());
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(solos.cbegin(), solos.cend(),
+                                  required_solos.cbegin(),
+                                  required_solos.cend());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(overlapping_sps_are_read_correctly)
