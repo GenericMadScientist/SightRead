@@ -2004,7 +2004,7 @@ BOOST_AUTO_TEST_CASE(bres_are_read_correctly_from_mid)
                                   bres.cbegin(), bres.cend());
 }
 
-BOOST_AUTO_TEST_CASE(disco_flips_are_read_correctly_from_mid)
+BOOST_AUTO_TEST_CASE(disco_flips_are_read_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
         {{.time = 0, .event = {part_event("PART DRUMS")}},
@@ -2023,6 +2023,38 @@ BOOST_AUTO_TEST_CASE(disco_flips_are_read_correctly_from_mid)
           .event = {SightRead::Detail::MetaEvent {
               .type = 1,
               .data = {0x5B, 0x6D, 0x69, 0x78, 0x20, 0x33, 0x20, 0x64, 0x72,
+                       0x75, 0x6D, 0x73, 0x30, 0x5D}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+    const auto song = drums_only_converter().convert(midi);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+    const auto& note = track.notes().at(0);
+
+    BOOST_CHECK_EQUAL(note.flags,
+                      SightRead::FLAGS_CYMBAL | SightRead::FLAGS_DISCO
+                          | SightRead::FLAGS_DRUMS);
+}
+
+BOOST_AUTO_TEST_CASE(disco_flips_with_underscores_are_read_correctly)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 15,
+          .event = {SightRead::Detail::MetaEvent {
+              .type = 1,
+              .data = {0x5B, 0x6D, 0x69, 0x78, 0x5F, 0x33, 0x5F, 0x64, 0x72,
+                       0x75, 0x6D, 0x73, 0x30, 0x64, 0x5D}}}},
+         {.time = 45,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 65,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}},
+         {.time = 75,
+          .event = {SightRead::Detail::MetaEvent {
+              .type = 1,
+              .data = {0x5B, 0x6D, 0x69, 0x78, 0x5F, 0x33, 0x5F, 0x64, 0x72,
                        0x75, 0x6D, 0x73, 0x30, 0x5D}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};

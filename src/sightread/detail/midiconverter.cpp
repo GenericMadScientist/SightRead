@@ -592,9 +592,9 @@ void append_disco_flip(InstrumentMidiTrack& event_track,
     constexpr int FLIP_START_SIZE = 15;
     constexpr int FLIP_END_SIZE = 14;
     constexpr int TEXT_EVENT_ID = 1;
-    constexpr std::array<std::uint8_t, 5> MIX {{'[', 'm', 'i', 'x', ' '}};
-    constexpr std::array<std::uint8_t, 6> DRUMS {
-        {' ', 'd', 'r', 'u', 'm', 's'}};
+    constexpr std::array<std::uint8_t, 4> MIX {{'[', 'm', 'i', 'x'}};
+    constexpr std::array<std::uint8_t, 5> DRUMS {{'d', 'r', 'u', 'm', 's'}};
+    constexpr std::array<std::size_t, 2> SPACE_LOCATIONS {{4, 6}};
 
     if (meta_event.type != TEXT_EVENT_ID) {
         return;
@@ -607,11 +607,17 @@ void append_disco_flip(InstrumentMidiTrack& event_track,
         return;
     }
     if (!std::equal(DRUMS.cbegin(), DRUMS.cend(),
-                    meta_event.data.cbegin() + MIX.size() + 1)) {
+                    meta_event.data.cbegin() + MIX.size() + 3)) {
         return;
     }
+    for (auto space_loc : SPACE_LOCATIONS) {
+        const auto character = meta_event.data.at(space_loc);
+        if (character != ' ' && character != '_') {
+            return;
+        }
+    }
     const auto diff = static_cast<SightRead::Difficulty>(
-        meta_event.data.at(MIX.size()) - '0');
+        meta_event.data.at(MIX.size() + 1) - '0');
     if (meta_event.data.size() == FLIP_END_SIZE
         && meta_event.data.at(FLIP_END_SIZE - 1) == ']') {
         event_track.disco_flip_off_events[diff].emplace_back(time, rank);
