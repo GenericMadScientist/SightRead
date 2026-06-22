@@ -924,14 +924,15 @@ void apply_forcing(
     const HalfOpenIntervalSet<int> tap_note_events {combine_note_on_off_events(
         event_track.tap_on_events, event_track.tap_off_events)};
 
-    std::map<SightRead::Difficulty, ClosedIntervalSet<int>> force_hopo_events;
+    std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>> force_hopo_events;
     std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>
         force_strum_events;
     for (auto d : DIFFICULTIES) {
-        force_hopo_events.emplace(d,
-                                  combine_note_on_off_events(
-                                      event_track.force_hopo_on_events.at(d),
-                                      event_track.force_hopo_off_events.at(d)));
+        force_hopo_events.emplace(
+            d,
+            combine_note_on_off_events(event_track.force_hopo_on_events.at(d),
+                                       event_track.force_hopo_off_events.at(d),
+                                       true));
         force_strum_events.emplace(
             d,
             combine_note_on_off_events(event_track.force_strum_on_events.at(d),

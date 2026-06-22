@@ -1281,6 +1281,33 @@ BOOST_AUTO_TEST_CASE(length_zero_hopo_force_hopo_events_include_notes)
                           | SightRead::FLAGS_FIVE_FRET_GUITAR);
 }
 
+BOOST_AUTO_TEST_CASE(positive_length_force_hopo_events_excludes_notes_at_end)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
+         {.time = 480,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 480,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}},
+         {.time = 481,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
+                                        .tracks = {note_track}};
+
+    const auto song = guitar_only_converter().convert(midi);
+    const auto notes = song.track(SightRead::Instrument::Guitar,
+                                  SightRead::Difficulty::Expert)
+                           .notes();
+
+    BOOST_CHECK_EQUAL(notes.at(0).flags, SightRead::FLAGS_FIVE_FRET_GUITAR);
+}
+
 BOOST_AUTO_TEST_CASE(length_zero_hopo_force_strum_events_include_notes)
 {
     SightRead::Detail::MidiTrack note_track {
