@@ -9,7 +9,7 @@ jobs:
     runs-on: windows-2025-vs2026
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Boost dependencies
         run: vcpkg --triplet x64-windows install boost-locale boost-test
@@ -32,7 +32,7 @@ jobs:
     runs-on: windows-2025-vs2026
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Boost dependencies
         run: |
@@ -59,7 +59,7 @@ jobs:
     runs-on: windows-2025-vs2026
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Boost dependencies
         run: vcpkg --triplet x64-windows install boost-locale boost-test
@@ -83,7 +83,7 @@ jobs:
     runs-on: macos-15-intel
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Boost 1.86.0
         run: |
@@ -111,7 +111,7 @@ jobs:
     runs-on: macos-15-intel
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Boost
         run: |
@@ -133,7 +133,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Boost 1.86.0
         run: |
@@ -161,7 +161,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Boost 1.86.0
         run: |
