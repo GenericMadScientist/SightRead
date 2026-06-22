@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(sp_phrases_do_not_overlap)
     track.sp_phrases(phrases);
     std::vector<SightRead::StarPower> required_phrases {
         {.position = SightRead::Tick {768}, .length = SightRead::Tick {132}},
-        {.position = SightRead::Tick {900}, .length = SightRead::Tick {150}}};
+        {.position = SightRead::Tick {900}, .length = SightRead::Tick {868}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         track.sp_phrases().cbegin(), track.sp_phrases().cend(),
@@ -215,6 +215,24 @@ BOOST_AUTO_TEST_CASE(duplicate_sp_phrases_are_removed)
     track.sp_phrases(phrases);
     std::vector<SightRead::StarPower> required_phrases {
         {.position = SightRead::Tick {768}, .length = SightRead::Tick {192}}};
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        track.sp_phrases().cbegin(), track.sp_phrases().cend(),
+        required_phrases.cbegin(), required_phrases.cend());
+}
+
+BOOST_AUTO_TEST_CASE(combined_sp_phrases_use_later_end_for_later_phrase)
+{
+    std::vector<SightRead::Note> notes {make_note(96), make_note(288)};
+    std::vector<SightRead::StarPower> phrases {
+        {.position = SightRead::Tick {0}, .length = SightRead::Tick {384}},
+        {.position = SightRead::Tick {192}, .length = SightRead::Tick {0}}};
+    SightRead::NoteTrack track {notes, SightRead::TrackType::FiveFret,
+                                std::make_shared<SightRead::SongGlobalData>()};
+    track.sp_phrases(phrases);
+    std::vector<SightRead::StarPower> required_phrases {
+        {.position = SightRead::Tick {0}, .length = SightRead::Tick {192}},
+        {.position = SightRead::Tick {192}, .length = SightRead::Tick {192}}};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         track.sp_phrases().cbegin(), track.sp_phrases().cend(),

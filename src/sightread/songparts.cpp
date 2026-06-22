@@ -328,6 +328,9 @@ void SightRead::NoteTrack::sp_phrases(
         auto& next_phrase = sp_phrases.at(i + 1);
         const auto distance_to_next_phrase
             = next_phrase.position - current_phrase.position;
+        next_phrase.length
+            = std::max(next_phrase.length,
+                       current_phrase.length - distance_to_next_phrase);
         current_phrase.length
             = std::min(current_phrase.length, distance_to_next_phrase);
     }
