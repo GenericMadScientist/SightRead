@@ -73,7 +73,7 @@ jobs:
           CMAKE_GENERATOR: "Visual Studio 18 2026"
           CMAKE_GENERATOR_TOOLSET: ClangCL
           CMAKE_TOOLCHAIN_FILE: C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-        run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON -DCMAKE_CXX_EXTENSIONS=OFF ..
+        run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON -DCMAKE_CXX_EXTENSIONS=OFF -DCMAKE_CXX_SCAN_FOR_MODULES=OFF ..
 
       - name: Build
         working-directory: build
