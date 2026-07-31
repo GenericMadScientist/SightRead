@@ -429,38 +429,40 @@ SightRead::NoteFlags dynamics_flags_from_velocity(std::uint8_t velocity)
     return static_cast<SightRead::NoteFlags>(0);
 }
 
+struct MidiEventPosition {
+    int tick_position;
+    int order_position;
+};
+
 // Like combine_solo_events, but never skips on events to suit Midi parsing and
 // checks if there is an unmatched on event.
-// The tuples are a pair of the form (position, rank), where events later in the
-// file have a higher rank. This is in case of the Note Off event being right
-// after the corresponding Note On event in the file, but at the same tick.
 //
 // expand_length_zero_events is because some drum events have the length
 // increased by 1 if the start and end are at the same time.
 std::vector<std::tuple<int, int>>
-combine_note_on_off_events(const std::vector<std::tuple<int, int>>& on_events,
-                           const std::vector<std::tuple<int, int>>& off_events,
+combine_note_on_off_events(const std::vector<MidiEventPosition>& on_events,
+                           const std::vector<MidiEventPosition>& off_events,
                            bool expand_length_zero_events = false)
 {
     std::vector<std::tuple<int, int>> ranges;
-    std::stack<std::tuple<int, int>, std::vector<std::tuple<int, int>>>
+    std::stack<MidiEventPosition, std::vector<MidiEventPosition>>
         unmatched_on_events;
 
     auto on_iter = on_events.cbegin();
     for (auto off_event : off_events) {
-        while (on_iter < on_events.cend() && *on_iter < off_event) {
+        for (; on_iter < on_events.cend()
+             && on_iter->order_position < off_event.order_position;
+             ++on_iter) {
             unmatched_on_events.push(*on_iter);
-            ++on_iter;
         }
 
         if (unmatched_on_events.empty()) {
             continue;
         }
 
-        const auto on_event = unmatched_on_events.top();
+        const auto start = unmatched_on_events.top().tick_position;
         unmatched_on_events.pop();
-        const auto start = std::get<0>(on_event);
-        auto end = std::get<0>(off_event);
+        auto end = off_event.tick_position;
         if (start == end && expand_length_zero_events) {
             ++end;
         }
@@ -473,46 +475,46 @@ combine_note_on_off_events(const std::vector<std::tuple<int, int>>& on_events,
 struct InstrumentMidiTrack {
 public:
     std::map<std::tuple<SightRead::Difficulty, int, SightRead::NoteFlags>,
-             std::vector<std::tuple<int, int>>>
+             std::vector<MidiEventPosition>>
         note_on_events;
     std::map<std::tuple<SightRead::Difficulty, int>,
-             std::vector<std::tuple<int, int>>>
+             std::vector<MidiEventPosition>>
         note_off_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         open_on_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         open_off_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         tap_on_sysex_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         tap_off_sysex_events;
-    std::vector<std::tuple<int, int>> yellow_tom_on_events;
-    std::vector<std::tuple<int, int>> yellow_tom_off_events;
-    std::vector<std::tuple<int, int>> blue_tom_on_events;
-    std::vector<std::tuple<int, int>> blue_tom_off_events;
-    std::vector<std::tuple<int, int>> green_tom_on_events;
-    std::vector<std::tuple<int, int>> green_tom_off_events;
-    std::vector<std::tuple<int, int>> solo_on_events;
-    std::vector<std::tuple<int, int>> solo_off_events;
-    std::vector<std::tuple<int, int>> sp_on_events;
-    std::vector<std::tuple<int, int>> sp_off_events;
-    std::vector<std::tuple<int, int>> tap_on_events;
-    std::vector<std::tuple<int, int>> tap_off_events;
-    std::vector<std::tuple<int, int>> flam_on_events;
-    std::vector<std::tuple<int, int>> flam_off_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::vector<MidiEventPosition> yellow_tom_on_events;
+    std::vector<MidiEventPosition> yellow_tom_off_events;
+    std::vector<MidiEventPosition> blue_tom_on_events;
+    std::vector<MidiEventPosition> blue_tom_off_events;
+    std::vector<MidiEventPosition> green_tom_on_events;
+    std::vector<MidiEventPosition> green_tom_off_events;
+    std::vector<MidiEventPosition> solo_on_events;
+    std::vector<MidiEventPosition> solo_off_events;
+    std::vector<MidiEventPosition> sp_on_events;
+    std::vector<MidiEventPosition> sp_off_events;
+    std::vector<MidiEventPosition> tap_on_events;
+    std::vector<MidiEventPosition> tap_off_events;
+    std::vector<MidiEventPosition> flam_on_events;
+    std::vector<MidiEventPosition> flam_off_events;
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         force_hopo_on_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         force_hopo_off_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         force_strum_on_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         force_strum_off_events;
-    std::vector<std::tuple<int, int>> fill_on_events;
-    std::vector<std::tuple<int, int>> fill_off_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::vector<MidiEventPosition> fill_on_events;
+    std::vector<MidiEventPosition> fill_off_events;
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         disco_flip_on_events;
-    std::map<SightRead::Difficulty, std::vector<std::tuple<int, int>>>
+    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         disco_flip_off_events;
 
     InstrumentMidiTrack() = default;
