@@ -196,20 +196,7 @@ std::vector<SightRead::StarPower> SightRead::Song::rb3_unison_phrases() const
 
 std::vector<SightRead::StarPower> SightRead::Song::yarg_unison_phrases() const
 {
-    // This counter-intuitive logic is to replicate a bug in YARG v0.14.0.
-    const auto has_similar_end =
-        [](const auto& benchmark, const auto& candidate, const auto tolerance) {
-            if (benchmark.position >= candidate.position
-                && benchmark.position < candidate.position + tolerance) {
-                return true;
-            }
-            const auto benchmark_end = benchmark.position + benchmark.length;
-            const auto candidate_end = candidate.position + candidate.length;
-            return candidate_end >= benchmark_end
-                && candidate_end < benchmark_end + tolerance;
-        };
-    return unison_phrases(m_tracks, m_global_data->resolution(),
-                          has_similar_end);
+    return rb3_unison_phrases();
 }
 
 void SightRead::Song::speedup(int speed)
