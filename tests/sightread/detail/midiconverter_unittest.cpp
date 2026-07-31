@@ -435,27 +435,6 @@ BOOST_AUTO_TEST_CASE(guitar_notes_are_also_read_from_t1_gems)
         1 << SightRead::FIVE_FRET_RED);
 }
 
-BOOST_AUTO_TEST_CASE(note_on_events_must_have_a_corresponding_note_off_event)
-{
-    SightRead::Detail::MidiTrack note_track {
-        {{.time = 0, .event = {part_event("PART GUITAR")}},
-         {.time = 768,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {.time = 960,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
-         {.time = 1152,
-          .event = {SightRead::Detail::MidiEvent {.status = 0x90,
-                                                  .data = {96, 64}}}}}};
-    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
-                                        .tracks = {note_track}};
-    const SightRead::Detail::MidiConverter converter {{}};
-
-    BOOST_CHECK_THROW([&] { return converter.convert(midi); }(),
-                      SightRead::ParseError);
-}
-
 BOOST_AUTO_TEST_CASE(corresponding_note_off_events_are_after_note_on_events)
 {
     SightRead::Detail::MidiTrack note_track {{
@@ -531,34 +510,6 @@ BOOST_AUTO_TEST_CASE(
                             .notes();
 
     BOOST_CHECK_EQUAL(notes.size(), 2U);
-}
-
-BOOST_AUTO_TEST_CASE(each_note_on_event_consumes_the_following_note_off_event)
-{
-    SightRead::Detail::MidiTrack note_track {
-        {{.time = 0, .event = {part_event("PART GUITAR")}},
-         {.time = 768,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {.time = 769,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {.time = 800,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 64}}}},
-         {.time = 1000,
-          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
-                                                  .data = {96, 64}}}}}};
-    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
-                                        .tracks = {note_track}};
-
-    const auto song = guitar_only_converter().convert(midi);
-    const auto& notes = song.track(SightRead::Instrument::Guitar,
-                                   SightRead::Difficulty::Expert)
-                            .notes();
-
-    BOOST_CHECK_EQUAL(notes.size(), 2U);
-    BOOST_CHECK_GT(notes.at(1).lengths.at(0), SightRead::Tick {0});
 }
 
 BOOST_AUTO_TEST_CASE(note_off_events_can_be_zero_ticks_after_the_note_on_events)
@@ -866,10 +817,13 @@ BOOST_AUTO_TEST_CASE(a_single_phrase_is_read)
                                   sp_phrases.cbegin(), sp_phrases.cend());
 }
 
-BOOST_AUTO_TEST_CASE(note_off_event_is_required_for_every_phrase)
+BOOST_AUTO_TEST_CASE(note_off_event_is_matched_with_latest_previous_on_event)
 {
     SightRead::Detail::MidiTrack note_track {
         {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 384,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {116, 64}}}},
          {.time = 768,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {116, 64}}}},
@@ -878,13 +832,20 @@ BOOST_AUTO_TEST_CASE(note_off_event_is_required_for_every_phrase)
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
          {.time = 960,
           .event
-          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 960,
+          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
+                                                  .data = {116, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
     const SightRead::Detail::MidiConverter converter {{}};
 
-    BOOST_CHECK_THROW([&] { return converter.convert(midi); }(),
-                      SightRead::ParseError);
+    const auto song = guitar_only_converter().convert(midi);
+    const auto& parsed_sp = song.track(SightRead::Instrument::Guitar,
+                                       SightRead::Difficulty::Expert)
+                                .sp_phrases();
+
+    BOOST_CHECK_EQUAL(parsed_sp.at(0).position, SightRead::Tick {768});
 }
 
 BOOST_AUTO_TEST_SUITE_END()

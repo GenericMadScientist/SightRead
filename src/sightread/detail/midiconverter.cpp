@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <climits>
 #include <limits>
+#include <stack>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -442,27 +443,28 @@ combine_note_on_off_events(const std::vector<std::tuple<int, int>>& on_events,
                            bool expand_length_zero_events = false)
 {
     std::vector<std::tuple<int, int>> ranges;
+    std::stack<std::tuple<int, int>, std::vector<std::tuple<int, int>>>
+        unmatched_on_events;
 
     auto on_iter = on_events.cbegin();
-    auto off_iter = off_events.cbegin();
+    for (auto off_event : off_events) {
+        while (on_iter < on_events.cend() && *on_iter < off_event) {
+            unmatched_on_events.push(*on_iter);
+            ++on_iter;
+        }
 
-    while (on_iter < on_events.cend() && off_iter < off_events.cend()) {
-        if (*on_iter >= *off_iter) {
-            ++off_iter;
+        if (unmatched_on_events.empty()) {
             continue;
         }
-        const auto start = std::get<0>(*on_iter);
-        auto end = std::get<0>(*off_iter);
+
+        const auto on_event = unmatched_on_events.top();
+        unmatched_on_events.pop();
+        const auto start = std::get<0>(on_event);
+        auto end = std::get<0>(off_event);
         if (start == end && expand_length_zero_events) {
             ++end;
         }
         ranges.emplace_back(start, end);
-        ++on_iter;
-        ++off_iter;
-    }
-
-    if (on_iter != on_events.cend()) {
-        throw SightRead::ParseError("on event has no corresponding off event");
     }
 
     return ranges;
