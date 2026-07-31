@@ -477,7 +477,8 @@ void SightRead::NoteTrack::flam_markers(
     for (const auto& flam : flam_markers) {
         flams.emplace_back(flam.position, flam.position + flam.length);
     }
-    const ClosedIntervalSet<SightRead::Tick> flam_intervals {std::move(flams)};
+    const HalfOpenIntervalSet<SightRead::Tick> flam_intervals {
+        std::move(flams)};
 
     for (auto& note : m_notes) {
         note.flags = static_cast<SightRead::NoteFlags>(
