@@ -124,10 +124,9 @@ practice_sections_from_track(const SightRead::Detail::MidiTrack& track)
         }
         std::span<const std::uint8_t> section_name {meta_event->data.data(),
                                                     meta_event->data.size()};
-        if (section_name.empty() || section_name.back() != ']') {
-            continue;
+        if (!section_name.empty() && section_name.back() == ']') {
+            section_name = section_name.first(section_name.size() - 1);
         }
-        section_name = section_name.first(section_name.size() - 1);
         for (auto prefix : practice_section_prefixes) {
             if (section_name.size() < prefix.size()
                 || !std::equal(prefix.cbegin(), prefix.cend(),

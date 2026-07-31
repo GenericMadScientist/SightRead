@@ -285,6 +285,24 @@ BOOST_AUTO_TEST_CASE(sections_with_other_prefixes_are_ignored)
     BOOST_TEST(practice_sections.empty());
 }
 
+BOOST_AUTO_TEST_CASE(sections_without_trailing_square_bracket_are_read)
+{
+    const std::vector<SightRead::PracticeSection> expected_sections {
+        {.name = "Start", .start = SightRead::Tick {768}}};
+    SightRead::Detail::MidiTrack events_track {
+        {{.time = 0, .event = {part_event("EVENTS")}},
+         {.time = 768, .event = {text_event("[section Start")}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {events_track}};
+
+    const auto song = SightRead::Detail::MidiConverter({}).convert(midi);
+    const auto& practice_sections = song.global_data().practice_sections();
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        practice_sections.cbegin(), practice_sections.cend(),
+        expected_sections.cbegin(), expected_sections.cend());
+}
+
 BOOST_AUTO_TEST_CASE(non_text_events_are_ignored)
 {
     SightRead::Detail::MidiTrack events_track {
