@@ -238,6 +238,7 @@ private:
 
     void compute_base_score_ticks();
     void merge_same_time_notes();
+    void fix_note_overlaps();
     void add_hopos(SightRead::Tick max_hopo_gap);
 
 public:

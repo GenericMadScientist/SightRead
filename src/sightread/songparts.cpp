@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdlib>
+#include <map>
 #include <stdexcept>
 #include <tuple>
 
@@ -171,6 +172,40 @@ void SightRead::NoteTrack::merge_same_time_notes()
     m_notes = std::move(notes);
 }
 
+void SightRead::NoteTrack::fix_note_overlaps()
+{
+    std::map<std::size_t, std::vector<Note>::iterator>
+        previous_note_with_colour;
+
+    for (auto it = m_notes.begin(); it != m_notes.end(); ++it) {
+        for (auto i = 0U; i < it->lengths.size(); ++i) {
+            auto& current_note_length = it->lengths.at(i);
+            if (current_note_length == SightRead::Tick {-1}) {
+                continue;
+            }
+
+            auto previous_note_iter = previous_note_with_colour.find(i);
+            if (previous_note_iter != previous_note_with_colour.end()) {
+                const auto previous_note_position
+                    = previous_note_iter->second->position;
+                auto& previous_note_length
+                    = previous_note_iter->second->lengths.at(i);
+                const auto previous_end
+                    = previous_note_position + previous_note_length;
+
+                current_note_length = std::max(current_note_length,
+                                               previous_end - it->position);
+                if (previous_end > it->position) {
+                    previous_note_length
+                        = it->position - previous_note_position;
+                }
+            }
+
+            previous_note_with_colour.insert_or_assign(i, it);
+        }
+    }
+}
+
 void SightRead::NoteTrack::add_hopos(SightRead::Tick max_hopo_gap)
 {
     if (m_track_type == TrackType::Drums) {
@@ -232,6 +267,7 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes, TrackType track_type,
     }
 
     merge_same_time_notes();
+    fix_note_overlaps();
     compute_base_score_ticks();
 
     // We handle open note merging at the end because in v23 the removed
