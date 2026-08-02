@@ -1004,15 +1004,23 @@ private:
     HalfOpenIntervalSet<int> m_yellow_tom_events;
     HalfOpenIntervalSet<int> m_blue_tom_events;
     HalfOpenIntervalSet<int> m_green_tom_events;
+    bool m_pro_drums;
+
+    [[nodiscard]] bool always_toms() const
+    {
+        return !m_pro_drums && m_yellow_tom_events.empty()
+            && m_blue_tom_events.empty() && m_green_tom_events.empty();
+    }
 
 public:
-    explicit TomEvents(const InstrumentMidiTrack& events)
+    explicit TomEvents(const InstrumentMidiTrack& events, bool pro_drums_tag)
         : m_yellow_tom_events {combine_note_on_off_events(
               events.yellow_tom_on_events, events.yellow_tom_off_events, true)}
         , m_blue_tom_events {combine_note_on_off_events(
               events.blue_tom_on_events, events.blue_tom_off_events, true)}
         , m_green_tom_events {combine_note_on_off_events(
               events.green_tom_on_events, events.green_tom_off_events, true)}
+        , m_pro_drums {pro_drums_tag}
     {
     }
 
@@ -1020,11 +1028,11 @@ public:
     {
         switch (colour) {
         case SightRead::DRUM_YELLOW:
-            return m_yellow_tom_events.contains(pos);
+            return m_yellow_tom_events.contains(pos) || always_toms();
         case SightRead::DRUM_BLUE:
-            return m_blue_tom_events.contains(pos);
+            return m_blue_tom_events.contains(pos) || always_toms();
         case SightRead::DRUM_GREEN:
-            return m_green_tom_events.contains(pos);
+            return m_green_tom_events.contains(pos) || always_toms();
         default:
             return false;
         }
@@ -1060,13 +1068,13 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack>
 drum_note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
-    int sustain_cutoff_threshold, bool permit_solos,
+    int sustain_cutoff_threshold, bool pro_drums_tag, bool permit_solos,
     std::optional<SightRead::Tick> coda_event_time)
 {
     const auto event_track
         = read_instrument_midi_track(midi_track, SightRead::TrackType::Drums);
 
-    const TomEvents tom_events {event_track};
+    const TomEvents tom_events {event_track, pro_drums_tag};
 
     std::map<SightRead::Difficulty, std::vector<SightRead::Note>> notes;
     for (const auto& [key, note_ons] : event_track.note_on_events) {
@@ -1375,8 +1383,8 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
         }
     } else if (*inst == SightRead::Instrument::Drums) {
         auto tracks = drum_note_tracks_from_midi(
-            track, song.global_data_ptr(), sustain_threshold, m_permit_solos,
-            coda_event_time);
+            track, song.global_data_ptr(), sustain_threshold,
+            m_metadata.pro_drums, m_permit_solos, coda_event_time);
         for (auto& [diff, note_track] : tracks) {
             song.add_note_track(*inst, diff, std::move(note_track));
         }

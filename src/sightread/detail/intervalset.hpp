@@ -64,6 +64,8 @@ public:
             [](const auto& interval) { return interval.end; });
         return it != std::ranges::end(m_intervals) && it->contains(position);
     }
+
+    [[nodiscard]] bool empty() const { return m_intervals.empty(); }
 };
 
 template <typename T>

@@ -10,6 +10,17 @@ SightRead::Detail::MidiConverter drums_only_converter()
         {SightRead::Instrument::Drums});
 }
 
+SightRead::Detail::MidiConverter pro_drums_only_converter()
+{
+    return SightRead::Detail::MidiConverter({.name = "",
+                                             .artist = "",
+                                             .charter = "",
+                                             .hopo_threshold = {},
+                                             .sustain_cutoff_threshold = {},
+                                             .pro_drums = true})
+        .permit_instruments({SightRead::Instrument::Drums});
+}
+
 SightRead::Detail::MidiConverter
 guitar_only_converter(SightRead::HopoThreshold hopo_threshold = {},
                       std::optional<int> sustain_cutoff_threshold = {})
@@ -19,7 +30,8 @@ guitar_only_converter(SightRead::HopoThreshold hopo_threshold = {},
                 .artist = "",
                 .charter = "",
                 .hopo_threshold = hopo_threshold,
-                .sustain_cutoff_threshold = sustain_cutoff_threshold})
+                .sustain_cutoff_threshold = sustain_cutoff_threshold,
+                .pro_drums = false})
         .permit_instruments({SightRead::Instrument::Guitar});
 }
 
@@ -1627,8 +1639,7 @@ BOOST_AUTO_TEST_CASE(not_done_on_drums)
                             .notes();
 
     BOOST_CHECK_EQUAL(notes.at(0).flags, SightRead::FLAGS_DRUMS);
-    BOOST_CHECK_EQUAL(notes.at(1).flags,
-                      SightRead::FLAGS_DRUMS | SightRead::FLAGS_CYMBAL);
+    BOOST_CHECK_EQUAL(notes.at(1).flags, SightRead::FLAGS_DRUMS);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -2032,7 +2043,7 @@ BOOST_AUTO_TEST_CASE(disco_flips_are_read_correctly)
                        0x75, 0x6D, 0x73, 0x30, 0x5D}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
-    const auto song = drums_only_converter().convert(midi);
+    const auto song = pro_drums_only_converter().convert(midi);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
     const auto& note = track.notes().at(0);
@@ -2064,7 +2075,7 @@ BOOST_AUTO_TEST_CASE(disco_flips_with_underscores_are_read_correctly)
                        0x75, 0x6D, 0x73, 0x30, 0x5D}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
-    const auto song = drums_only_converter().convert(midi);
+    const auto song = pro_drums_only_converter().convert(midi);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
     const auto& note = track.notes().at(0);
@@ -2092,7 +2103,7 @@ BOOST_AUTO_TEST_CASE(
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
                                         .tracks = {note_track}};
-    const auto song = drums_only_converter().convert(midi);
+    const auto song = pro_drums_only_converter().convert(midi);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
     const auto& note = track.notes().at(0);
@@ -2100,6 +2111,25 @@ BOOST_AUTO_TEST_CASE(
     BOOST_CHECK_EQUAL(note.flags,
                       SightRead::FLAGS_CYMBAL | SightRead::FLAGS_DISCO
                           | SightRead::FLAGS_DRUMS);
+}
+
+BOOST_AUTO_TEST_CASE(no_cymbals_if_detected_as_not_pro_from_no_toms)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART DRUMS")}},
+         {.time = 0,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {98, 64}}}},
+         {.time = 1,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {98, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+    const auto song = drums_only_converter().convert(midi);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    BOOST_CHECK_EQUAL(track.notes().at(0).flags, SightRead::FLAGS_DRUMS);
 }
 
 BOOST_AUTO_TEST_CASE(flam_sections_are_read_correctly)
@@ -2126,8 +2156,7 @@ BOOST_AUTO_TEST_CASE(flam_sections_are_read_correctly)
     const auto& note = track.notes().at(0);
 
     BOOST_CHECK_EQUAL(note.flags,
-                      SightRead::FLAGS_CYMBAL | SightRead::FLAGS_DRUMS
-                          | SightRead::FLAGS_FLAM);
+                      SightRead::FLAGS_DRUMS | SightRead::FLAGS_FLAM);
 }
 
 BOOST_AUTO_TEST_CASE(drum_sustains_are_read_correctly)
