@@ -78,14 +78,16 @@ void assign_value(SightRead::Metadata& metadata, std::string_view key,
             return;
         }
         metadata.sustain_cutoff_threshold = int_value;
+    } else if (key == "pro_drums") {
+        metadata.pro_drums = value == "True" || value == "1";
     }
 }
 
 SightRead::Metadata parse_ini(std::string_view data)
 {
-    constexpr std::array<std::string_view, 7> INI_KEYS {
-        "artist",         "charter", "eighthnote_hopo",         "frets",
-        "hopo_frequency", "name",    "sustain_cutoff_threshold"};
+    constexpr std::array<std::string_view, 8> INI_KEYS {
+        "artist",         "charter", "eighthnote_hopo",          "frets",
+        "hopo_frequency", "name",    "sustain_cutoff_threshold", "pro_drums"};
 
     std::string u8_string = to_utf8_string(data);
     data = u8_string;

@@ -21,6 +21,7 @@ BOOST_AUTO_TEST_CASE(default_ini_values_are_correct)
     BOOST_CHECK_EQUAL(ini_values.charter, "Unknown Charter");
     BOOST_CHECK_EQUAL(ini_values.hopo_threshold.threshold_type,
                       SightRead::HopoThresholdType::Resolution);
+    BOOST_CHECK(!ini_values.pro_drums);
     BOOST_CHECK(!ini_values.sustain_cutoff_threshold.has_value());
 }
 
@@ -116,6 +117,15 @@ BOOST_AUTO_TEST_CASE(sustain_cutoff_threshold_is_read)
 
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     BOOST_CHECK_EQUAL(ini_values.sustain_cutoff_threshold.value(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(pro_drums_is_read)
+{
+    const char* text = "pro_drums = True";
+
+    const auto ini_values = SightRead::parse_ini(text);
+
+    BOOST_CHECK(ini_values.pro_drums);
 }
 
 BOOST_AUTO_TEST_CASE(utf16le_inis_are_read_correctly)
