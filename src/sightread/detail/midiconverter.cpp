@@ -171,33 +171,6 @@ void process_events_track(const SightRead::Detail::MidiTrack& track,
     }
 }
 
-bool is_five_lane_green_note(const SightRead::Detail::TimedEvent& event)
-{
-    constexpr std::array<std::uint8_t, 4> GREEN_LANE_KEYS {65, 77, 89, 101};
-    constexpr int NOTE_OFF_ID = 0x80;
-    constexpr int NOTE_ON_ID = 0x90;
-    constexpr int UPPER_NIBBLE_MASK = 0xF0;
-
-    const auto* midi_event
-        = std::get_if<SightRead::Detail::MidiEvent>(&event.event);
-    if (midi_event == nullptr) {
-        return false;
-    }
-    const auto event_type = midi_event->status & UPPER_NIBBLE_MASK;
-    if (event_type != NOTE_ON_ID && event_type != NOTE_OFF_ID) {
-        return false;
-    }
-    const auto key = midi_event->data.at(0);
-    return std::ranges::find(GREEN_LANE_KEYS, key)
-        != std::ranges::end(GREEN_LANE_KEYS);
-}
-
-bool has_five_lane_green_notes(const SightRead::Detail::MidiTrack& midi_track)
-{
-    return std::ranges::find_if(midi_track.events, is_five_lane_green_note)
-        != std::ranges::end(midi_track.events);
-}
-
 bool is_enable_chart_dynamics(const SightRead::Detail::TimedEvent& event)
 {
     using namespace std::literals;
@@ -309,10 +282,10 @@ difficulty_from_key(std::uint8_t key, SightRead::TrackType track_type,
                         {58, 66, SightRead::Difficulty::Easy}}}; // NOLINT
         break;
     case SightRead::TrackType::Drums:
-        diff_ranges = {{{95, 101, SightRead::Difficulty::Expert}, // NOLINT
-                        {83, 89, SightRead::Difficulty::Hard}, // NOLINT
-                        {71, 77, SightRead::Difficulty::Medium}, // NOLINT
-                        {59, 65, SightRead::Difficulty::Easy}}}; // NOLINT
+        diff_ranges = {{{95, 100, SightRead::Difficulty::Expert}, // NOLINT
+                        {83, 88, SightRead::Difficulty::Hard}, // NOLINT
+                        {71, 76, SightRead::Difficulty::Medium}, // NOLINT
+                        {59, 64, SightRead::Difficulty::Easy}}}; // NOLINT
         break;
     }
     return look_up_difficulty(diff_ranges, key);
@@ -333,7 +306,7 @@ T colour_from_key_and_bounds(std::uint8_t key,
 }
 
 int colour_from_key(std::uint8_t key, SightRead::TrackType track_type,
-                    bool from_five_lane, bool enable_enhanced_opens)
+                    bool enable_enhanced_opens)
 {
     constexpr std::array FIVE_FRET_WITHOUT_OPENS_NOTE_COLOURS {
         SightRead::FIVE_FRET_GREEN, SightRead::FIVE_FRET_RED,
@@ -375,15 +348,6 @@ int colour_from_key(std::uint8_t key, SightRead::TrackType track_type,
             SightRead::DRUM_DOUBLE_KICK, SightRead::DRUM_KICK,
             SightRead::DRUM_RED,         SightRead::DRUM_YELLOW,
             SightRead::DRUM_BLUE,        SightRead::DRUM_GREEN};
-        constexpr std::array FIVE_LANE_COLOURS {
-            SightRead::DRUM_DOUBLE_KICK, SightRead::DRUM_KICK,
-            SightRead::DRUM_RED,         SightRead::DRUM_YELLOW,
-            SightRead::DRUM_BLUE,        SightRead::DRUM_GREEN,
-            SightRead::DRUM_GREEN};
-        if (from_five_lane) {
-            return colour_from_key_and_bounds(key, diff_ranges,
-                                              FIVE_LANE_COLOURS);
-        }
         return colour_from_key_and_bounds(key, diff_ranges, DRUM_NOTE_COLOURS);
     }
     }
@@ -406,12 +370,9 @@ SightRead::NoteFlags flags_from_track_type(SightRead::TrackType track_type)
     throw std::invalid_argument("Invalid track type");
 }
 
-bool is_cymbal_key(std::uint8_t key, bool from_five_lane)
+bool is_cymbal_key(std::uint8_t key)
 {
     const auto index = (key + 1) % 12;
-    if (from_five_lane) {
-        return index == 3 || index == 5; // NOLINT
-    }
     return index == 3 || index == 4 || index == 5; // NOLINT
 }
 
@@ -653,8 +614,7 @@ bool force_strum_key(std::uint8_t key, SightRead::TrackType track_type)
 
 void add_note_off_event(InstrumentMidiTrack& track,
                         const std::array<std::uint8_t, 2>& data, int time,
-                        int rank, bool from_five_lane,
-                        bool enable_enhanced_opens,
+                        int rank, bool enable_enhanced_opens,
                         SightRead::TrackType track_type)
 {
     constexpr int YELLOW_TOM_ID = 110;
@@ -674,8 +634,8 @@ void add_note_off_event(InstrumentMidiTrack& track,
         } else if (force_strum_key(data.at(0), track_type)) {
             track.force_strum_off_events[*diff].emplace_back(time, rank);
         } else {
-            const auto colour = colour_from_key(
-                data.at(0), track_type, from_five_lane, enable_enhanced_opens);
+            const auto colour = colour_from_key(data.at(0), track_type,
+                                                enable_enhanced_opens);
             track.note_off_events[{*diff, colour}].emplace_back(time, rank);
         }
     } else {
@@ -712,7 +672,7 @@ void add_note_off_event(InstrumentMidiTrack& track,
 
 void add_note_on_event(InstrumentMidiTrack& track,
                        const std::array<std::uint8_t, 2>& data, int time,
-                       int rank, bool from_five_lane, bool parse_dynamics,
+                       int rank, bool parse_dynamics,
                        bool enable_enhanced_opens,
                        SightRead::TrackType track_type)
 {
@@ -727,8 +687,8 @@ void add_note_on_event(InstrumentMidiTrack& track,
 
     // Velocity 0 Note On events are counted as Note Off events.
     if (data.at(1) == 0) {
-        add_note_off_event(track, data, time, rank, from_five_lane,
-                           enable_enhanced_opens, track_type);
+        add_note_off_event(track, data, time, rank, enable_enhanced_opens,
+                           track_type);
         return;
     }
 
@@ -740,11 +700,11 @@ void add_note_on_event(InstrumentMidiTrack& track,
         } else if (force_strum_key(data.at(0), track_type)) {
             track.force_strum_on_events[*diff].emplace_back(time, rank);
         } else {
-            auto colour = colour_from_key(
-                data.at(0), track_type, from_five_lane, enable_enhanced_opens);
+            auto colour = colour_from_key(data.at(0), track_type,
+                                          enable_enhanced_opens);
             auto flags = flags_from_track_type(track_type);
             if (track_type == SightRead::TrackType::Drums) {
-                if (is_cymbal_key(data.at(0), from_five_lane)) {
+                if (is_cymbal_key(data.at(0))) {
                     flags = static_cast<SightRead::NoteFlags>(
                         flags | SightRead::FLAGS_CYMBAL);
                 }
@@ -799,8 +759,6 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
         SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
         SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
 
-    const bool from_five_lane = track_type == SightRead::TrackType::Drums
-        && has_five_lane_green_notes(midi_track);
     const bool parse_dynamics = track_type == SightRead::TrackType::Drums
         && has_enable_chart_dynamics(midi_track);
     const bool enable_enhanced_opens
@@ -843,13 +801,12 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
         switch (midi_event->status & UPPER_NIBBLE_MASK) {
         case NOTE_OFF_ID:
             add_note_off_event(event_track, midi_event->data, event.time, rank,
-                               from_five_lane, enable_enhanced_opens,
-                               track_type);
+                               enable_enhanced_opens, track_type);
             break;
         case NOTE_ON_ID:
             add_note_on_event(event_track, midi_event->data, event.time, rank,
-                              from_five_lane, parse_dynamics,
-                              enable_enhanced_opens, track_type);
+                              parse_dynamics, enable_enhanced_opens,
+                              track_type);
             break;
         default:
             break;

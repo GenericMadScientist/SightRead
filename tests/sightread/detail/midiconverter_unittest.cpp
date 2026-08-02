@@ -2102,50 +2102,6 @@ BOOST_AUTO_TEST_CASE(
                           | SightRead::FLAGS_DRUMS);
 }
 
-BOOST_AUTO_TEST_CASE(drum_five_lane_to_four_lane_conversion_is_done_from_mid)
-{
-    SightRead::Detail::MidiTrack note_track {
-        {{.time = 0, .event = {part_event("PART DRUMS")}},
-         {.time = 0,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
-         {.time = 1,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}},
-         {.time = 2,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {100, 64}}}},
-         {.time = 3,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {100, 0}}}},
-         {.time = 4,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {101, 64}}}},
-         {.time = 4,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {100, 64}}}},
-         {.time = 5,
-          .event
-          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {101, 0}}}},
-         {.time = 5,
-          .event = {SightRead::Detail::MidiEvent {.status = 0x80,
-                                                  .data = {100, 0}}}}}};
-    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
-                                        .tracks = {note_track}};
-    const auto song = drums_only_converter().convert(midi);
-    const auto& track = song.track(SightRead::Instrument::Drums,
-                                   SightRead::Difficulty::Expert);
-
-    std::vector<SightRead::Note> notes {
-        make_drum_note(0, 0, SightRead::DRUM_GREEN),
-        make_drum_note(2, 0, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL),
-        make_drum_note(4, 0, SightRead::DRUM_BLUE),
-        make_drum_note(4, 0, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL)};
-
-    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
-                                  notes.cbegin(), notes.cend());
-}
-
 BOOST_AUTO_TEST_CASE(flam_sections_are_read_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
