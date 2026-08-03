@@ -471,8 +471,74 @@ combine_note_on_off_events(const std::vector<MidiEventPosition>& on_events,
     return ranges;
 }
 
-struct InstrumentMidiTrack {
+struct NoteToggleEvent {
+    int position;
+    int velocity;
+    int rank;
+};
+
+struct NoteEvent {
+    int position;
+    int length;
+    int velocity;
+};
+
+class NoteOnOffEvents {
+private:
+    std::vector<NoteToggleEvent> m_note_on_events;
+    std::vector<NoteToggleEvent> m_note_off_events;
+    int m_last_rank = 0;
+
 public:
+    void add_note_on_event(int position, int velocity)
+    {
+        m_note_on_events.emplace_back(position, velocity, ++m_last_rank);
+    }
+    void add_note_off_event(int position, int velocity)
+    {
+        m_note_off_events.emplace_back(position, velocity, ++m_last_rank);
+    }
+
+    // Like combine_solo_events, but never skips on events to suit Midi parsing
+    // and checks if there is an unmatched on event.
+    //
+    // expand_length_zero_events is because some drum events have the length
+    // increased by 1 if the start and end are at the same time.
+    [[nodiscard]] std::vector<NoteEvent>
+    combined_events(bool expand_length_zero_events = false) const
+    {
+        std::vector<NoteEvent> notes;
+        std::stack<NoteToggleEvent, std::vector<NoteToggleEvent>>
+            unmatched_on_events;
+
+        auto on_iter = m_note_on_events.cbegin();
+        for (auto off_event : m_note_off_events) {
+            for (; on_iter < m_note_on_events.cend()
+                 && on_iter->rank < off_event.rank;
+                 ++on_iter) {
+                unmatched_on_events.push(*on_iter);
+            }
+
+            if (unmatched_on_events.empty()) {
+                continue;
+            }
+
+            const auto start = unmatched_on_events.top().position;
+            const auto velocity = unmatched_on_events.top().velocity;
+            unmatched_on_events.pop();
+            auto end = off_event.position;
+            if (start == end && expand_length_zero_events) {
+                ++end;
+            }
+            notes.emplace_back(start, end - start, velocity);
+        }
+
+        return notes;
+    }
+};
+
+struct InstrumentMidiTrack {
+    std::map<int, NoteOnOffEvents> note_events;
     std::map<std::tuple<SightRead::Difficulty, int, SightRead::NoteFlags>,
              std::vector<MidiEventPosition>>
         note_on_events;
@@ -499,8 +565,6 @@ public:
     std::vector<MidiEventPosition> sp_off_events;
     std::vector<MidiEventPosition> tap_on_events;
     std::vector<MidiEventPosition> tap_off_events;
-    std::vector<MidiEventPosition> flam_on_events;
-    std::vector<MidiEventPosition> flam_off_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         force_hopo_on_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
@@ -517,6 +581,15 @@ public:
         disco_flip_off_events;
 
     InstrumentMidiTrack() = default;
+
+    [[nodiscard]] NoteOnOffEvents events_with_key(int key) const
+    {
+        const auto iter = note_events.find(key);
+        if (iter == note_events.cend()) {
+            return {};
+        }
+        return iter->second;
+    }
 };
 
 bool is_tap_sysex_event(const SightRead::Detail::SysexEvent& event)
@@ -664,8 +737,8 @@ void add_note_off_event(InstrumentMidiTrack& track,
     constexpr int SP_NOTE_ID = 116;
     constexpr int TAP_NOTE_ID = 104;
     constexpr int DRUM_FILL_ID = 120;
-    constexpr int FLAM_MARKER_ID = 109;
 
+    track.note_events[data.at(0)].add_note_off_event(time, data.at(1));
     const auto diff
         = difficulty_from_key(data.at(0), track_type, enable_enhanced_opens);
     if (diff.has_value()) {
@@ -701,9 +774,6 @@ void add_note_off_event(InstrumentMidiTrack& track,
         case DRUM_FILL_ID:
             track.fill_off_events.emplace_back(time, rank);
             break;
-        case FLAM_MARKER_ID:
-            track.flam_off_events.emplace_back(time, rank);
-            break;
         default:
             break;
         }
@@ -723,7 +793,6 @@ void add_note_on_event(InstrumentMidiTrack& track,
     constexpr int SP_NOTE_ID = 116;
     constexpr int TAP_NOTE_ID = 104;
     constexpr int DRUM_FILL_ID = 120;
-    constexpr int FLAM_MARKER_ID = 109;
 
     // Velocity 0 Note On events are counted as Note Off events.
     if (data.at(1) == 0) {
@@ -732,6 +801,7 @@ void add_note_on_event(InstrumentMidiTrack& track,
         return;
     }
 
+    track.note_events[data.at(0)].add_note_on_event(time, data.at(1));
     const auto diff
         = difficulty_from_key(data.at(0), track_type, enable_enhanced_opens);
     if (diff.has_value()) {
@@ -778,9 +848,6 @@ void add_note_on_event(InstrumentMidiTrack& track,
             break;
         case DRUM_FILL_ID:
             track.fill_on_events.emplace_back(time, rank);
-            break;
-        case FLAM_MARKER_ID:
-            track.flam_on_events.emplace_back(time, rank);
             break;
         default:
             break;
@@ -1156,10 +1223,10 @@ drum_note_tracks_from_midi(
     }
 
     std::vector<SightRead::FlamMarker> flam_markers;
-    for (const auto& [start, end] : combine_note_on_off_events(
-             event_track.flam_on_events, event_track.flam_off_events)) {
-        flam_markers.push_back({.position = SightRead::Tick {start},
-                                .length = SightRead::Tick {end - start}});
+    for (const auto& note :
+         event_track.events_with_key(109).combined_events()) {
+        flam_markers.push_back({.position = SightRead::Tick {note.position},
+                                .length = SightRead::Tick {note.length}});
     }
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
