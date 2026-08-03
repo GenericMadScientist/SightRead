@@ -535,6 +535,17 @@ public:
 
         return notes;
     }
+
+    [[nodiscard]] HalfOpenIntervalSet<int> interval_set() const
+    {
+        std::vector<std::tuple<int, int>> intervals;
+        for (auto event : combined_events(true)) {
+            intervals.emplace_back(event.position,
+                                   event.position + event.length);
+        }
+
+        return {std::move(intervals)};
+    }
 };
 
 struct InstrumentMidiTrack {
@@ -553,18 +564,10 @@ struct InstrumentMidiTrack {
         tap_on_sysex_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         tap_off_sysex_events;
-    std::vector<MidiEventPosition> yellow_tom_on_events;
-    std::vector<MidiEventPosition> yellow_tom_off_events;
-    std::vector<MidiEventPosition> blue_tom_on_events;
-    std::vector<MidiEventPosition> blue_tom_off_events;
-    std::vector<MidiEventPosition> green_tom_on_events;
-    std::vector<MidiEventPosition> green_tom_off_events;
     std::vector<MidiEventPosition> solo_on_events;
     std::vector<MidiEventPosition> solo_off_events;
     std::vector<MidiEventPosition> sp_on_events;
     std::vector<MidiEventPosition> sp_off_events;
-    std::vector<MidiEventPosition> tap_on_events;
-    std::vector<MidiEventPosition> tap_off_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         force_hopo_on_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
@@ -573,8 +576,6 @@ struct InstrumentMidiTrack {
         force_strum_on_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         force_strum_off_events;
-    std::vector<MidiEventPosition> fill_on_events;
-    std::vector<MidiEventPosition> fill_off_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         disco_flip_on_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
@@ -730,13 +731,8 @@ void add_note_off_event(InstrumentMidiTrack& track,
                         bool enable_enhanced_opens,
                         SightRead::TrackType track_type)
 {
-    constexpr int YELLOW_TOM_ID = 110;
-    constexpr int BLUE_TOM_ID = 111;
-    constexpr int GREEN_TOM_ID = 112;
     constexpr int SOLO_NOTE_ID = 103;
     constexpr int SP_NOTE_ID = 116;
-    constexpr int TAP_NOTE_ID = 104;
-    constexpr int DRUM_FILL_ID = 120;
 
     track.note_events[data.at(0)].add_note_off_event(time, data.at(1));
     const auto diff
@@ -753,26 +749,11 @@ void add_note_off_event(InstrumentMidiTrack& track,
         }
     } else {
         switch (data.at(0)) {
-        case YELLOW_TOM_ID:
-            track.yellow_tom_off_events.emplace_back(time, rank);
-            break;
-        case BLUE_TOM_ID:
-            track.blue_tom_off_events.emplace_back(time, rank);
-            break;
-        case GREEN_TOM_ID:
-            track.green_tom_off_events.emplace_back(time, rank);
-            break;
         case SOLO_NOTE_ID:
             track.solo_off_events.emplace_back(time, rank);
             break;
         case SP_NOTE_ID:
             track.sp_off_events.emplace_back(time, rank);
-            break;
-        case TAP_NOTE_ID:
-            track.tap_off_events.emplace_back(time, rank);
-            break;
-        case DRUM_FILL_ID:
-            track.fill_off_events.emplace_back(time, rank);
             break;
         default:
             break;
@@ -786,13 +767,8 @@ void add_note_on_event(InstrumentMidiTrack& track,
                        bool enable_enhanced_opens,
                        SightRead::TrackType track_type)
 {
-    constexpr int YELLOW_TOM_ID = 110;
-    constexpr int BLUE_TOM_ID = 111;
-    constexpr int GREEN_TOM_ID = 112;
     constexpr int SOLO_NOTE_ID = 103;
     constexpr int SP_NOTE_ID = 116;
-    constexpr int TAP_NOTE_ID = 104;
-    constexpr int DRUM_FILL_ID = 120;
 
     // Velocity 0 Note On events are counted as Note Off events.
     if (data.at(1) == 0) {
@@ -828,26 +804,11 @@ void add_note_on_event(InstrumentMidiTrack& track,
         }
     } else {
         switch (data.at(0)) {
-        case YELLOW_TOM_ID:
-            track.yellow_tom_on_events.emplace_back(time, rank);
-            break;
-        case BLUE_TOM_ID:
-            track.blue_tom_on_events.emplace_back(time, rank);
-            break;
-        case GREEN_TOM_ID:
-            track.green_tom_on_events.emplace_back(time, rank);
-            break;
         case SOLO_NOTE_ID:
             track.solo_on_events.emplace_back(time, rank);
             break;
         case SP_NOTE_ID:
             track.sp_on_events.emplace_back(time, rank);
-            break;
-        case TAP_NOTE_ID:
-            track.tap_on_events.emplace_back(time, rank);
-            break;
-        case DRUM_FILL_ID:
-            track.fill_on_events.emplace_back(time, rank);
             break;
         default:
             break;
@@ -991,8 +952,8 @@ void apply_forcing(
         SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
         SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
 
-    const HalfOpenIntervalSet<int> tap_note_events {combine_note_on_off_events(
-        event_track.tap_on_events, event_track.tap_off_events)};
+    const auto tap_note_events
+        = event_track.events_with_key(104).interval_set();
 
     std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>> force_hopo_events;
     std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>
@@ -1115,14 +1076,18 @@ private:
     HalfOpenIntervalSet<int> m_blue_tom_events;
     HalfOpenIntervalSet<int> m_green_tom_events;
 
+    static constexpr int YELLOW_TOM_KEY = 110;
+    static constexpr int BLUE_TOM_KEY = 111;
+    static constexpr int GREEN_TOM_KEY = 112;
+
 public:
     explicit TomEvents(const InstrumentMidiTrack& events)
-        : m_yellow_tom_events {combine_note_on_off_events(
-              events.yellow_tom_on_events, events.yellow_tom_off_events, true)}
-        , m_blue_tom_events {combine_note_on_off_events(
-              events.blue_tom_on_events, events.blue_tom_off_events, true)}
-        , m_green_tom_events {combine_note_on_off_events(
-              events.green_tom_on_events, events.green_tom_off_events, true)}
+        : m_yellow_tom_events {
+              events.events_with_key(YELLOW_TOM_KEY).interval_set()}
+        , m_blue_tom_events {events.events_with_key(BLUE_TOM_KEY)
+                                 .interval_set()}
+        , m_green_tom_events {
+              events.events_with_key(GREEN_TOM_KEY).interval_set()}
     {
     }
 
@@ -1211,14 +1176,16 @@ drum_note_tracks_from_midi(
 
     std::vector<SightRead::BigRockEnding> bres;
     std::vector<SightRead::DrumFill> drum_fills;
-    for (const auto& [start, end] : combine_note_on_off_events(
-             event_track.fill_on_events, event_track.fill_off_events)) {
-        if (coda_event_time.has_value() && coda_event_time->value() <= start) {
-            bres.push_back({.start = SightRead::Tick {start},
-                            .end = SightRead::Tick {end}});
+    for (const auto& event :
+         event_track.events_with_key(120).combined_events()) {
+        if (coda_event_time.has_value()
+            && coda_event_time->value() <= event.position) {
+            bres.push_back(
+                {.start = SightRead::Tick {event.position},
+                 .end = SightRead::Tick {event.position + event.length}});
         } else {
-            drum_fills.push_back({.position = SightRead::Tick {start},
-                                  .length = SightRead::Tick {end - start}});
+            drum_fills.push_back({.position = SightRead::Tick {event.position},
+                                  .length = SightRead::Tick {event.length}});
         }
     }
 
@@ -1260,11 +1227,13 @@ read_bres(const InstrumentMidiTrack& event_track,
           std::optional<SightRead::Tick> coda_event_time)
 {
     std::vector<SightRead::BigRockEnding> bres;
-    for (const auto& [start, end] : combine_note_on_off_events(
-             event_track.fill_on_events, event_track.fill_off_events)) {
-        if (coda_event_time.has_value() && coda_event_time->value() <= start) {
-            bres.push_back({.start = SightRead::Tick {start},
-                            .end = SightRead::Tick {end}});
+    for (const auto& event :
+         event_track.events_with_key(120).combined_events()) {
+        if (coda_event_time.has_value()
+            && coda_event_time->value() <= event.position) {
+            bres.push_back(
+                {.start = SightRead::Tick {event.position},
+                 .end = SightRead::Tick {event.position + event.length}});
         }
     }
 
