@@ -291,22 +291,22 @@ difficulty_from_key(std::uint8_t key, SightRead::TrackType track_type,
     case SightRead::TrackType::FiveFret:
     case SightRead::TrackType::FortniteFestival:
         if (enable_enhanced_opens) {
-            diff_ranges = {{{95, 102, SightRead::Difficulty::Expert}, // NOLINT
-                            {83, 90, SightRead::Difficulty::Hard}, // NOLINT
-                            {71, 78, SightRead::Difficulty::Medium}, // NOLINT
-                            {59, 66, SightRead::Difficulty::Easy}}}; // NOLINT
+            diff_ranges = {{{95, 100, SightRead::Difficulty::Expert}, // NOLINT
+                            {83, 88, SightRead::Difficulty::Hard}, // NOLINT
+                            {71, 76, SightRead::Difficulty::Medium}, // NOLINT
+                            {59, 64, SightRead::Difficulty::Easy}}}; // NOLINT
         } else {
-            diff_ranges = {{{96, 102, SightRead::Difficulty::Expert}, // NOLINT
-                            {84, 90, SightRead::Difficulty::Hard}, // NOLINT
-                            {72, 78, SightRead::Difficulty::Medium}, // NOLINT
-                            {60, 66, SightRead::Difficulty::Easy}}}; // NOLINT
+            diff_ranges = {{{96, 100, SightRead::Difficulty::Expert}, // NOLINT
+                            {84, 88, SightRead::Difficulty::Hard}, // NOLINT
+                            {72, 76, SightRead::Difficulty::Medium}, // NOLINT
+                            {60, 64, SightRead::Difficulty::Easy}}}; // NOLINT
         }
         break;
     case SightRead::TrackType::SixFret:
-        diff_ranges = {{{94, 102, SightRead::Difficulty::Expert}, // NOLINT
-                        {82, 90, SightRead::Difficulty::Hard}, // NOLINT
-                        {70, 78, SightRead::Difficulty::Medium}, // NOLINT
-                        {58, 66, SightRead::Difficulty::Easy}}}; // NOLINT
+        diff_ranges = {{{94, 100, SightRead::Difficulty::Expert}, // NOLINT
+                        {82, 88, SightRead::Difficulty::Hard}, // NOLINT
+                        {70, 76, SightRead::Difficulty::Medium}, // NOLINT
+                        {58, 64, SightRead::Difficulty::Easy}}}; // NOLINT
         break;
     case SightRead::TrackType::Drums:
         diff_ranges = {{{95, 101, SightRead::Difficulty::Expert}, // NOLINT
@@ -628,14 +628,6 @@ public:
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         tap_off_sysex_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        force_hopo_on_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        force_hopo_off_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        force_strum_on_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        force_strum_off_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         disco_flip_on_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         disco_flip_off_events;
@@ -785,26 +777,6 @@ void append_disco_flip(InstrumentMidiTrack& event_track,
     }
 }
 
-bool force_hopo_key(std::uint8_t key, SightRead::TrackType track_type)
-{
-    constexpr std::array FORCE_HOPO_KEYS {65, 77, 89, 101};
-    if (track_type == SightRead::TrackType::Drums) {
-        return false;
-    }
-    return std::ranges::find(FORCE_HOPO_KEYS, key)
-        != std::ranges::end(FORCE_HOPO_KEYS);
-}
-
-bool force_strum_key(std::uint8_t key, SightRead::TrackType track_type)
-{
-    constexpr std::array FORCE_STRUM_KEYS {66, 78, 90, 102};
-    if (track_type == SightRead::TrackType::Drums) {
-        return false;
-    }
-    return std::ranges::find(FORCE_STRUM_KEYS, key)
-        != std::ranges::end(FORCE_STRUM_KEYS);
-}
-
 void add_note_off_event(InstrumentMidiTrack& track,
                         const std::array<std::uint8_t, 2>& data, int time,
                         int rank, bool from_five_lane,
@@ -815,15 +787,9 @@ void add_note_off_event(InstrumentMidiTrack& track,
     const auto diff
         = difficulty_from_key(data.at(0), track_type, enable_enhanced_opens);
     if (diff.has_value()) {
-        if (force_hopo_key(data.at(0), track_type)) {
-            track.force_hopo_off_events[*diff].emplace_back(time, rank);
-        } else if (force_strum_key(data.at(0), track_type)) {
-            track.force_strum_off_events[*diff].emplace_back(time, rank);
-        } else {
-            const auto colour = colour_from_key(
-                data.at(0), track_type, from_five_lane, enable_enhanced_opens);
-            track.note_off_events[{*diff, colour}].emplace_back(time, rank);
-        }
+        const auto colour = colour_from_key(
+            data.at(0), track_type, from_five_lane, enable_enhanced_opens);
+        track.note_off_events[{*diff, colour}].emplace_back(time, rank);
     }
 }
 
@@ -844,27 +810,20 @@ void add_note_on_event(InstrumentMidiTrack& track,
     const auto diff
         = difficulty_from_key(data.at(0), track_type, enable_enhanced_opens);
     if (diff.has_value()) {
-        if (force_hopo_key(data.at(0), track_type)) {
-            track.force_hopo_on_events[*diff].emplace_back(time, rank);
-        } else if (force_strum_key(data.at(0), track_type)) {
-            track.force_strum_on_events[*diff].emplace_back(time, rank);
-        } else {
-            auto colour = colour_from_key(
-                data.at(0), track_type, from_five_lane, enable_enhanced_opens);
-            auto flags = flags_from_track_type(track_type);
-            if (track_type == SightRead::TrackType::Drums) {
-                if (is_cymbal_key(data.at(0), from_five_lane)) {
-                    flags = static_cast<SightRead::NoteFlags>(
-                        flags | SightRead::FLAGS_CYMBAL);
-                }
-                if (parse_dynamics) {
-                    flags = static_cast<SightRead::NoteFlags>(
-                        flags | dynamics_flags_from_velocity(data.at(1)));
-                }
+        auto colour = colour_from_key(data.at(0), track_type, from_five_lane,
+                                      enable_enhanced_opens);
+        auto flags = flags_from_track_type(track_type);
+        if (track_type == SightRead::TrackType::Drums) {
+            if (is_cymbal_key(data.at(0), from_five_lane)) {
+                flags = static_cast<SightRead::NoteFlags>(
+                    flags | SightRead::FLAGS_CYMBAL);
             }
-            track.note_on_events[{*diff, colour, flags}].emplace_back(time,
-                                                                      rank);
+            if (parse_dynamics) {
+                flags = static_cast<SightRead::NoteFlags>(
+                    flags | dynamics_flags_from_velocity(data.at(1)));
+            }
         }
+        track.note_on_events[{*diff, colour, flags}].emplace_back(time, rank);
     }
 }
 
@@ -891,10 +850,6 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
     for (auto d : DIFFICULTIES) {
         event_track.disco_flip_on_events[d] = {};
         event_track.disco_flip_off_events[d] = {};
-        event_track.force_hopo_on_events[d] = {};
-        event_track.force_hopo_off_events[d] = {};
-        event_track.force_strum_on_events[d] = {};
-        event_track.force_strum_off_events[d] = {};
     }
 
     int rank = 0;
@@ -953,47 +908,45 @@ void apply_forcing(
     const InstrumentMidiTrack& event_track,
     const std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>& tap_events)
 {
-    constexpr std::array DIFFICULTIES {
-        SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
-        SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
+    const std::map<SightRead::Difficulty, int> force_hopo_keys {
+        {SightRead::Difficulty::Easy, 65},
+        {SightRead::Difficulty::Medium, 77},
+        {SightRead::Difficulty::Hard, 89},
+        {SightRead::Difficulty::Expert, 101}};
+    const std::map<SightRead::Difficulty, int> force_strum_keys {
+        {SightRead::Difficulty::Easy, 66},
+        {SightRead::Difficulty::Medium, 78},
+        {SightRead::Difficulty::Hard, 90},
+        {SightRead::Difficulty::Expert, 102}};
 
     const auto tap_note_events
         = event_track.events_with_key(104).interval_set();
 
-    std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>> force_hopo_events;
-    std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>
-        force_strum_events;
-    for (auto d : DIFFICULTIES) {
-        force_hopo_events.emplace(
-            d,
-            combine_note_on_off_events(event_track.force_hopo_on_events.at(d),
-                                       event_track.force_hopo_off_events.at(d),
-                                       true));
-        force_strum_events.emplace(
-            d,
-            combine_note_on_off_events(event_track.force_strum_on_events.at(d),
-                                       event_track.force_strum_off_events.at(d),
-                                       true));
-    }
-
     for (auto& [diff, note_array] : notes) {
+        const auto force_hopo_events
+            = event_track.events_with_key(force_hopo_keys.at(diff))
+                  .interval_set();
+        const auto force_strum_events
+            = event_track.events_with_key(force_strum_keys.at(diff))
+                  .interval_set();
+        const auto tap_events_iter = tap_events.find(diff);
+
         for (auto& note : note_array) {
             const auto pos = note.position.value();
             if (tap_note_events.contains(pos)) {
                 note.flags = static_cast<SightRead::NoteFlags>(
                     note.flags | SightRead::FLAGS_TAP);
             }
-            const auto tap_events_iter = tap_events.find(diff);
             if (tap_events_iter != tap_events.cend()
                 && tap_events_iter->second.contains(pos)) {
                 note.flags = static_cast<SightRead::NoteFlags>(
                     note.flags | SightRead::FLAGS_TAP);
             }
-            if (force_hopo_events.at(diff).contains(pos)) {
+            if (force_hopo_events.contains(pos)) {
                 note.flags = static_cast<SightRead::NoteFlags>(
                     note.flags | SightRead::FLAGS_FORCE_HOPO);
             }
-            if (force_strum_events.at(diff).contains(pos)) {
+            if (force_strum_events.contains(pos)) {
                 note.flags = static_cast<SightRead::NoteFlags>(
                     note.flags | SightRead::FLAGS_FORCE_STRUM);
             }
