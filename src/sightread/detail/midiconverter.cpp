@@ -499,6 +499,11 @@ public:
         m_note_off_events.emplace_back(position, velocity, ++m_last_rank);
     }
 
+    [[nodiscard]] std::size_t on_event_count() const
+    {
+        return m_note_on_events.size();
+    }
+
     // Like combine_solo_events, but never skips on events to suit Midi parsing
     // and checks if there is an unmatched on event.
     //
@@ -536,6 +541,30 @@ public:
         return notes;
     }
 
+    [[nodiscard]] std::vector<SightRead::Solo>
+    track_solos(const std::vector<SightRead::Note>& notes,
+                SightRead::TrackType track_type, bool permit_solos) const
+    {
+        if (!permit_solos) {
+            return {};
+        }
+
+        std::vector<int> solo_ons;
+        std::vector<int> solo_offs;
+        solo_ons.reserve(m_note_on_events.size());
+        for (const auto& event : m_note_on_events) {
+            solo_ons.push_back(event.position);
+        }
+        solo_offs.reserve(m_note_off_events.size());
+        for (const auto& event : m_note_off_events) {
+            solo_offs.push_back(event.position);
+        }
+
+        return SightRead::Detail::form_solo_vector(
+            solo_ons, solo_offs, notes, track_type,
+            SightRead::SoloParsingBehaviour::PreferEarlierStarts, true);
+    }
+
     [[nodiscard]] HalfOpenIntervalSet<int> interval_set() const
     {
         std::vector<std::tuple<int, int>> intervals;
@@ -548,7 +577,41 @@ public:
     }
 };
 
-struct InstrumentMidiTrack {
+class InstrumentMidiTrack {
+private:
+    static constexpr int SOLO_KEY = 103;
+    static constexpr int SP_KEY = 116;
+
+    [[nodiscard]] bool should_use_solos_for_sp() const
+    {
+        const auto solo_iter = note_events.find(SOLO_KEY);
+        if (solo_iter == note_events.cend()
+            || solo_iter->second.on_event_count() <= 1) {
+            return false;
+        }
+
+        const auto sp_iter = note_events.find(SP_KEY);
+        return sp_iter == note_events.cend()
+            || sp_iter->second.on_event_count() == 0;
+    }
+
+    [[nodiscard]] NoteOnOffEvents solo_events() const
+    {
+        if (should_use_solos_for_sp()) {
+            return {};
+        }
+        return events_with_key(SOLO_KEY);
+    }
+
+    [[nodiscard]] NoteOnOffEvents sp_events() const
+    {
+        if (should_use_solos_for_sp()) {
+            return events_with_key(SOLO_KEY);
+        }
+        return events_with_key(SP_KEY);
+    }
+
+public:
     std::map<int, NoteOnOffEvents> note_events;
     std::map<std::tuple<SightRead::Difficulty, int, SightRead::NoteFlags>,
              std::vector<MidiEventPosition>>
@@ -564,10 +627,6 @@ struct InstrumentMidiTrack {
         tap_on_sysex_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         tap_off_sysex_events;
-    std::vector<MidiEventPosition> solo_on_events;
-    std::vector<MidiEventPosition> solo_off_events;
-    std::vector<MidiEventPosition> sp_on_events;
-    std::vector<MidiEventPosition> sp_off_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         force_hopo_on_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
@@ -590,6 +649,27 @@ struct InstrumentMidiTrack {
             return {};
         }
         return iter->second;
+    }
+
+    [[nodiscard]] std::vector<SightRead::StarPower> sp_phrases() const
+    {
+        const auto combined_events = sp_events().combined_events();
+
+        std::vector<SightRead::StarPower> sp_phrases;
+        sp_phrases.reserve(combined_events.size());
+        for (const auto& event : combined_events) {
+            sp_phrases.push_back({.position = SightRead::Tick {event.position},
+                                  .length = SightRead::Tick {event.length}});
+        }
+
+        return sp_phrases;
+    }
+
+    [[nodiscard]] std::vector<SightRead::Solo>
+    solos(const std::vector<SightRead::Note>& notes,
+          SightRead::TrackType track_type, bool permit_solos) const
+    {
+        return solo_events().track_solos(notes, track_type, permit_solos);
     }
 };
 
@@ -731,9 +811,6 @@ void add_note_off_event(InstrumentMidiTrack& track,
                         bool enable_enhanced_opens,
                         SightRead::TrackType track_type)
 {
-    constexpr int SOLO_NOTE_ID = 103;
-    constexpr int SP_NOTE_ID = 116;
-
     track.note_events[data.at(0)].add_note_off_event(time, data.at(1));
     const auto diff
         = difficulty_from_key(data.at(0), track_type, enable_enhanced_opens);
@@ -747,17 +824,6 @@ void add_note_off_event(InstrumentMidiTrack& track,
                 data.at(0), track_type, from_five_lane, enable_enhanced_opens);
             track.note_off_events[{*diff, colour}].emplace_back(time, rank);
         }
-    } else {
-        switch (data.at(0)) {
-        case SOLO_NOTE_ID:
-            track.solo_off_events.emplace_back(time, rank);
-            break;
-        case SP_NOTE_ID:
-            track.sp_off_events.emplace_back(time, rank);
-            break;
-        default:
-            break;
-        }
     }
 }
 
@@ -767,9 +833,6 @@ void add_note_on_event(InstrumentMidiTrack& track,
                        bool enable_enhanced_opens,
                        SightRead::TrackType track_type)
 {
-    constexpr int SOLO_NOTE_ID = 103;
-    constexpr int SP_NOTE_ID = 116;
-
     // Velocity 0 Note On events are counted as Note Off events.
     if (data.at(1) == 0) {
         add_note_off_event(track, data, time, rank, from_five_lane,
@@ -801,17 +864,6 @@ void add_note_on_event(InstrumentMidiTrack& track,
             }
             track.note_on_events[{*diff, colour, flags}].emplace_back(time,
                                                                       rank);
-        }
-    } else {
-        switch (data.at(0)) {
-        case SOLO_NOTE_ID:
-            track.solo_on_events.emplace_back(time, rank);
-            break;
-        case SP_NOTE_ID:
-            track.sp_on_events.emplace_back(time, rank);
-            break;
-        default:
-            break;
         }
     }
 }
@@ -893,54 +945,7 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
     event_track.disco_flip_off_events.at(SightRead::Difficulty::Expert)
         .emplace_back(std::numeric_limits<int>::max(), ++rank);
 
-    if (event_track.sp_on_events.empty()
-        && event_track.solo_on_events.size() > 1) {
-        std::swap(event_track.sp_off_events, event_track.solo_off_events);
-        std::swap(event_track.sp_on_events, event_track.solo_on_events);
-    }
-
     return event_track;
-}
-
-std::vector<SightRead::StarPower>
-track_sp_phrases(const InstrumentMidiTrack& event_track)
-{
-    const auto combined_events = combine_note_on_off_events(
-        event_track.sp_on_events, event_track.sp_off_events);
-
-    std::vector<SightRead::StarPower> sp_phrases;
-    sp_phrases.reserve(combined_events.size());
-    for (const auto& [start, end] : combined_events) {
-        sp_phrases.push_back({.position = SightRead::Tick {start},
-                              .length = SightRead::Tick {end - start}});
-    }
-
-    return sp_phrases;
-}
-
-std::vector<SightRead::Solo>
-track_solos(const InstrumentMidiTrack& event_track,
-            const std::vector<SightRead::Note>& notes,
-            SightRead::TrackType track_type, bool permit_solos)
-{
-    if (!permit_solos) {
-        return {};
-    }
-
-    std::vector<int> solo_ons;
-    std::vector<int> solo_offs;
-    solo_ons.reserve(event_track.solo_on_events.size());
-    for (const auto& [pos, rank] : event_track.solo_on_events) {
-        solo_ons.push_back(pos);
-    }
-    solo_offs.reserve(event_track.solo_off_events.size());
-    for (const auto& [pos, rank] : event_track.solo_off_events) {
-        solo_offs.push_back(pos);
-    }
-
-    return SightRead::Detail::form_solo_vector(
-        solo_ons, solo_offs, notes, track_type,
-        SightRead::SoloParsingBehaviour::PreferEarlierStarts, true);
 }
 
 void apply_forcing(
@@ -1052,12 +1057,12 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
     const auto notes = notes_from_event_track(event_track, {}, {},
                                               SightRead::TrackType::SixFret,
                                               sustain_cutoff_threshold);
-    const auto sp_phrases = track_sp_phrases(event_track);
+    const auto sp_phrases = event_track.sp_phrases();
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
     for (const auto& [diff, note_set] : notes) {
-        auto solos = track_solos(event_track, note_set,
-                                 SightRead::TrackType::SixFret, permit_solos);
+        auto solos = event_track.solos(note_set, SightRead::TrackType::SixFret,
+                                       permit_solos);
         SightRead::NoteTrack note_track {
             note_set, SightRead::TrackType::SixFret, global_data,
             allow_open_chords,
@@ -1172,7 +1177,7 @@ drum_note_tracks_from_midi(
         fix_double_greens(notes[diff]);
     }
 
-    const auto sp_phrases = track_sp_phrases(event_track);
+    const auto sp_phrases = event_track.sp_phrases();
 
     std::vector<SightRead::BigRockEnding> bres;
     std::vector<SightRead::DrumFill> drum_fills;
@@ -1206,8 +1211,8 @@ drum_note_tracks_from_midi(
                                    .length = SightRead::Tick {end - start}});
         }
 
-        auto solos = track_solos(event_track, note_set,
-                                 SightRead::TrackType::Drums, permit_solos);
+        auto solos = event_track.solos(note_set, SightRead::TrackType::Drums,
+                                       permit_solos);
         SightRead::NoteTrack note_track {note_set, SightRead::TrackType::Drums,
                                          global_data};
         note_track.sp_phrases(sp_phrases);
@@ -1266,13 +1271,12 @@ fortnite_note_tracks_from_midi(
     const auto notes = notes_from_event_track(
         event_track, {}, {}, SightRead::TrackType::FortniteFestival,
         sustain_cutoff_threshold);
-    const auto sp_phrases = track_sp_phrases(event_track);
+    const auto sp_phrases = event_track.sp_phrases();
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
     for (const auto& [diff, note_set] : notes) {
-        auto solos
-            = track_solos(event_track, note_set,
-                          SightRead::TrackType::FortniteFestival, permit_solos);
+        auto solos = event_track.solos(
+            note_set, SightRead::TrackType::FortniteFestival, permit_solos);
         SightRead::NoteTrack note_track {
             note_set, SightRead::TrackType::FortniteFestival, global_data};
         note_track.sp_phrases(sp_phrases);
@@ -1317,12 +1321,12 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
     const auto notes = notes_from_event_track(
         event_track, open_events, tap_events, SightRead::TrackType::FiveFret,
         sustain_cutoff_threshold);
-    const auto sp_phrases = track_sp_phrases(event_track);
+    const auto sp_phrases = event_track.sp_phrases();
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
     for (const auto& [diff, note_set] : notes) {
-        auto solos = track_solos(event_track, note_set,
-                                 SightRead::TrackType::FiveFret, permit_solos);
+        auto solos = event_track.solos(note_set, SightRead::TrackType::FiveFret,
+                                       permit_solos);
         SightRead::NoteTrack note_track {
             note_set, SightRead::TrackType::FiveFret, global_data,
             allow_open_chords,
