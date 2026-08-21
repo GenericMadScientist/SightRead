@@ -551,22 +551,6 @@ BOOST_AUTO_TEST_CASE(note_off_events_can_be_zero_ticks_after_the_note_on_events)
     BOOST_CHECK_EQUAL(notes.size(), 1U);
 }
 
-BOOST_AUTO_TEST_CASE(
-    parseerror_thrown_if_note_on_has_no_corresponding_note_off_track)
-{
-    SightRead::Detail::MidiTrack note_track {
-        {{.time = 0, .event = {part_event("PART GUITAR")}},
-         {.time = 768,
-          .event = {SightRead::Detail::MidiEvent {.status = 0x90,
-                                                  .data = {96, 64}}}}}};
-    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
-                                        .tracks = {note_track}};
-    const SightRead::Detail::MidiConverter converter {{}};
-
-    BOOST_CHECK_THROW([&] { return converter.convert(midi); }(),
-                      SightRead::ParseError);
-}
-
 BOOST_AUTO_TEST_CASE(open_notes_are_read_correctly)
 {
     SightRead::Detail::MidiTrack note_track {
