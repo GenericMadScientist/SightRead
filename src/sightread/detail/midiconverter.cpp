@@ -657,6 +657,21 @@ public:
     {
         return solo_events().track_solos(notes, track_type, permit_solos);
     }
+
+    void add_note_off_event(std::uint8_t key, std::uint8_t velocity, int time)
+    {
+        note_events[key].add_note_off_event(time, velocity);
+    }
+
+    void add_note_on_event(std::uint8_t key, std::uint8_t velocity, int time)
+    {
+        // Velocity 0 Note On events are counted as Note Off events.
+        if (velocity == 0) {
+            note_events[key].add_note_off_event(time, velocity);
+        } else {
+            note_events[key].add_note_on_event(time, velocity);
+        }
+    }
 };
 
 bool is_tap_sysex_event(const SightRead::Detail::SysexEvent& event)
@@ -771,23 +786,6 @@ void append_disco_flip(InstrumentMidiTrack& event_track,
     }
 }
 
-void add_note_off_event(InstrumentMidiTrack& track,
-                        const std::array<std::uint8_t, 2>& data, int time)
-{
-    track.note_events[data.at(0)].add_note_off_event(time, data.at(1));
-}
-
-void add_note_on_event(InstrumentMidiTrack& track,
-                       const std::array<std::uint8_t, 2>& data, int time)
-{
-    // Velocity 0 Note On events are counted as Note Off events.
-    if (data.at(1) == 0) {
-        add_note_off_event(track, data, time);
-    } else {
-        track.note_events[data.at(0)].add_note_on_event(time, data.at(1));
-    }
-}
-
 InstrumentMidiTrack
 read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
                            SightRead::TrackType track_type)
@@ -830,10 +828,12 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
         }
         switch (midi_event->status & UPPER_NIBBLE_MASK) {
         case NOTE_OFF_ID:
-            add_note_off_event(event_track, midi_event->data, event.time);
+            event_track.add_note_off_event(midi_event->data.at(0),
+                                           midi_event->data.at(1), event.time);
             break;
         case NOTE_ON_ID:
-            add_note_on_event(event_track, midi_event->data, event.time);
+            event_track.add_note_on_event(midi_event->data.at(0),
+                                          midi_event->data.at(1), event.time);
             break;
         default:
             break;
