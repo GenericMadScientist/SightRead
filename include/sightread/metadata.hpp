@@ -29,6 +29,8 @@ struct Metadata {
     std::string charter;
     HopoThreshold hopo_threshold;
     std::optional<int> sustain_cutoff_threshold;
+    bool pro_drums = false;
+    bool five_lane_drums = false;
 };
 
 Metadata parse_ini(std::string_view data);

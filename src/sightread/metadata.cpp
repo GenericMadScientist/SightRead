@@ -4,6 +4,10 @@
 #include "sightread/detail/stringutil.hpp"
 #include "sightread/metadata.hpp"
 
+namespace {
+bool to_bool(std::string_view value) { return value == "True" || value == "1"; }
+}
+
 namespace SightRead {
 using namespace SightRead::Detail;
 
@@ -78,14 +82,19 @@ void assign_value(SightRead::Metadata& metadata, std::string_view key,
             return;
         }
         metadata.sustain_cutoff_threshold = int_value;
+    } else if (key == "pro_drums") {
+        metadata.pro_drums = to_bool(value);
+    } else if (key == "five_lane_drums") {
+        metadata.five_lane_drums = to_bool(value);
     }
 }
 
 SightRead::Metadata parse_ini(std::string_view data)
 {
-    constexpr std::array<std::string_view, 7> INI_KEYS {
-        "artist",         "charter", "eighthnote_hopo",         "frets",
-        "hopo_frequency", "name",    "sustain_cutoff_threshold"};
+    constexpr std::array<std::string_view, 9> INI_KEYS {
+        "artist",         "charter", "eighthnote_hopo",          "frets",
+        "hopo_frequency", "name",    "sustain_cutoff_threshold", "pro_drums",
+        "five_lane_drums"};
 
     std::string u8_string = to_utf8_string(data);
     data = u8_string;
