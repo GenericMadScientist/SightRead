@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "sightread/detail/instrumentmiditrack.hpp"
 #include "sightread/detail/intervalset.hpp"
 #include "sightread/detail/midiconverter.hpp"
 #include "sightread/detail/parserutil.hpp"
@@ -428,23 +429,19 @@ SightRead::NoteFlags dynamics_flags_from_velocity(std::uint8_t velocity)
     return static_cast<SightRead::NoteFlags>(0);
 }
 
-struct MidiEventPosition {
-    int tick_position;
-    int order_position;
-};
-
 // Like combine_solo_events, but never skips on events to suit Midi parsing and
 // checks if there is an unmatched on event.
 //
 // expand_length_zero_events is because some drum events have the length
 // increased by 1 if the start and end are at the same time.
-std::vector<std::tuple<int, int>>
-combine_note_on_off_events(const std::vector<MidiEventPosition>& on_events,
-                           const std::vector<MidiEventPosition>& off_events,
-                           bool expand_length_zero_events = false)
+std::vector<std::tuple<int, int>> combine_note_on_off_events(
+    const std::vector<SightRead::Detail::MidiEventPosition>& on_events,
+    const std::vector<SightRead::Detail::MidiEventPosition>& off_events,
+    bool expand_length_zero_events = false)
 {
     std::vector<std::tuple<int, int>> ranges;
-    std::stack<MidiEventPosition, std::vector<MidiEventPosition>>
+    std::stack<SightRead::Detail::MidiEventPosition,
+               std::vector<SightRead::Detail::MidiEventPosition>>
         unmatched_on_events;
 
     auto on_iter = on_events.cbegin();
@@ -470,209 +467,6 @@ combine_note_on_off_events(const std::vector<MidiEventPosition>& on_events,
 
     return ranges;
 }
-
-struct NoteToggleEvent {
-    int position;
-    int velocity;
-    int rank;
-};
-
-struct NoteEvent {
-    int position;
-    int length;
-    std::uint8_t velocity;
-};
-
-class NoteOnOffEvents {
-private:
-    std::vector<NoteToggleEvent> m_note_on_events;
-    std::vector<NoteToggleEvent> m_note_off_events;
-    int m_last_rank = 0;
-
-public:
-    void add_note_on_event(int position, std::uint8_t velocity)
-    {
-        m_note_on_events.emplace_back(position, velocity, ++m_last_rank);
-    }
-    void add_note_off_event(int position, std::uint8_t velocity)
-    {
-        m_note_off_events.emplace_back(position, velocity, ++m_last_rank);
-    }
-
-    [[nodiscard]] std::size_t on_event_count() const
-    {
-        return m_note_on_events.size();
-    }
-
-    // Like combine_solo_events, but never skips on events to suit Midi parsing
-    // and checks if there is an unmatched on event.
-    //
-    // expand_length_zero_events is because some drum events have the length
-    // increased by 1 if the start and end are at the same time.
-    [[nodiscard]] std::vector<NoteEvent>
-    combined_events(bool expand_length_zero_events = false) const
-    {
-        std::vector<NoteEvent> notes;
-        std::stack<NoteToggleEvent, std::vector<NoteToggleEvent>>
-            unmatched_on_events;
-
-        auto on_iter = m_note_on_events.cbegin();
-        for (auto off_event : m_note_off_events) {
-            for (; on_iter < m_note_on_events.cend()
-                 && on_iter->rank < off_event.rank;
-                 ++on_iter) {
-                unmatched_on_events.push(*on_iter);
-            }
-
-            if (unmatched_on_events.empty()) {
-                continue;
-            }
-
-            const auto start = unmatched_on_events.top().position;
-            const auto velocity = unmatched_on_events.top().velocity;
-            unmatched_on_events.pop();
-            auto end = off_event.position;
-            if (start == end && expand_length_zero_events) {
-                ++end;
-            }
-            notes.emplace_back(start, end - start, velocity);
-        }
-
-        return notes;
-    }
-
-    [[nodiscard]] std::vector<SightRead::Solo>
-    track_solos(const std::vector<SightRead::Note>& notes,
-                SightRead::TrackType track_type, bool permit_solos) const
-    {
-        if (!permit_solos) {
-            return {};
-        }
-
-        std::vector<int> solo_ons;
-        std::vector<int> solo_offs;
-        solo_ons.reserve(m_note_on_events.size());
-        for (const auto& event : m_note_on_events) {
-            solo_ons.push_back(event.position);
-        }
-        solo_offs.reserve(m_note_off_events.size());
-        for (const auto& event : m_note_off_events) {
-            solo_offs.push_back(event.position);
-        }
-
-        return SightRead::Detail::form_solo_vector(
-            solo_ons, solo_offs, notes, track_type,
-            SightRead::SoloParsingBehaviour::PreferEarlierStarts, true);
-    }
-
-    [[nodiscard]] HalfOpenIntervalSet<int> interval_set() const
-    {
-        std::vector<std::tuple<int, int>> intervals;
-        for (auto event : combined_events(true)) {
-            intervals.emplace_back(event.position,
-                                   event.position + event.length);
-        }
-
-        return {std::move(intervals)};
-    }
-};
-
-class InstrumentMidiTrack {
-private:
-    static constexpr std::uint8_t SOLO_KEY = 103;
-    static constexpr std::uint8_t SP_KEY = 116;
-
-    [[nodiscard]] bool should_use_solos_for_sp() const
-    {
-        const auto solo_iter = note_events.find(SOLO_KEY);
-        if (solo_iter == note_events.cend()
-            || solo_iter->second.on_event_count() <= 1) {
-            return false;
-        }
-
-        const auto sp_iter = note_events.find(SP_KEY);
-        return sp_iter == note_events.cend()
-            || sp_iter->second.on_event_count() == 0;
-    }
-
-    [[nodiscard]] NoteOnOffEvents solo_events() const
-    {
-        if (should_use_solos_for_sp()) {
-            return {};
-        }
-        return events_with_key(SOLO_KEY);
-    }
-
-    [[nodiscard]] NoteOnOffEvents sp_events() const
-    {
-        if (should_use_solos_for_sp()) {
-            return events_with_key(SOLO_KEY);
-        }
-        return events_with_key(SP_KEY);
-    }
-
-public:
-    std::map<std::uint8_t, NoteOnOffEvents> note_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        open_on_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        open_off_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        tap_on_sysex_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        tap_off_sysex_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        disco_flip_on_events;
-    std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
-        disco_flip_off_events;
-
-    InstrumentMidiTrack() = default;
-
-    [[nodiscard]] NoteOnOffEvents events_with_key(std::uint8_t key) const
-    {
-        const auto iter = note_events.find(key);
-        if (iter == note_events.cend()) {
-            return {};
-        }
-        return iter->second;
-    }
-
-    [[nodiscard]] std::vector<SightRead::StarPower> sp_phrases() const
-    {
-        const auto combined_events = sp_events().combined_events();
-
-        std::vector<SightRead::StarPower> sp_phrases;
-        sp_phrases.reserve(combined_events.size());
-        for (const auto& event : combined_events) {
-            sp_phrases.push_back({.position = SightRead::Tick {event.position},
-                                  .length = SightRead::Tick {event.length}});
-        }
-
-        return sp_phrases;
-    }
-
-    [[nodiscard]] std::vector<SightRead::Solo>
-    solos(const std::vector<SightRead::Note>& notes,
-          SightRead::TrackType track_type, bool permit_solos) const
-    {
-        return solo_events().track_solos(notes, track_type, permit_solos);
-    }
-
-    void add_note_off_event(std::uint8_t key, std::uint8_t velocity, int time)
-    {
-        note_events[key].add_note_off_event(time, velocity);
-    }
-
-    void add_note_on_event(std::uint8_t key, std::uint8_t velocity, int time)
-    {
-        // Velocity 0 Note On events are counted as Note Off events.
-        if (velocity == 0) {
-            note_events[key].add_note_off_event(time, velocity);
-        } else {
-            note_events[key].add_note_on_event(time, velocity);
-        }
-    }
-};
 
 bool is_tap_sysex_event(const SightRead::Detail::SysexEvent& event)
 {
@@ -719,7 +513,7 @@ std::set<SightRead::Difficulty> difficulties_from_sysex_diff(std::uint8_t diff)
     }
 }
 
-void add_sysex_event(InstrumentMidiTrack& track,
+void add_sysex_event(SightRead::Detail::InstrumentMidiTrack& track,
                      const SightRead::Detail::SysexEvent& event, int time,
                      int rank)
 {
@@ -743,7 +537,7 @@ void add_sysex_event(InstrumentMidiTrack& track,
     }
 }
 
-void append_disco_flip(InstrumentMidiTrack& event_track,
+void append_disco_flip(SightRead::Detail::InstrumentMidiTrack& event_track,
                        const SightRead::Detail::MetaEvent& meta_event, int time,
                        int rank)
 {
@@ -786,7 +580,7 @@ void append_disco_flip(InstrumentMidiTrack& event_track,
     }
 }
 
-InstrumentMidiTrack
+SightRead::Detail::InstrumentMidiTrack
 read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
                            SightRead::TrackType track_type)
 {
@@ -797,7 +591,7 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
         SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
         SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
 
-    InstrumentMidiTrack event_track;
+    SightRead::Detail::InstrumentMidiTrack event_track;
     for (auto d : DIFFICULTIES) {
         event_track.disco_flip_on_events[d] = {};
         event_track.disco_flip_off_events[d] = {};
@@ -854,7 +648,7 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
 
 void apply_forcing(
     std::map<SightRead::Difficulty, std::vector<SightRead::Note>>& notes,
-    const InstrumentMidiTrack& event_track,
+    const SightRead::Detail::InstrumentMidiTrack& event_track,
     const std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>& tap_events)
 {
     const std::map<SightRead::Difficulty, std::uint8_t> force_hopo_keys {
@@ -914,7 +708,7 @@ private:
     static constexpr int GREEN_TOM_KEY = 112;
 
 public:
-    explicit TomEvents(const InstrumentMidiTrack& events)
+    explicit TomEvents(const SightRead::Detail::InstrumentMidiTrack& events)
         : m_yellow_tom_events {
               events.events_with_key(YELLOW_TOM_KEY).interval_set()}
         , m_blue_tom_events {events.events_with_key(BLUE_TOM_KEY)
@@ -987,7 +781,7 @@ void fix_double_greens(std::vector<SightRead::Note>& notes)
 
 std::map<SightRead::Difficulty, std::vector<SightRead::Note>>
 notes_from_event_track(
-    const InstrumentMidiTrack& event_track,
+    const SightRead::Detail::InstrumentMidiTrack& event_track,
     const std::map<SightRead::Difficulty, ClosedIntervalSet<int>>& open_events,
     const std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>& tap_events,
     bool from_five_lane, bool parse_dynamics, bool enable_enhanced_opens,
@@ -1145,7 +939,7 @@ drum_note_tracks_from_midi(
 }
 
 std::vector<SightRead::BigRockEnding>
-read_bres(const InstrumentMidiTrack& event_track,
+read_bres(const SightRead::Detail::InstrumentMidiTrack& event_track,
           std::optional<SightRead::Tick> coda_event_time)
 {
     std::vector<SightRead::BigRockEnding> bres;
