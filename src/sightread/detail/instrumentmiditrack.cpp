@@ -110,6 +110,14 @@ NoteOnOffEvents InstrumentMidiTrack::sp_events() const
     return events_with_key(SP_KEY);
 }
 
+bool InstrumentMidiTrack::has_tom_markers() const
+{
+    constexpr std::array<std::uint8_t, 3> TOM_KEYS {110, 111, 112};
+
+    return std::ranges::any_of(
+        TOM_KEYS, [&](auto key) { return note_events.contains(key); });
+}
+
 NoteOnOffEvents InstrumentMidiTrack::events_with_key(std::uint8_t key) const
 {
     const auto iter = note_events.find(key);
@@ -160,5 +168,25 @@ void InstrumentMidiTrack::add_note_on_event(std::uint8_t key,
     } else {
         note_events[key].add_note_on_event(time, velocity);
     }
+}
+
+DrumTrackType
+InstrumentMidiTrack::drum_track_type(const SightRead::Metadata& metadata) const
+{
+    constexpr int FIVE_LANE_GREEN_KEY = 101;
+
+    if (metadata.pro_drums) {
+        return DrumTrackType::FourLanePro;
+    }
+    if (metadata.five_lane_drums) {
+        return DrumTrackType::FiveLane;
+    }
+    if (has_tom_markers()) {
+        return DrumTrackType::FourLanePro;
+    }
+    if (note_events.contains(FIVE_LANE_GREEN_KEY)) {
+        return DrumTrackType::FiveLane;
+    }
+    return DrumTrackType::FourLane;
 }
 }

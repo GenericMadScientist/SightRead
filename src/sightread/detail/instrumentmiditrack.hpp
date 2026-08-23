@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "sightread/detail/intervalset.hpp"
+#include "sightread/metadata.hpp"
 #include "sightread/songparts.hpp"
 
 namespace SightRead::Detail {
@@ -52,6 +53,8 @@ public:
     [[nodiscard]] HalfOpenIntervalSet<int> interval_set() const;
 };
 
+enum class DrumTrackType : std::uint8_t { FourLane, FourLanePro, FiveLane };
+
 class InstrumentMidiTrack {
 private:
     static constexpr std::uint8_t SOLO_KEY = 103;
@@ -60,6 +63,8 @@ private:
     [[nodiscard]] bool should_use_solos_for_sp() const;
     [[nodiscard]] NoteOnOffEvents solo_events() const;
     [[nodiscard]] NoteOnOffEvents sp_events() const;
+
+    [[nodiscard]] bool has_tom_markers() const;
 
 public:
     std::map<std::uint8_t, NoteOnOffEvents> note_events;
@@ -86,6 +91,9 @@ public:
 
     void add_note_off_event(std::uint8_t key, std::uint8_t velocity, int time);
     void add_note_on_event(std::uint8_t key, std::uint8_t velocity, int time);
+
+    [[nodiscard]] DrumTrackType
+    drum_track_type(const SightRead::Metadata& metadata) const;
 };
 }
 
