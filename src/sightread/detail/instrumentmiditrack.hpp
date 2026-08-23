@@ -47,7 +47,7 @@ public:
     combined_events(bool expand_length_zero_events = false) const;
     [[nodiscard]] std::vector<SightRead::Solo>
     track_solos(const std::vector<SightRead::Note>& notes,
-                SightRead::TrackType track_type, bool permit_solos) const;
+                SightRead::TrackType track_type) const;
 
     [[nodiscard]] HalfOpenIntervalSet<int> interval_set() const;
 };

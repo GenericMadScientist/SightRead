@@ -53,13 +53,8 @@ NoteOnOffEvents::combined_events(bool expand_length_zero_events) const
 
 std::vector<SightRead::Solo>
 NoteOnOffEvents::track_solos(const std::vector<SightRead::Note>& notes,
-                             SightRead::TrackType track_type,
-                             bool permit_solos) const
+                             SightRead::TrackType track_type) const
 {
-    if (!permit_solos) {
-        return {};
-    }
-
     std::vector<int> solo_ons;
     std::vector<int> solo_offs;
     solo_ons.reserve(m_note_on_events.size());
@@ -143,7 +138,11 @@ InstrumentMidiTrack::solos(const std::vector<SightRead::Note>& notes,
                            SightRead::TrackType track_type,
                            bool permit_solos) const
 {
-    return solo_events().track_solos(notes, track_type, permit_solos);
+    if (!permit_solos) {
+        return {};
+    }
+
+    return solo_events().track_solos(notes, track_type);
 }
 
 void InstrumentMidiTrack::add_note_off_event(std::uint8_t key,
