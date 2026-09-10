@@ -172,33 +172,6 @@ void process_events_track(const SightRead::Detail::MidiTrack& track,
     }
 }
 
-bool is_five_lane_green_note(const SightRead::Detail::TimedEvent& event)
-{
-    constexpr std::array<std::uint8_t, 4> GREEN_LANE_KEYS {65, 77, 89, 101};
-    constexpr int NOTE_OFF_ID = 0x80;
-    constexpr int NOTE_ON_ID = 0x90;
-    constexpr int UPPER_NIBBLE_MASK = 0xF0;
-
-    const auto* midi_event
-        = std::get_if<SightRead::Detail::MidiEvent>(&event.event);
-    if (midi_event == nullptr) {
-        return false;
-    }
-    const auto event_type = midi_event->status & UPPER_NIBBLE_MASK;
-    if (event_type != NOTE_ON_ID && event_type != NOTE_OFF_ID) {
-        return false;
-    }
-    const auto key = midi_event->data.at(0);
-    return std::ranges::find(GREEN_LANE_KEYS, key)
-        != std::ranges::end(GREEN_LANE_KEYS);
-}
-
-bool has_five_lane_green_notes(const SightRead::Detail::MidiTrack& midi_track)
-{
-    return std::ranges::find_if(midi_track.events, is_five_lane_green_note)
-        != std::ranges::end(midi_track.events);
-}
-
 bool is_enable_chart_dynamics(const SightRead::Detail::TimedEvent& event)
 {
     using namespace std::literals;
@@ -334,7 +307,8 @@ T colour_from_key_and_bounds(std::uint8_t key,
 }
 
 int colour_from_key(std::uint8_t key, SightRead::TrackType track_type,
-                    bool from_five_lane, bool enable_enhanced_opens)
+                    SightRead::Detail::DrumTrackType drum_track_type,
+                    bool enable_enhanced_opens)
 {
     constexpr std::array FIVE_FRET_WITHOUT_OPENS_NOTE_COLOURS {
         SightRead::FIVE_FRET_GREEN, SightRead::FIVE_FRET_RED,
@@ -381,7 +355,7 @@ int colour_from_key(std::uint8_t key, SightRead::TrackType track_type,
             SightRead::DRUM_RED,         SightRead::DRUM_YELLOW,
             SightRead::DRUM_BLUE,        SightRead::DRUM_GREEN,
             SightRead::DRUM_GREEN};
-        if (from_five_lane) {
+        if (drum_track_type == SightRead::Detail::DrumTrackType::FiveLane) {
             return colour_from_key_and_bounds(key, diff_ranges,
                                               FIVE_LANE_COLOURS);
         }
@@ -407,10 +381,11 @@ SightRead::NoteFlags flags_from_track_type(SightRead::TrackType track_type)
     throw std::invalid_argument("Invalid track type");
 }
 
-bool is_cymbal_key(std::uint8_t key, bool from_five_lane)
+bool is_cymbal_key(std::uint8_t key,
+                   SightRead::Detail::DrumTrackType track_type)
 {
     const auto index = (key + 1) % 12;
-    if (from_five_lane) {
+    if (track_type == SightRead::Detail::DrumTrackType::FiveLane) {
         return index == 3 || index == 5; // NOLINT
     }
     return index == 3 || index == 4 || index == 5; // NOLINT
@@ -733,16 +708,17 @@ public:
     }
 };
 
-SightRead::NoteFlags note_flags(std::uint8_t key, std::uint8_t velocity,
-                                bool from_five_lane, bool parse_dynamics,
-                                SightRead::TrackType track_type)
+SightRead::NoteFlags
+note_flags(std::uint8_t key, std::uint8_t velocity,
+           SightRead::Detail::DrumTrackType drum_track_type,
+           bool parse_dynamics, SightRead::TrackType track_type)
 {
     auto flags = flags_from_track_type(track_type);
     if (track_type != SightRead::TrackType::Drums) {
         return flags;
     }
 
-    if (is_cymbal_key(key, from_five_lane)) {
+    if (is_cymbal_key(key, drum_track_type)) {
         flags = static_cast<SightRead::NoteFlags>(flags
                                                   | SightRead::FLAGS_CYMBAL);
     }
@@ -782,9 +758,10 @@ void fix_double_greens(std::vector<SightRead::Note>& notes)
 std::map<SightRead::Difficulty, std::vector<SightRead::Note>>
 notes_from_event_track(
     const SightRead::Detail::InstrumentMidiTrack& event_track,
+    const SightRead::Metadata& metadata,
     const std::map<SightRead::Difficulty, ClosedIntervalSet<int>>& open_events,
     const std::map<SightRead::Difficulty, HalfOpenIntervalSet<int>>& tap_events,
-    bool from_five_lane, bool parse_dynamics, bool enable_enhanced_opens,
+    bool parse_dynamics, bool enable_enhanced_opens,
     SightRead::TrackType track_type, int sustain_cutoff_threshold)
 {
     const TomEvents tom_events {event_track};
@@ -797,10 +774,12 @@ notes_from_event_track(
             continue;
         }
         const auto base_colour = colour_from_key(
-            key, track_type, from_five_lane, enable_enhanced_opens);
+            key, track_type, event_track.drum_track_type(metadata),
+            enable_enhanced_opens);
 
         for (const auto& event : events.combined_events()) {
-            auto flags = note_flags(key, event.velocity, from_five_lane,
+            auto flags = note_flags(key, event.velocity,
+                                    event_track.drum_track_type(metadata),
                                     parse_dynamics, track_type);
             if (tom_events.force_tom(base_colour, event.position)) {
                 flags = static_cast<SightRead::NoteFlags>(
@@ -845,16 +824,16 @@ notes_from_event_track(
 
 std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
+    const SightRead::Metadata& metadata,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
-    const SightRead::HopoThreshold& hopo_threshold,
     int sustain_cutoff_threshold, bool permit_solos, bool allow_open_chords)
 {
     const auto event_track
         = read_instrument_midi_track(midi_track, SightRead::TrackType::SixFret);
 
     const auto notes = notes_from_event_track(
-        event_track, {}, {}, false, false, false, SightRead::TrackType::SixFret,
-        sustain_cutoff_threshold);
+        event_track, metadata, {}, {}, false, false,
+        SightRead::TrackType::SixFret, sustain_cutoff_threshold);
     const auto sp_phrases = event_track.sp_phrases();
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
@@ -864,7 +843,8 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
         SightRead::NoteTrack note_track {
             note_set, SightRead::TrackType::SixFret, global_data,
             allow_open_chords,
-            hopo_threshold.midi_max_hopo_gap(global_data->resolution())};
+            metadata.hopo_threshold.midi_max_hopo_gap(
+                global_data->resolution())};
         note_track.sp_phrases(sp_phrases);
         note_track.solos(std::move(solos));
         note_tracks.emplace(diff, std::move(note_track));
@@ -876,6 +856,7 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
 std::map<SightRead::Difficulty, SightRead::NoteTrack>
 drum_note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
+    const SightRead::Metadata& metadata,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
     int sustain_cutoff_threshold, bool permit_solos,
     std::optional<SightRead::Tick> coda_event_time)
@@ -884,9 +865,8 @@ drum_note_tracks_from_midi(
         = read_instrument_midi_track(midi_track, SightRead::TrackType::Drums);
 
     const auto notes = notes_from_event_track(
-        event_track, {}, {}, has_five_lane_green_notes(midi_track),
-        has_enable_chart_dynamics(midi_track), false,
-        SightRead::TrackType::Drums, sustain_cutoff_threshold);
+        event_track, metadata, {}, {}, has_enable_chart_dynamics(midi_track),
+        false, SightRead::TrackType::Drums, sustain_cutoff_threshold);
 
     const auto sp_phrases = event_track.sp_phrases();
 
@@ -971,6 +951,7 @@ bool is_fortnite_instrument(SightRead::Instrument instrument)
 std::map<SightRead::Difficulty, SightRead::NoteTrack>
 fortnite_note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
+    const SightRead::Metadata& metadata,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
     int sustain_cutoff_threshold, bool permit_solos,
     std::optional<SightRead::Tick> coda_event_time)
@@ -980,7 +961,7 @@ fortnite_note_tracks_from_midi(
     const auto bres = read_bres(event_track, coda_event_time);
 
     const auto notes = notes_from_event_track(
-        event_track, {}, {}, false, false, false,
+        event_track, metadata, {}, {}, false, false,
         SightRead::TrackType::FortniteFestival, sustain_cutoff_threshold);
     const auto sp_phrases = event_track.sp_phrases();
 
@@ -1001,8 +982,8 @@ fortnite_note_tracks_from_midi(
 
 std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
+    const SightRead::Metadata& metadata,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
-    const SightRead::HopoThreshold& hopo_threshold,
     int sustain_cutoff_threshold, bool permit_solos, bool allow_open_chords,
     std::optional<SightRead::Tick> coda_event_time)
 {
@@ -1030,7 +1011,7 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
     }
 
     const auto notes = notes_from_event_track(
-        event_track, open_events, tap_events, false, false,
+        event_track, metadata, open_events, tap_events, false,
         has_enhanced_opens(midi_track), SightRead::TrackType::FiveFret,
         sustain_cutoff_threshold);
     const auto sp_phrases = event_track.sp_phrases();
@@ -1042,7 +1023,8 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
         SightRead::NoteTrack note_track {
             note_set, SightRead::TrackType::FiveFret, global_data,
             allow_open_chords,
-            hopo_threshold.midi_max_hopo_gap(global_data->resolution())};
+            metadata.hopo_threshold.midi_max_hopo_gap(
+                global_data->resolution())};
         note_track.sp_phrases(sp_phrases);
         note_track.solos(std::move(solos));
         note_track.bres(bres);
@@ -1156,30 +1138,29 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
         = sustain_cutoff_threshold(song.global_data().resolution());
     if (is_fortnite_instrument(*inst)) {
         auto tracks = fortnite_note_tracks_from_midi(
-            track, song.global_data_ptr(), sustain_threshold, m_permit_solos,
-            coda_event_time);
+            track, m_metadata, song.global_data_ptr(), sustain_threshold,
+            m_permit_solos, coda_event_time);
         for (auto& [diff, note_track] : tracks) {
             song.add_note_track(*inst, diff, std::move(note_track));
         }
     } else if (SightRead::Detail::is_six_fret_instrument(*inst)) {
         auto tracks = ghl_note_tracks_from_midi(
-            track, song.global_data_ptr(), m_metadata.hopo_threshold,
-            sustain_threshold, m_permit_solos, m_allow_open_chords);
+            track, m_metadata, song.global_data_ptr(), sustain_threshold,
+            m_permit_solos, m_allow_open_chords);
         for (auto& [diff, note_track] : tracks) {
             song.add_note_track(*inst, diff, std::move(note_track));
         }
     } else if (*inst == SightRead::Instrument::Drums) {
         auto tracks = drum_note_tracks_from_midi(
-            track, song.global_data_ptr(), sustain_threshold, m_permit_solos,
-            coda_event_time);
+            track, m_metadata, song.global_data_ptr(), sustain_threshold,
+            m_permit_solos, coda_event_time);
         for (auto& [diff, note_track] : tracks) {
             song.add_note_track(*inst, diff, std::move(note_track));
         }
     } else {
         auto tracks = note_tracks_from_midi(
-            track, song.global_data_ptr(), m_metadata.hopo_threshold,
-            sustain_threshold, m_permit_solos, m_allow_open_chords,
-            coda_event_time);
+            track, m_metadata, song.global_data_ptr(), sustain_threshold,
+            m_permit_solos, m_allow_open_chords, coda_event_time);
         for (auto& [diff, note_track] : tracks) {
             song.add_note_track(*inst, diff, std::move(note_track));
         }
