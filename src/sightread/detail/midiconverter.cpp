@@ -385,10 +385,16 @@ bool is_cymbal_key(std::uint8_t key,
                    SightRead::Detail::DrumTrackType track_type)
 {
     const auto index = (key + 1) % 12;
-    if (track_type == SightRead::Detail::DrumTrackType::FiveLane) {
+    switch (track_type) {
+    case SightRead::Detail::DrumTrackType::FourLane:
+        return false;
+    case SightRead::Detail::DrumTrackType::FourLanePro:
+        return index == 3 || index == 4 || index == 5; // NOLINT
+    case SightRead::Detail::DrumTrackType::FiveLane:
         return index == 3 || index == 5; // NOLINT
     }
-    return index == 3 || index == 4 || index == 5; // NOLINT
+
+    throw std::invalid_argument("Invalid drum track type");
 }
 
 SightRead::NoteFlags dynamics_flags_from_velocity(std::uint8_t velocity)
