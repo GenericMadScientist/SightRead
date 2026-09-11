@@ -905,23 +905,23 @@ BOOST_AUTO_TEST_CASE(mids_with_multiple_solos_and_no_sp_have_solos_read_as_sp)
 
 BOOST_AUTO_TEST_SUITE(sustain_trimming)
 
-BOOST_AUTO_TEST_CASE(short_midi_sustains_are_trimmed)
+BOOST_AUTO_TEST_CASE(midi_sustains_below_third_of_res_plus_one_are_trimmed)
 {
     SightRead::Detail::MidiTrack note_track {
         {{.time = 0, .event = {part_event("PART GUITAR")}},
          {.time = 0,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {.time = 65,
+         {.time = 201,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
-         {.time = 100,
+         {.time = 400,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
-         {.time = 170,
+         {.time = 602,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}}}};
-    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 200,
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 600,
                                         .tracks = {note_track}};
     const auto song = guitar_only_converter().convert(midi);
     const auto& notes = song.track(SightRead::Instrument::Guitar,
@@ -929,7 +929,7 @@ BOOST_AUTO_TEST_CASE(short_midi_sustains_are_trimmed)
                             .notes();
 
     BOOST_CHECK_EQUAL(notes.at(0).lengths.at(0), SightRead::Tick {0});
-    BOOST_CHECK_EQUAL(notes.at(1).lengths.at(0), SightRead::Tick {70});
+    BOOST_CHECK_EQUAL(notes.at(1).lengths.at(0), SightRead::Tick {202});
 }
 
 BOOST_AUTO_TEST_CASE(metadata_cutoff_is_used_by_default)
@@ -1720,7 +1720,7 @@ BOOST_AUTO_TEST_CASE(six_fret_guitar_is_read_correctly)
          {.time = 0,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
-         {.time = 65,
+         {.time = 66,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
@@ -1730,7 +1730,7 @@ BOOST_AUTO_TEST_CASE(six_fret_guitar_is_read_correctly)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {
-        make_ghl_note(0, 65, SightRead::SIX_FRET_OPEN)};
+        make_ghl_note(0, 66, SightRead::SIX_FRET_OPEN)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
@@ -1743,7 +1743,7 @@ BOOST_AUTO_TEST_CASE(six_fret_bass_is_read_correctly)
          {.time = 0,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
-         {.time = 65,
+         {.time = 66,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
@@ -1753,7 +1753,7 @@ BOOST_AUTO_TEST_CASE(six_fret_bass_is_read_correctly)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {
-        make_ghl_note(0, 65, SightRead::SIX_FRET_OPEN)};
+        make_ghl_note(0, 66, SightRead::SIX_FRET_OPEN)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
@@ -1766,7 +1766,7 @@ BOOST_AUTO_TEST_CASE(six_fret_rhythm_is_read_correctly)
          {.time = 0,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
-         {.time = 65,
+         {.time = 66,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
@@ -1776,7 +1776,7 @@ BOOST_AUTO_TEST_CASE(six_fret_rhythm_is_read_correctly)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {
-        make_ghl_note(0, 65, SightRead::SIX_FRET_OPEN)};
+        make_ghl_note(0, 66, SightRead::SIX_FRET_OPEN)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
@@ -1789,7 +1789,7 @@ BOOST_AUTO_TEST_CASE(six_fret_guitar_coop_is_read_correctly)
          {.time = 0,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
-         {.time = 65,
+         {.time = 66,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
@@ -1799,7 +1799,7 @@ BOOST_AUTO_TEST_CASE(six_fret_guitar_coop_is_read_correctly)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {
-        make_ghl_note(0, 65, SightRead::SIX_FRET_OPEN)};
+        make_ghl_note(0, 66, SightRead::SIX_FRET_OPEN)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());
@@ -1812,7 +1812,7 @@ BOOST_AUTO_TEST_CASE(six_fret_keys_is_read_correctly)
          {.time = 0,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {94, 64}}}},
-         {.time = 65,
+         {.time = 66,
           .event
           = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {94, 0}}}}}};
     const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
@@ -1822,7 +1822,7 @@ BOOST_AUTO_TEST_CASE(six_fret_keys_is_read_correctly)
                                    SightRead::Difficulty::Expert);
 
     std::vector<SightRead::Note> notes {
-        make_ghl_note(0, 65, SightRead::SIX_FRET_OPEN)};
+        make_ghl_note(0, 66, SightRead::SIX_FRET_OPEN)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   notes.cbegin(), notes.cend());

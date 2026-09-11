@@ -1088,7 +1088,7 @@ int SightRead::Detail::MidiConverter::sustain_cutoff_threshold(
         return *m_metadata.sustain_cutoff_threshold;
     }
 
-    return resolution / 3;
+    return resolution / 3 + 1;
 }
 
 std::optional<SightRead::Instrument>
