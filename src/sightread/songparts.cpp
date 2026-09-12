@@ -15,10 +15,8 @@ combined_note(std::vector<SightRead::Note>::const_iterator begin,
     SightRead::Note note = *begin;
     for (auto it = std::next(begin); it < end; ++it) {
         for (auto i = 0U; i < note.lengths.size(); ++i) {
-            const auto new_length = it->lengths.at(i);
-            if (new_length != SightRead::Tick {-1}) {
-                note.lengths.at(i) = new_length;
-            }
+            note.lengths.at(i)
+                = std::max(note.lengths.at(i), it->lengths.at(i));
         }
     }
     return note;
@@ -243,7 +241,8 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes, TrackType track_type,
                                 std::shared_ptr<SongGlobalData> global_data,
                                 bool allow_open_chords,
                                 SightRead::Tick max_hopo_gap)
-    : m_track_type {track_type}
+    : m_notes {std::move(notes)}
+    , m_track_type {track_type}
     , m_global_data {std::move(global_data)}
     , m_base_score_ticks {0}
 {
@@ -251,20 +250,8 @@ SightRead::NoteTrack::NoteTrack(std::vector<Note> notes, TrackType track_type,
         throw std::runtime_error("Non-null global data required");
     }
 
-    std::ranges::stable_sort(notes, {},
+    std::ranges::stable_sort(m_notes, {},
                              [](const auto& x) { return x.position; });
-
-    if (!notes.empty()) {
-        auto prev_note = notes.cbegin();
-        for (auto p = notes.cbegin() + 1; p < notes.cend(); ++p) {
-            if (p->position != prev_note->position
-                || p->colours() != prev_note->colours()) {
-                m_notes.push_back(*prev_note);
-            }
-            prev_note = p;
-        }
-        m_notes.push_back(*prev_note);
-    }
 
     merge_same_time_notes();
     fix_note_overlaps();

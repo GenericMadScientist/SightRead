@@ -42,25 +42,16 @@ BOOST_AUTO_TEST_CASE(notes_are_sorted)
 
 BOOST_AUTO_TEST_CASE(notes_of_the_same_colour_and_position_are_merged)
 {
-    std::vector<SightRead::Note> notes {make_note(768, 0), make_note(768, 768)};
+    std::vector<SightRead::Note> notes {make_note(0, 192), make_note(0, 0),
+                                        make_note(384, 0), make_note(384, 192)};
     SightRead::NoteTrack track {notes, SightRead::TrackType::FiveFret,
                                 std::make_shared<SightRead::SongGlobalData>()};
-    std::vector<SightRead::Note> required_notes {make_note(768, 768)};
+    std::vector<SightRead::Note> required_notes {make_note(0, 192),
+                                                 make_note(384, 192)};
 
     BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
                                   required_notes.cbegin(),
                                   required_notes.cend());
-
-    std::vector<SightRead::Note> second_notes {make_note(768, 768),
-                                               make_note(768, 0)};
-    SightRead::NoteTrack second_track {
-        second_notes, SightRead::TrackType::FiveFret,
-        std::make_shared<SightRead::SongGlobalData>()};
-    std::vector<SightRead::Note> second_required_notes {make_note(768, 0)};
-
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        second_track.notes().cbegin(), second_track.notes().cend(),
-        second_required_notes.cbegin(), second_required_notes.cend());
 }
 
 BOOST_AUTO_TEST_CASE(overlapping_notes_of_the_same_colour_are_normalised)
