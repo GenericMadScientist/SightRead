@@ -620,6 +620,47 @@ BOOST_AUTO_TEST_CASE(length_zero_open_events_are_handled_correctly)
         1 << SightRead::FIVE_FRET_OPEN);
 }
 
+BOOST_AUTO_TEST_CASE(positive_length_open_events_are_handled_correctly)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 768,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 3, 1, 1, 0xF7}}}},
+         {.time = 959,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}},
+         {.time = 960,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 3, 1, 0, 0xF7}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 961,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+
+    const auto song = guitar_only_converter().convert(midi);
+
+    BOOST_CHECK_EQUAL(
+        song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
+            .notes()
+            .at(0)
+            .colours(),
+        1 << SightRead::FIVE_FRET_OPEN);
+    BOOST_CHECK_EQUAL(
+        song.track(SightRead::Instrument::Guitar, SightRead::Difficulty::Expert)
+            .notes()
+            .at(1)
+            .colours(),
+        1 << SightRead::FIVE_FRET_GREEN);
+}
+
 BOOST_AUTO_TEST_CASE(parseerror_thrown_if_open_note_ons_have_no_note_offs)
 {
     SightRead::Detail::MidiTrack note_track {
