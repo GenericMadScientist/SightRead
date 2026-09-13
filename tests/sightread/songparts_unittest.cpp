@@ -54,6 +54,17 @@ BOOST_AUTO_TEST_CASE(notes_of_the_same_colour_and_position_are_merged)
                                   required_notes.cend());
 }
 
+BOOST_AUTO_TEST_CASE(drum_notes_of_the_same_colour_and_position_are_merged)
+{
+    std::vector<SightRead::Note> notes {
+        make_drum_note(0), make_drum_note(0),
+        make_drum_note(0, 0, SightRead::DRUM_YELLOW)};
+    SightRead::NoteTrack track {notes, SightRead::TrackType::Drums,
+                                std::make_shared<SightRead::SongGlobalData>()};
+
+    BOOST_CHECK_EQUAL(track.notes().size(), 2U);
+}
+
 BOOST_AUTO_TEST_CASE(overlapping_notes_of_the_same_colour_are_normalised)
 {
     std::vector<SightRead::Note> notes {make_note(0, 768), make_note(192, 0)};

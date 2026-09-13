@@ -8,18 +8,34 @@
 #include "sightread/songparts.hpp"
 
 namespace {
-SightRead::Note
-combined_note(std::vector<SightRead::Note>::const_iterator begin,
-              std::vector<SightRead::Note>::const_iterator end)
+std::vector<SightRead::Note>
+combined_notes(std::vector<SightRead::Note>::const_iterator begin,
+               std::vector<SightRead::Note>::const_iterator end,
+               bool combine_across_colours)
 {
-    SightRead::Note note = *begin;
-    for (auto it = std::next(begin); it < end; ++it) {
-        for (auto i = 0U; i < note.lengths.size(); ++i) {
-            note.lengths.at(i)
-                = std::max(note.lengths.at(i), it->lengths.at(i));
+    if (combine_across_colours) {
+        SightRead::Note note = *begin;
+        for (auto it = std::next(begin); it < end; ++it) {
+            for (auto i = 0U; i < note.lengths.size(); ++i) {
+                note.lengths.at(i)
+                    = std::max(note.lengths.at(i), it->lengths.at(i));
+            }
+        }
+        return {note};
+    }
+
+    std::vector<int> inserted_colours;
+    std::vector<SightRead::Note> notes;
+    for (auto it = begin; it < end; ++it) {
+        const auto colours = it->colours();
+        if (std::ranges::find(inserted_colours, colours)
+            == std::ranges::end(inserted_colours)) {
+            notes.push_back(*it);
+            inserted_colours.push_back(colours);
         }
     }
-    return note;
+
+    return notes;
 }
 
 bool is_chord(const SightRead::Note& note)
@@ -153,10 +169,8 @@ void SightRead::NoteTrack::compute_base_score_ticks()
 
 void SightRead::NoteTrack::merge_same_time_notes()
 {
-    if (m_track_type == TrackType::Drums
-        || m_track_type == TrackType::FortniteFestival) {
-        return;
-    }
+    const auto combine_across_colours = m_track_type != TrackType::Drums
+        && m_track_type != TrackType::FortniteFestival;
 
     std::vector<Note> notes;
     for (auto p = m_notes.cbegin(); p < m_notes.cend();) {
@@ -164,7 +178,8 @@ void SightRead::NoteTrack::merge_same_time_notes()
             = std::find_if_not(p, m_notes.cend(), [=](const auto& note) {
                   return note.position == p->position;
               });
-        notes.push_back(combined_note(p, q));
+        const auto new_notes = combined_notes(p, q, combine_across_colours);
+        notes.insert(notes.end(), new_notes.cbegin(), new_notes.cend());
         p = q;
     }
     m_notes = std::move(notes);
