@@ -833,6 +833,8 @@ BOOST_AUTO_TEST_CASE(six_fret_keys_is_read_correctly)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(drum_parsing)
+
 BOOST_AUTO_TEST_CASE(drum_notes_are_read_correctly_from_chart)
 {
     const auto chart_file
@@ -912,15 +914,43 @@ BOOST_AUTO_TEST_CASE(fifth_lane_notes_are_read_correctly_from_chart)
 {
     const auto chart_file
         = section_string("ExpertDrums",
+                         {{.position = 0, .fret = 4, .length = 0},
+                          {.position = 192, .fret = 5, .length = 0},
+                          {.position = 384, .fret = 4, .length = 0},
+                          {.position = 384, .fret = 5, .length = 0}});
+    const std::vector<SightRead::Note> notes {
+        make_drum_note(0, 0, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL),
+        make_drum_note(192, 0, SightRead::DRUM_GREEN),
+        make_drum_note(384, 0, SightRead::DRUM_BLUE),
+        make_drum_note(384, 0, SightRead::DRUM_GREEN)};
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
+                                  notes.cbegin(), notes.cend());
+}
+
+BOOST_AUTO_TEST_CASE(fifth_lane_notes_are_ignored_for_pro_drums)
+{
+    const auto chart_file
+        = section_string("ExpertDrums",
                          {{.position = 192, .fret = 5, .length = 0},
                           {.position = 384, .fret = 4, .length = 0},
                           {.position = 384, .fret = 5, .length = 0}});
     const std::vector<SightRead::Note> notes {
-        make_drum_note(192, 0, SightRead::DRUM_GREEN),
-        make_drum_note(384, 0, SightRead::DRUM_GREEN),
-        make_drum_note(384, 0, SightRead::DRUM_BLUE)};
+        make_drum_note(384, 0, SightRead::DRUM_GREEN)};
+    const SightRead::Metadata pro_drums_metadata {.name = "",
+                                                  .artist = "",
+                                                  .charter = "",
+                                                  .hopo_threshold = {},
+                                                  .sustain_cutoff_threshold
+                                                  = {},
+                                                  .pro_drums = true};
 
-    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto song
+        = SightRead::ChartParser(pro_drums_metadata).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
 
@@ -957,6 +987,8 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_from_chart)
     BOOST_CHECK_EQUAL(track.drum_fills().size(), 1U);
     BOOST_CHECK_EQUAL(track.drum_fills().at(0), fill);
 }
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(disco_flips)
 

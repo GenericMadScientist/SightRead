@@ -2,7 +2,6 @@
 #define SIGHTREAD_DETAIL_CHARTCONVERTER_HPP
 
 #include <set>
-#include <string>
 
 #include "sightread/detail/chart.hpp"
 #include "sightread/metadata.hpp"
@@ -13,10 +12,7 @@
 namespace SightRead::Detail {
 class ChartConverter {
 private:
-    std::string m_song_name;
-    std::string m_artist;
-    std::string m_charter;
-    SightRead::HopoThreshold m_hopo_threshold;
+    SightRead::Metadata m_metadata;
     std::set<SightRead::Instrument> m_permitted_instruments;
     SightRead::SoloParsingBehaviour m_solo_parsing_behaviour;
     bool m_allow_open_chords;

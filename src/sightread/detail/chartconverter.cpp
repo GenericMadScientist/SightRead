@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "sightread/detail/chartconverter.hpp"
+#include "sightread/detail/drumtracktype.hpp"
 #include "sightread/detail/parserutil.hpp"
 
 namespace {
@@ -131,9 +132,21 @@ note_from_colour_key_map(const std::map<int, int>& colour_map, int position,
     return note;
 }
 
+bool is_cymbal_colour(int fret_type,
+                      SightRead::Detail::DrumTrackType drum_track_type)
+{
+    constexpr int FOUR_LANE_CYMBAL_THRESHOLD = 64;
+
+    if (drum_track_type == SightRead::Detail::DrumTrackType::FiveLane) {
+        return fret_type == 2 || fret_type == 4;
+    }
+    return fret_type >= FOUR_LANE_CYMBAL_THRESHOLD;
+}
+
 std::optional<SightRead::Note>
 note_from_note_colour(int position, int length, int fret_type,
-                      SightRead::TrackType track_type)
+                      SightRead::TrackType track_type,
+                      SightRead::Detail::DrumTrackType drum_track_type)
 {
     std::map<int, int> colours;
     switch (track_type) {
@@ -157,19 +170,29 @@ note_from_note_colour(int position, int length, int fret_type,
         return note_from_colour_key_map(colours, position, length, fret_type,
                                         SightRead::FLAGS_SIX_FRET_GUITAR);
     case SightRead::TrackType::Drums: {
-        constexpr int CYMBAL_THRESHOLD = 64;
-        colours = {{0, SightRead::DRUM_KICK},
-                   {1, SightRead::DRUM_RED},
-                   {2, SightRead::DRUM_YELLOW},
-                   {3, SightRead::DRUM_BLUE},
-                   {4, SightRead::DRUM_GREEN},
-                   {32, SightRead::DRUM_DOUBLE_KICK}, // NOLINT
-                   {66, SightRead::DRUM_YELLOW}, // NOLINT
-                   {67, SightRead::DRUM_BLUE}, // NOLINT
-                   {68, SightRead::DRUM_GREEN}}; // NOLINT
+        if (drum_track_type == SightRead::Detail::DrumTrackType::FiveLane) {
+            colours = {
+                {0, SightRead::DRUM_KICK},
+                {1, SightRead::DRUM_RED},
+                {2, SightRead::DRUM_YELLOW},
+                {3, SightRead::DRUM_BLUE},
+                {4, SightRead::DRUM_GREEN},
+                {5, SightRead::DRUM_GREEN} // NOLINT
+            };
+        } else {
+            colours = {{0, SightRead::DRUM_KICK},
+                       {1, SightRead::DRUM_RED},
+                       {2, SightRead::DRUM_YELLOW},
+                       {3, SightRead::DRUM_BLUE},
+                       {4, SightRead::DRUM_GREEN},
+                       {32, SightRead::DRUM_DOUBLE_KICK}, // NOLINT
+                       {66, SightRead::DRUM_YELLOW}, // NOLINT
+                       {67, SightRead::DRUM_BLUE}, // NOLINT
+                       {68, SightRead::DRUM_GREEN}}; // NOLINT
+        }
         auto note = note_from_colour_key_map(colours, position, length,
                                              fret_type, SightRead::FLAGS_DRUMS);
-        if (note.has_value() && fret_type >= CYMBAL_THRESHOLD) {
+        if (note.has_value() && is_cymbal_colour(fret_type, drum_track_type)) {
             note->flags = static_cast<SightRead::NoteFlags>(
                 note->flags | SightRead::FLAGS_CYMBAL);
         }
@@ -183,33 +206,26 @@ note_from_note_colour(int position, int length, int fret_type,
     throw std::invalid_argument("Invalid track type");
 }
 
-std::vector<SightRead::Note> add_fifth_lane_greens(
-    std::vector<SightRead::Note> notes,
-    const std::vector<SightRead::Detail::NoteEvent>& note_events)
+// Turns five lane G tom + G cymbal into B tom + G tom.
+void fix_double_greens(std::vector<SightRead::Note>& notes)
 {
-    constexpr int FIVE_LANE_GREEN = 5;
-
-    std::set<SightRead::Tick> green_positions;
+    std::set<SightRead::Tick> green_tom_positions;
     for (const auto& note : notes) {
-        if (note.lengths.at(3) != SightRead::Tick {-1}) {
-            green_positions.insert(note.position);
+        if (note.lengths.at(3) != SightRead::Tick {-1}
+            && (note.flags & SightRead::FLAGS_CYMBAL) == 0U) {
+            green_tom_positions.insert(note.position);
         }
     }
-    for (const auto& note_event : note_events) {
-        if (note_event.fret != FIVE_LANE_GREEN) {
-            continue;
+
+    for (auto& note : notes) {
+        if (note.lengths.at(3) != SightRead::Tick {-1}
+            && (note.flags & SightRead::FLAGS_CYMBAL) != 0U
+            && green_tom_positions.contains(note.position)) {
+            std::swap(note.lengths.at(2), note.lengths.at(3));
+            note.flags = static_cast<SightRead::NoteFlags>(
+                note.flags & ~SightRead::FLAGS_CYMBAL);
         }
-        SightRead::Note note;
-        note.position = SightRead::Tick {note_event.position};
-        note.flags = SightRead::FLAGS_DRUMS;
-        if (green_positions.contains(SightRead::Tick {note_event.position})) {
-            note.lengths.at(SightRead::DRUM_BLUE) = SightRead::Tick {0};
-        } else {
-            note.lengths.at(SightRead::DRUM_GREEN) = SightRead::Tick {0};
-        }
-        notes.push_back(note);
     }
-    return notes;
 }
 
 std::vector<SightRead::Note>
@@ -381,13 +397,19 @@ public:
 std::vector<SightRead::Note>
 apply_drum_events(std::vector<SightRead::Note> notes,
                   const std::vector<SightRead::Detail::NoteEvent>& note_events,
-                  SightRead::TrackType track_type)
+                  SightRead::TrackType track_type,
+                  SightRead::Detail::DrumTrackType drum_track_type)
 {
-    if (track_type != SightRead::TrackType::Drums) {
+    if (track_type != SightRead::TrackType::Drums
+        || drum_track_type == SightRead::Detail::DrumTrackType::FourLane) {
         return notes;
     }
-    notes = add_fifth_lane_greens(std::move(notes), note_events);
-    notes = apply_cymbal_events(notes);
+
+    if (drum_track_type == SightRead::Detail::DrumTrackType::FiveLane) {
+        fix_double_greens(notes);
+    } else {
+        notes = apply_cymbal_events(notes);
+    }
     return apply_dynamics_events(notes, note_events);
 }
 
@@ -428,21 +450,59 @@ bool is_event_disco_end(const std::string& data)
     return matches_template(data, "mix_*_drums*");
 }
 
+SightRead::Detail::DrumTrackType
+drum_track_type(const SightRead::Metadata& metadata,
+                const std::vector<SightRead::Detail::NoteEvent>& note_events)
+{
+    using SightRead::Detail::DrumTrackType;
+
+    if (metadata.pro_drums) {
+        return DrumTrackType::FourLanePro;
+    }
+    if (metadata.five_lane_drums) {
+        return DrumTrackType::FiveLane;
+    }
+
+    std::set<int> note_event_keys;
+    for (const auto& note : note_events) {
+        note_event_keys.insert(note.fret);
+    }
+
+    constexpr std::array CYMBAL_KEYS {66, 67, 68};
+    if (std::ranges::any_of(CYMBAL_KEYS, [&](const auto key) {
+            return note_event_keys.contains(key);
+        })) {
+        return DrumTrackType::FourLanePro;
+    }
+
+    constexpr int FIFTH_LANE_GREEN_KEY = 5;
+    if (note_event_keys.contains(FIFTH_LANE_GREEN_KEY)) {
+        return DrumTrackType::FiveLane;
+    }
+
+    return DrumTrackType::FourLanePro;
+}
+
 SightRead::NoteTrack
 note_track_from_section(const SightRead::Detail::ChartSection& section,
                         std::shared_ptr<SightRead::SongGlobalData> global_data,
                         SightRead::TrackType track_type,
                         SightRead::SoloParsingBehaviour solo_parsing_behaviour,
-                        bool allow_open_chords, SightRead::Tick max_hopo_gap)
+                        bool allow_open_chords,
+                        const SightRead::Metadata& metadata)
 {
     constexpr int DRUM_FILL_KEY = 64;
 
     ForcingEvents forcing_events;
     std::vector<SightRead::Note> notes;
+    const auto drum_type = drum_track_type(metadata, section.note_events);
+    const auto resolution = global_data->resolution();
+    const auto max_hopo_gap
+        = metadata.hopo_threshold.chart_max_hopo_gap(resolution);
     for (const auto& note_event : section.note_events) {
         const auto note
             = note_from_note_colour(note_event.position, note_event.length,
-                                    note_event.fret, track_type);
+                                    note_event.fret, track_type, drum_type);
         if (note.has_value()) {
             notes.push_back(*note);
         } else {
@@ -450,7 +510,8 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
         }
     }
     forcing_events.apply_forcing(notes);
-    notes = apply_drum_events(notes, section.note_events, track_type);
+    notes
+        = apply_drum_events(notes, section.note_events, track_type, drum_type);
 
     std::vector<SightRead::DrumFill> fills;
     std::vector<SightRead::StarPower> sp;
@@ -543,10 +604,7 @@ track_type_from_instrument(SightRead::Instrument instrument)
 }
 
 SightRead::Detail::ChartConverter::ChartConverter(SightRead::Metadata metadata)
-    : m_song_name {std::move(metadata.name)}
-    , m_artist {std::move(metadata.artist)}
-    , m_charter {std::move(metadata.charter)}
-    , m_hopo_threshold {metadata.hopo_threshold}
+    : m_metadata {std::move(metadata)}
     , m_permitted_instruments {SightRead::all_instruments()}
     , m_solo_parsing_behaviour {SightRead::SoloParsingBehaviour::
                                     PreferLaterStarts}
@@ -583,9 +641,9 @@ SightRead::Song SightRead::Detail::ChartConverter::convert(
     SightRead::Song song;
 
     song.global_data().is_from_midi(false);
-    song.global_data().name(m_song_name);
-    song.global_data().artist(m_artist);
-    song.global_data().charter(m_charter);
+    song.global_data().name(m_metadata.name);
+    song.global_data().artist(m_metadata.artist);
+    song.global_data().charter(m_metadata.charter);
 
     for (const auto& section : chart.sections) {
         if (section.name == "Song") {
@@ -613,12 +671,10 @@ SightRead::Song SightRead::Detail::ChartConverter::convert(
             if (!m_permitted_instruments.contains(inst)) {
                 continue;
             }
-            const auto resolution = song.global_data().resolution();
             auto note_track = note_track_from_section(
                 section, song.global_data_ptr(),
                 track_type_from_instrument(inst), m_solo_parsing_behaviour,
-                m_allow_open_chords,
-                m_hopo_threshold.chart_max_hopo_gap(resolution));
+                m_allow_open_chords, m_metadata);
             song.add_note_track(inst, diff, std::move(note_track));
         }
     }

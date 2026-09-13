@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 
+#include "sightread/detail/drumtracktype.hpp"
 #include "sightread/detail/intervalset.hpp"
 #include "sightread/metadata.hpp"
 #include "sightread/songparts.hpp"
@@ -52,8 +53,6 @@ public:
 
     [[nodiscard]] IntervalSet<int> interval_set() const;
 };
-
-enum class DrumTrackType : std::uint8_t { FourLane, FourLanePro, FiveLane };
 
 class InstrumentMidiTrack {
 private:
