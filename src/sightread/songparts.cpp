@@ -461,8 +461,7 @@ void SightRead::NoteTrack::disco_flips(
     for (const auto& flip : disco_flips) {
         flips.emplace_back(flip.position, flip.position + flip.length);
     }
-    const HalfOpenIntervalSet<SightRead::Tick> flip_intervals {
-        std::move(flips)};
+    const IntervalSet<SightRead::Tick> flip_intervals {std::move(flips)};
 
     for (auto& note : m_notes) {
         note.flags = static_cast<SightRead::NoteFlags>(
@@ -515,8 +514,7 @@ void SightRead::NoteTrack::flam_markers(
     for (const auto& flam : flam_markers) {
         flams.emplace_back(flam.position, flam.position + flam.length);
     }
-    const HalfOpenIntervalSet<SightRead::Tick> flam_intervals {
-        std::move(flams)};
+    const IntervalSet<SightRead::Tick> flam_intervals {std::move(flams)};
 
     for (auto& note : m_notes) {
         note.flags = static_cast<SightRead::NoteFlags>(

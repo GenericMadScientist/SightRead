@@ -50,7 +50,7 @@ public:
     track_solos(const std::vector<SightRead::Note>& notes,
                 SightRead::TrackType track_type) const;
 
-    [[nodiscard]] HalfOpenIntervalSet<int> interval_set() const;
+    [[nodiscard]] IntervalSet<int> interval_set() const;
 };
 
 enum class DrumTrackType : std::uint8_t { FourLane, FourLanePro, FiveLane };

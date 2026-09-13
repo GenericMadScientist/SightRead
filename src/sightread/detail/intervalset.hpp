@@ -6,24 +6,9 @@
 #include <tuple>
 #include <vector>
 
-template <typename T> struct ClosedInterval {
+template <typename T> struct Interval {
     T start;
     T end;
-
-    using value_type = T;
-
-    [[nodiscard]] bool contains(T position) const
-    {
-        return start <= position && position <= end;
-    }
-    [[nodiscard]] bool empty() const { return start > end; }
-};
-
-template <typename T> struct HalfOpenInterval {
-    T start;
-    T end;
-
-    using value_type = T;
 
     [[nodiscard]] bool contains(T position) const
     {
@@ -32,19 +17,18 @@ template <typename T> struct HalfOpenInterval {
     [[nodiscard]] bool empty() const { return start >= end; }
 };
 
-template <typename I> class IntervalSet {
+template <typename T> class IntervalSet {
 private:
-    std::vector<I> m_intervals;
+    std::vector<Interval<T>> m_intervals;
 
 public:
-    IntervalSet(
-        std::vector<std::tuple<typename I::value_type, typename I::value_type>>
-            intervals)
+    IntervalSet(std::vector<std::tuple<T, T>> intervals)
     {
         std::ranges::sort(intervals);
 
         for (auto i = intervals.cbegin(); i < intervals.cend();) {
-            I new_interval {.start = std::get<0>(*i), .end = std::get<1>(*i)};
+            Interval<T> new_interval {.start = std::get<0>(*i),
+                                      .end = std::get<1>(*i)};
             auto j = std::next(i);
             for (; j < intervals.cend() && std::get<0>(*j) <= new_interval.end;
                  ++j) {
@@ -57,7 +41,7 @@ public:
         }
     }
 
-    [[nodiscard]] bool contains(I::value_type position) const
+    [[nodiscard]] bool contains(T position) const
     {
         const auto it = std::ranges::lower_bound(
             m_intervals, position, {},
@@ -65,10 +49,5 @@ public:
         return it != std::ranges::end(m_intervals) && it->contains(position);
     }
 };
-
-template <typename T>
-using HalfOpenIntervalSet = IntervalSet<HalfOpenInterval<T>>;
-
-template <typename T> using ClosedIntervalSet = IntervalSet<ClosedInterval<T>>;
 
 #endif

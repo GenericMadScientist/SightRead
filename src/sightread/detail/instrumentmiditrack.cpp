@@ -71,7 +71,7 @@ NoteOnOffEvents::track_solos(const std::vector<SightRead::Note>& notes,
         SightRead::SoloParsingBehaviour::PreferEarlierStarts, true);
 }
 
-HalfOpenIntervalSet<int> NoteOnOffEvents::interval_set() const
+IntervalSet<int> NoteOnOffEvents::interval_set() const
 {
     std::vector<std::tuple<int, int>> intervals;
     for (auto event : combined_events(true)) {
