@@ -415,6 +415,8 @@ int SightRead::NoteTrack::base_score(
 {
     constexpr int BASE_NOTE_VALUE = 50;
     constexpr int CYMBAL_NOTE_VALUE = 65;
+    constexpr auto DYNAMICS_FLAGS
+        = SightRead::FLAGS_ACCENT | SightRead::FLAGS_GHOST;
 
     auto cymbal_count = 0;
     auto other_note_count = 0;
@@ -424,11 +426,16 @@ int SightRead::NoteTrack::base_score(
         }
         for (auto l : note.lengths) {
             if (l != SightRead::Tick {-1}) {
+                auto base_score_multiplier = 1;
+                if (drum_settings.pro_drums
+                    && ((note.flags & DYNAMICS_FLAGS) != 0U)) {
+                    base_score_multiplier = 2;
+                }
                 if (drum_settings.pro_drums
                     && (note.flags & SightRead::FLAGS_CYMBAL) != 0U) {
-                    ++cymbal_count;
+                    cymbal_count += base_score_multiplier;
                 } else {
-                    ++other_note_count;
+                    other_note_count += base_score_multiplier;
                 }
             }
         }
