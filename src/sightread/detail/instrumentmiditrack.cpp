@@ -189,4 +189,53 @@ InstrumentMidiTrack::drum_track_type(const SightRead::Metadata& metadata) const
     }
     return DrumTrackType::FourLane;
 }
+
+std::map<SightRead::Difficulty, IntervalSet<int>>
+InstrumentMidiTrack::tap_sysex_events() const
+{
+    std::map<SightRead::Difficulty, IntervalSet<int>> tap_events;
+    for (const auto& [diff, tap_ons] : tap_on_sysex_events) {
+        if (!tap_off_sysex_events.contains(diff)) {
+            throw SightRead::ParseError("No tap Note Off events");
+        }
+        const auto& tap_offs = tap_off_sysex_events.at(diff);
+        tap_events.emplace(diff, combine_note_on_off_events(tap_ons, tap_offs));
+    }
+
+    return tap_events;
+}
+
+std::vector<std::tuple<int, int>> combine_note_on_off_events(
+    const std::vector<SightRead::Detail::MidiEventPosition>& on_events,
+    const std::vector<SightRead::Detail::MidiEventPosition>& off_events,
+    bool expand_length_zero_events)
+{
+    std::vector<std::tuple<int, int>> ranges;
+    std::stack<SightRead::Detail::MidiEventPosition,
+               std::vector<SightRead::Detail::MidiEventPosition>>
+        unmatched_on_events;
+
+    auto on_iter = on_events.cbegin();
+    for (auto off_event : off_events) {
+        for (; on_iter < on_events.cend()
+             && on_iter->order_position < off_event.order_position;
+             ++on_iter) {
+            unmatched_on_events.push(*on_iter);
+        }
+
+        if (unmatched_on_events.empty()) {
+            continue;
+        }
+
+        const auto start = unmatched_on_events.top().tick_position;
+        unmatched_on_events.pop();
+        auto end = off_event.tick_position;
+        if (start == end && expand_length_zero_events) {
+            ++end;
+        }
+        ranges.emplace_back(start, end);
+    }
+
+    return ranges;
+}
 }

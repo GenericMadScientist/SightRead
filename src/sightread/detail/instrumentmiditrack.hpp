@@ -93,7 +93,20 @@ public:
 
     [[nodiscard]] DrumTrackType
     drum_track_type(const SightRead::Metadata& metadata) const;
+
+    [[nodiscard]] std::map<SightRead::Difficulty, IntervalSet<int>>
+    tap_sysex_events() const;
 };
+
+// Like combine_solo_events, but never skips on events to suit Midi parsing and
+// checks if there is an unmatched on event.
+//
+// expand_length_zero_events is because some drum events have the length
+// increased by 1 if the start and end are at the same time.
+std::vector<std::tuple<int, int>> combine_note_on_off_events(
+    const std::vector<SightRead::Detail::MidiEventPosition>& on_events,
+    const std::vector<SightRead::Detail::MidiEventPosition>& off_events,
+    bool expand_length_zero_events = false);
 }
 
 #endif

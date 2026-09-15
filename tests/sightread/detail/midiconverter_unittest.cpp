@@ -34,6 +34,12 @@ guitar_only_converter(SightRead::HopoThreshold hopo_threshold = {},
         .permit_instruments({SightRead::Instrument::Guitar});
 }
 
+SightRead::Detail::MidiConverter six_fret_guitar_only_converter()
+{
+    return SightRead::Detail::MidiConverter({}).permit_instruments(
+        {SightRead::Instrument::GHLGuitar});
+}
+
 SightRead::Detail::MetaEvent part_event(std::string_view name)
 {
     std::vector<std::uint8_t> bytes {name.cbegin(), name.cend()};
@@ -1554,6 +1560,34 @@ BOOST_AUTO_TEST_CASE(chords_can_be_taps)
 
     BOOST_CHECK_EQUAL(notes.at(1).flags,
                       SightRead::FLAGS_TAP | SightRead::FLAGS_FIVE_FRET_GUITAR);
+}
+
+BOOST_AUTO_TEST_CASE(six_fret_sysex_tap_events_are_read)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART GUITAR GHL")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 768,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 3, 4, 1, 0xF7}}}},
+         {.time = 770,
+          .event = {SightRead::Detail::SysexEvent {
+              {0x50, 0x53, 0, 0, 0xFF, 4, 0, 0xF7}}}},
+         {.time = 960,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 480,
+                                        .tracks = {note_track}};
+
+    const auto song = six_fret_guitar_only_converter().convert(midi);
+    const auto notes = song.track(SightRead::Instrument::GHLGuitar,
+                                  SightRead::Difficulty::Expert)
+                           .notes();
+
+    BOOST_CHECK_EQUAL(notes.at(0).flags,
+                      SightRead::FLAGS_TAP | SightRead::FLAGS_SIX_FRET_GUITAR);
 }
 
 BOOST_AUTO_TEST_CASE(other_resolutions_are_handled_correctly)

@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <climits>
 #include <limits>
-#include <stack>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -410,45 +409,6 @@ SightRead::NoteFlags dynamics_flags_from_velocity(std::uint8_t velocity)
     return static_cast<SightRead::NoteFlags>(0);
 }
 
-// Like combine_solo_events, but never skips on events to suit Midi parsing and
-// checks if there is an unmatched on event.
-//
-// expand_length_zero_events is because some drum events have the length
-// increased by 1 if the start and end are at the same time.
-std::vector<std::tuple<int, int>> combine_note_on_off_events(
-    const std::vector<SightRead::Detail::MidiEventPosition>& on_events,
-    const std::vector<SightRead::Detail::MidiEventPosition>& off_events,
-    bool expand_length_zero_events = false)
-{
-    std::vector<std::tuple<int, int>> ranges;
-    std::stack<SightRead::Detail::MidiEventPosition,
-               std::vector<SightRead::Detail::MidiEventPosition>>
-        unmatched_on_events;
-
-    auto on_iter = on_events.cbegin();
-    for (auto off_event : off_events) {
-        for (; on_iter < on_events.cend()
-             && on_iter->order_position < off_event.order_position;
-             ++on_iter) {
-            unmatched_on_events.push(*on_iter);
-        }
-
-        if (unmatched_on_events.empty()) {
-            continue;
-        }
-
-        const auto start = unmatched_on_events.top().tick_position;
-        unmatched_on_events.pop();
-        auto end = off_event.tick_position;
-        if (start == end && expand_length_zero_events) {
-            ++end;
-        }
-        ranges.emplace_back(start, end);
-    }
-
-    return ranges;
-}
-
 bool is_tap_sysex_event(const SightRead::Detail::SysexEvent& event)
 {
     constexpr std::array<std::tuple<std::size_t, int>, 6> REQUIRED_BYTES {
@@ -629,8 +589,7 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
 
 void apply_forcing(
     std::map<SightRead::Difficulty, std::vector<SightRead::Note>>& notes,
-    const SightRead::Detail::InstrumentMidiTrack& event_track,
-    const std::map<SightRead::Difficulty, IntervalSet<int>>& tap_events)
+    const SightRead::Detail::InstrumentMidiTrack& event_track)
 {
     const std::map<SightRead::Difficulty, std::uint8_t> force_hopo_keys {
         {SightRead::Difficulty::Easy, 65},
@@ -645,6 +604,7 @@ void apply_forcing(
 
     const auto tap_note_events
         = event_track.events_with_key(104).interval_set();
+    const auto tap_sysex_events = event_track.tap_sysex_events();
 
     for (auto& [diff, note_array] : notes) {
         const auto force_hopo_events
@@ -653,7 +613,7 @@ void apply_forcing(
         const auto force_strum_events
             = event_track.events_with_key(force_strum_keys.at(diff))
                   .interval_set();
-        const auto tap_events_iter = tap_events.find(diff);
+        const auto tap_events_iter = tap_sysex_events.find(diff);
 
         for (auto& note : note_array) {
             const auto pos = note.position.value();
@@ -661,7 +621,7 @@ void apply_forcing(
                 note.flags = static_cast<SightRead::NoteFlags>(
                     note.flags | SightRead::FLAGS_TAP);
             }
-            if (tap_events_iter != tap_events.cend()
+            if (tap_events_iter != tap_sysex_events.cend()
                 && tap_events_iter->second.contains(pos)) {
                 note.flags = static_cast<SightRead::NoteFlags>(
                     note.flags | SightRead::FLAGS_TAP);
@@ -766,7 +726,6 @@ notes_from_event_track(
     const SightRead::Detail::InstrumentMidiTrack& event_track,
     const SightRead::Metadata& metadata,
     const std::map<SightRead::Difficulty, IntervalSet<int>>& open_events,
-    const std::map<SightRead::Difficulty, IntervalSet<int>>& tap_events,
     bool parse_dynamics, bool enable_enhanced_opens,
     SightRead::TrackType track_type, int sustain_cutoff_threshold)
 {
@@ -816,7 +775,7 @@ notes_from_event_track(
             fix_double_greens(note_set);
         }
     } else {
-        apply_forcing(notes, event_track, tap_events);
+        apply_forcing(notes, event_track);
     }
 
     for (auto& [_, note_set] : notes) {
@@ -838,8 +797,8 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
         = read_instrument_midi_track(midi_track, SightRead::TrackType::SixFret);
 
     const auto notes = notes_from_event_track(
-        event_track, metadata, {}, {}, false, false,
-        SightRead::TrackType::SixFret, sustain_cutoff_threshold);
+        event_track, metadata, {}, false, false, SightRead::TrackType::SixFret,
+        sustain_cutoff_threshold);
     const auto sp_phrases = event_track.sp_phrases();
 
     std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks;
@@ -871,8 +830,8 @@ drum_note_tracks_from_midi(
         = read_instrument_midi_track(midi_track, SightRead::TrackType::Drums);
 
     const auto notes = notes_from_event_track(
-        event_track, metadata, {}, {}, has_enable_chart_dynamics(midi_track),
-        false, SightRead::TrackType::Drums, sustain_cutoff_threshold);
+        event_track, metadata, {}, has_enable_chart_dynamics(midi_track), false,
+        SightRead::TrackType::Drums, sustain_cutoff_threshold);
 
     const auto sp_phrases = event_track.sp_phrases();
 
@@ -967,7 +926,7 @@ fortnite_note_tracks_from_midi(
     const auto bres = read_bres(event_track, coda_event_time);
 
     const auto notes = notes_from_event_track(
-        event_track, metadata, {}, {}, false, false,
+        event_track, metadata, {}, false, false,
         SightRead::TrackType::FortniteFestival, sustain_cutoff_threshold);
     const auto sp_phrases = event_track.sp_phrases();
 
@@ -1007,17 +966,8 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
             diff, combine_note_on_off_events(open_ons, open_offs, true));
     }
 
-    std::map<SightRead::Difficulty, IntervalSet<int>> tap_events;
-    for (const auto& [diff, tap_ons] : event_track.tap_on_sysex_events) {
-        if (!event_track.tap_off_sysex_events.contains(diff)) {
-            throw SightRead::ParseError("No tap Note Off events");
-        }
-        const auto& tap_offs = event_track.tap_off_sysex_events.at(diff);
-        tap_events.emplace(diff, combine_note_on_off_events(tap_ons, tap_offs));
-    }
-
     const auto notes = notes_from_event_track(
-        event_track, metadata, open_events, tap_events, false,
+        event_track, metadata, open_events, false,
         has_enhanced_opens(midi_track), SightRead::TrackType::FiveFret,
         sustain_cutoff_threshold);
     const auto sp_phrases = event_track.sp_phrases();
