@@ -932,14 +932,14 @@ BOOST_AUTO_TEST_CASE(fifth_lane_notes_are_read_correctly_from_chart)
                                   notes.cbegin(), notes.cend());
 }
 
-BOOST_AUTO_TEST_CASE(fifth_lane_notes_are_ignored_for_pro_drums)
+BOOST_AUTO_TEST_CASE(fifth_lane_notes_are_not_ignored_for_pro_drums)
 {
     const auto chart_file
         = section_string("ExpertDrums",
                          {{.position = 192, .fret = 5, .length = 0},
-                          {.position = 384, .fret = 4, .length = 0},
-                          {.position = 384, .fret = 5, .length = 0}});
+                          {.position = 384, .fret = 4, .length = 0}});
     const std::vector<SightRead::Note> notes {
+        make_drum_note(192, 0, SightRead::DRUM_GREEN),
         make_drum_note(384, 0, SightRead::DRUM_GREEN)};
     const SightRead::Metadata pro_drums_metadata {.name = "",
                                                   .artist = "",

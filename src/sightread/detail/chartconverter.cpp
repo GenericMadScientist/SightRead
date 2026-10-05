@@ -185,6 +185,7 @@ note_from_note_colour(int position, int length, int fret_type,
                        {2, SightRead::DRUM_YELLOW},
                        {3, SightRead::DRUM_BLUE},
                        {4, SightRead::DRUM_GREEN},
+                       {5, SightRead::DRUM_GREEN}, // NOLINT
                        {32, SightRead::DRUM_DOUBLE_KICK}, // NOLINT
                        {66, SightRead::DRUM_YELLOW}, // NOLINT
                        {67, SightRead::DRUM_BLUE}, // NOLINT
