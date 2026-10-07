@@ -86,6 +86,16 @@ sync_track_string(const std::vector<SightRead::Detail::BpmEvent>& bpm_events,
     section += '}';
     return section;
 }
+
+SightRead::Metadata pro_drums_metadata()
+{
+    return {.name = "",
+            .artist = "",
+            .charter = "",
+            .hopo_threshold = {},
+            .sustain_cutoff_threshold = {},
+            .pro_drums = true};
+}
 }
 
 BOOST_AUTO_TEST_CASE(chart_to_song_has_correct_value_for_is_from_midi)
@@ -941,16 +951,31 @@ BOOST_AUTO_TEST_CASE(fifth_lane_notes_are_not_ignored_for_pro_drums)
     const std::vector<SightRead::Note> notes {
         make_drum_note(192, 0, SightRead::DRUM_GREEN),
         make_drum_note(384, 0, SightRead::DRUM_GREEN)};
-    const SightRead::Metadata pro_drums_metadata {.name = "",
-                                                  .artist = "",
-                                                  .charter = "",
-                                                  .hopo_threshold = {},
-                                                  .sustain_cutoff_threshold
-                                                  = {},
-                                                  .pro_drums = true};
 
     const auto song
-        = SightRead::ChartParser(pro_drums_metadata).parse(chart_file);
+        = SightRead::ChartParser(pro_drums_metadata()).parse(chart_file);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(track.notes().cbegin(), track.notes().cend(),
+                                  notes.cbegin(), notes.cend());
+}
+
+BOOST_AUTO_TEST_CASE(double_greens_are_handled_for_pro_drums)
+{
+    const auto chart_file
+        = section_string("ExpertDrums",
+                         {{.position = 0, .fret = 4, .length = 0},
+                          {.position = 0, .fret = 5, .length = 0},
+                          {.position = 192, .fret = 4, .length = 0},
+                          {.position = 192, .fret = 68, .length = 0}});
+    const std::vector<SightRead::Note> notes {
+        make_drum_note(0, 0, SightRead::DRUM_BLUE),
+        make_drum_note(0, 0, SightRead::DRUM_GREEN),
+        make_drum_note(192, 0, SightRead::DRUM_GREEN, SightRead::FLAGS_CYMBAL)};
+
+    const auto song
+        = SightRead::ChartParser(pro_drums_metadata()).parse(chart_file);
     const auto& track = song.track(SightRead::Instrument::Drums,
                                    SightRead::Difficulty::Expert);
 

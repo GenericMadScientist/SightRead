@@ -229,6 +229,27 @@ void fix_double_greens(std::vector<SightRead::Note>& notes)
     }
 }
 
+// Turns pro drums double G tom into B tom + G tom.
+void fix_double_green_toms(std::vector<SightRead::Note>& notes)
+{
+    std::map<SightRead::Tick, int> green_tom_positions;
+    for (const auto& note : notes) {
+        if (note.lengths.at(3) != SightRead::Tick {-1}
+            && (note.flags & SightRead::FLAGS_CYMBAL) == 0U) {
+            ++green_tom_positions[note.position];
+        }
+    }
+
+    for (auto& note : notes) {
+        if (note.lengths.at(3) != SightRead::Tick {-1}
+            && (note.flags & SightRead::FLAGS_CYMBAL) == 0U
+            && green_tom_positions.at(note.position) > 1) {
+            std::swap(note.lengths.at(2), note.lengths.at(3));
+            --green_tom_positions[note.position];
+        }
+    }
+}
+
 std::vector<SightRead::Note>
 apply_cymbal_events(const std::vector<SightRead::Note>& notes)
 {
@@ -409,6 +430,7 @@ apply_drum_events(std::vector<SightRead::Note> notes,
     if (drum_track_type == SightRead::Detail::DrumTrackType::FiveLane) {
         fix_double_greens(notes);
     } else {
+        fix_double_green_toms(notes);
         notes = apply_cymbal_events(notes);
     }
     return apply_dynamics_events(notes, note_events);
