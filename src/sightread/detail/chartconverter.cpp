@@ -72,6 +72,22 @@ practice_sections_from_section(const SightRead::Detail::ChartSection& section)
     return practice_sections;
 }
 
+std::optional<int>
+coda_event_time_from_section(const SightRead::Detail::ChartSection& section)
+{
+    using namespace std::string_view_literals;
+
+    constexpr std::array coda_values {R"("coda")"sv, R"("[coda]")"sv};
+    for (const auto& event : section.events) {
+        if (std::ranges::find(coda_values, event.data)
+            != std::ranges::end(coda_values)) {
+            return event.position;
+        }
+    }
+
+    return {};
+}
+
 std::optional<std::tuple<SightRead::Difficulty, SightRead::Instrument>>
 diff_inst_from_header(const std::string& header)
 {
@@ -506,13 +522,12 @@ drum_track_type(const SightRead::Metadata& metadata,
     return DrumTrackType::FourLanePro;
 }
 
-SightRead::NoteTrack
-note_track_from_section(const SightRead::Detail::ChartSection& section,
-                        std::shared_ptr<SightRead::SongGlobalData> global_data,
-                        SightRead::TrackType track_type,
-                        SightRead::SoloParsingBehaviour solo_parsing_behaviour,
-                        bool allow_open_chords,
-                        const SightRead::Metadata& metadata)
+SightRead::NoteTrack note_track_from_section(
+    const SightRead::Detail::ChartSection& section,
+    std::shared_ptr<SightRead::SongGlobalData> global_data,
+    SightRead::TrackType track_type, std::optional<int> coda_event_time,
+    SightRead::SoloParsingBehaviour solo_parsing_behaviour,
+    bool allow_open_chords, const SightRead::Metadata& metadata)
 {
     constexpr int DRUM_FILL_KEY = 64;
 
@@ -536,6 +551,7 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
     notes
         = apply_drum_events(notes, section.note_events, track_type, drum_type);
 
+    std::vector<SightRead::BigRockEnding> bres;
     std::vector<SightRead::DrumFill> fills;
     std::vector<SightRead::StarPower> sp;
     for (const auto& phrase : section.special_events) {
@@ -544,14 +560,17 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
                 .position = SightRead::Tick {phrase.position},
                 .length = SightRead::Tick {phrase.length}});
         } else if (phrase.key == DRUM_FILL_KEY) {
-            fills.push_back(SightRead::DrumFill {
-                .position = SightRead::Tick {phrase.position},
-                .length = SightRead::Tick {phrase.length}});
+            if (coda_event_time.has_value()
+                && phrase.position >= *coda_event_time) {
+                bres.push_back(SightRead::BigRockEnding {
+                    .start = SightRead::Tick {phrase.position},
+                    .end = SightRead::Tick {phrase.position + phrase.length}});
+            } else {
+                fills.push_back(SightRead::DrumFill {
+                    .position = SightRead::Tick {phrase.position},
+                    .length = SightRead::Tick {phrase.length}});
+            }
         }
-    }
-    if (track_type != SightRead::TrackType::Drums) {
-        fills.clear();
-        fills.shrink_to_fit();
     }
 
     std::vector<int> solo_on_events;
@@ -589,7 +608,10 @@ note_track_from_section(const SightRead::Detail::ChartSection& section,
                                      max_hopo_gap};
     note_track.sp_phrases(std::move(sp));
     note_track.solos(std::move(solos));
-    note_track.drum_fills(std::move(fills));
+    if (track_type == SightRead::TrackType::Drums) {
+        note_track.bres(std::move(bres));
+        note_track.drum_fills(std::move(fills));
+    }
     note_track.disco_flips(disco_flips);
     return note_track;
 }
@@ -662,6 +684,7 @@ SightRead::Song SightRead::Detail::ChartConverter::convert(
     const SightRead::Detail::Chart& chart) const
 {
     SightRead::Song song;
+    std::optional<int> coda_event_time;
 
     song.global_data().is_from_midi(false);
     song.global_data().name(m_metadata.name);
@@ -685,6 +708,7 @@ SightRead::Song SightRead::Detail::ChartConverter::convert(
         } else if (section.name == "Events") {
             song.global_data().practice_sections(
                 practice_sections_from_section(section));
+            coda_event_time = coda_event_time_from_section(section);
         } else {
             auto pair = diff_inst_from_header(section.name);
             if (!pair.has_value()) {
@@ -696,8 +720,8 @@ SightRead::Song SightRead::Detail::ChartConverter::convert(
             }
             auto note_track = note_track_from_section(
                 section, song.global_data_ptr(),
-                track_type_from_instrument(inst), m_solo_parsing_behaviour,
-                m_allow_open_chords, m_metadata);
+                track_type_from_instrument(inst), coda_event_time,
+                m_solo_parsing_behaviour, m_allow_open_chords, m_metadata);
             song.add_note_track(inst, diff, std::move(note_track));
         }
     }

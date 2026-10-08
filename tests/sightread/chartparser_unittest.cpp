@@ -1013,6 +1013,40 @@ BOOST_AUTO_TEST_CASE(drum_fills_are_read_from_chart)
     BOOST_CHECK_EQUAL(track.drum_fills().at(0), fill);
 }
 
+BOOST_AUTO_TEST_CASE(coda_markers_convert_drum_fills_after_them)
+{
+    using namespace std::string_literals;
+
+    const auto events = "[Events]\n{\n    192 = E \"[coda]\"\n}"s;
+    const auto drum_track = section_string(
+        "ExpertDrums", {{.position = 192, .fret = 1, .length = 0}},
+        {{.position = 192, .key = 64, .length = 1}});
+    const auto chart_file = events + '\n' + drum_track;
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    BOOST_CHECK_EQUAL(track.bres().size(), 1U);
+}
+
+BOOST_AUTO_TEST_CASE(coda_markers_also_work_without_square_brackets)
+{
+    using namespace std::string_literals;
+
+    const auto events = "[Events]\n{\n    192 = E \"coda\"\n}"s;
+    const auto drum_track = section_string(
+        "ExpertDrums", {{.position = 192, .fret = 1, .length = 0}},
+        {{.position = 192, .key = 64, .length = 1}});
+    const auto chart_file = events + '\n' + drum_track;
+
+    const auto song = SightRead::ChartParser({}).parse(chart_file);
+    const auto& track = song.track(SightRead::Instrument::Drums,
+                                   SightRead::Difficulty::Expert);
+
+    BOOST_CHECK_EQUAL(track.bres().size(), 1U);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(disco_flips)
