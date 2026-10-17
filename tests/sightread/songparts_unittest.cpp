@@ -129,6 +129,19 @@ BOOST_AUTO_TEST_CASE(
                                   required_notes.cend());
 }
 
+BOOST_AUTO_TEST_CASE(hopo_forcing_takes_priority_over_strum_forcing)
+{
+    std::vector<SightRead::Note> notes {make_note(
+        768, 0, SightRead::FIVE_FRET_GREEN,
+        static_cast<SightRead::NoteFlags>(SightRead::FLAGS_FORCE_STRUM
+                                          | SightRead::FLAGS_FORCE_HOPO))};
+    SightRead::NoteTrack track {notes, SightRead::TrackType::FiveFret,
+                                std::make_shared<SightRead::SongGlobalData>()};
+
+    BOOST_CHECK_EQUAL(track.notes().at(0).flags & SightRead::FLAGS_HOPO,
+                      SightRead::FLAGS_HOPO);
+}
+
 BOOST_AUTO_TEST_CASE(resolution_is_positive)
 {
     SightRead::SongGlobalData data;

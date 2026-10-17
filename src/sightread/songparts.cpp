@@ -225,10 +225,22 @@ void SightRead::NoteTrack::add_hopos(SightRead::Tick max_hopo_gap)
         return;
     }
 
+    const auto force_hopo = [](auto& note) {
+        note.flags = static_cast<NoteFlags>(note.flags | FLAGS_HOPO);
+    };
+
     for (auto i = 0U; i < m_notes.size(); ++i) {
-        if ((m_notes.at(i).flags & (FLAGS_TAP | FLAGS_FORCE_STRUM)) != 0U) {
+        if ((m_notes.at(i).flags & FLAGS_TAP) != 0U) {
             continue;
         }
+        if ((m_notes.at(i).flags & FLAGS_FORCE_HOPO) != 0U) {
+            force_hopo(m_notes.at(i));
+            continue;
+        }
+        if ((m_notes.at(i).flags & FLAGS_FORCE_STRUM) != 0U) {
+            continue;
+        }
+
         bool is_hopo = (m_notes.at(i).flags & FLAGS_FORCE_FLIP) != 0U;
         if (i != 0U) {
             const auto note_gap
@@ -242,12 +254,8 @@ void SightRead::NoteTrack::add_hopos(SightRead::Tick max_hopo_gap)
                 is_hopo = !is_hopo;
             }
         }
-        if ((m_notes.at(i).flags & FLAGS_FORCE_HOPO) != 0U) {
-            is_hopo = true;
-        }
         if (is_hopo) {
-            m_notes.at(i).flags
-                = static_cast<NoteFlags>(m_notes.at(i).flags | FLAGS_HOPO);
+            force_hopo(m_notes.at(i));
         }
     }
 }
