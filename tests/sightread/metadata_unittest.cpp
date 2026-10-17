@@ -110,6 +110,22 @@ BOOST_AUTO_TEST_CASE(eighthnote_hopo_off_is_read)
                       SightRead::HopoThresholdType::Resolution);
 }
 
+BOOST_AUTO_TEST_CASE(hammer_on_measure_scale_is_read)
+{
+    const char* text = "hammer_on_measure_scale = 1.95";
+
+    const auto ini_values = SightRead::parse_ini(text);
+
+    BOOST_CHECK_EQUAL(ini_values.hammer_on_measure_scale, 1.95);
+}
+
+BOOST_AUTO_TEST_CASE(hammer_on_measure_scale_default_is_correct)
+{
+    const auto ini_values = SightRead::parse_ini("");
+
+    BOOST_CHECK_EQUAL(ini_values.hammer_on_measure_scale, 500);
+}
+
 BOOST_AUTO_TEST_CASE(sustain_cutoff_threshold_is_read)
 {
     const char* text = "sustain_cutoff_threshold = 1";

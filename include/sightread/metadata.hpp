@@ -24,10 +24,15 @@ struct HopoThreshold {
 };
 
 struct Metadata {
+private:
+    constexpr static double DEFAULT_HAMMER_ON_MEASURE_SCALE = 500.0;
+
+public:
     std::string name;
     std::string artist;
     std::string charter;
     HopoThreshold hopo_threshold;
+    double hammer_on_measure_scale = DEFAULT_HAMMER_ON_MEASURE_SCALE;
     std::optional<int> sustain_cutoff_threshold;
     bool pro_drums = false;
     bool five_lane_drums = false;

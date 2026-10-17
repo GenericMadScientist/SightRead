@@ -1,4 +1,6 @@
+#include <cerrno>
 #include <charconv>
+#include <cstdlib>
 
 #include <boost/locale.hpp>
 
@@ -76,8 +78,6 @@ std::string to_utf8_string(std::string_view input)
         input.data(), input.data() + input.size(), "Latin1");
 }
 
-// Convert a string_view to an int. If there are any problems with the input,
-// this function returns std::nullopt.
 std::optional<int> string_view_to_int(std::string_view input)
 {
     int result = 0;
@@ -85,6 +85,26 @@ std::optional<int> string_view_to_int(std::string_view input)
     // NOLINTNEXTLINE(bugprone-suspicious-stringview-data-usage)
     const auto [p, ec] = std::from_chars(input.data(), last, result);
     if ((ec != std::errc()) || (p != last)) {
+        return std::nullopt;
+    }
+    return result;
+}
+
+std::optional<double> string_view_to_double(std::string_view input)
+{
+    // We can't use std::from_chars as AppleClang 17 doesn't support it for
+    // floating-point types. So we use std::strtod instead.
+    std::string null_terminated_input {input};
+    char* input_end = nullptr;
+    errno = 0;
+    const auto result = std::strtod(null_terminated_input.data(), &input_end);
+
+    if (errno == ERANGE) {
+        errno = 0;
+        return std::nullopt;
+    }
+    if (null_terminated_input.data() + null_terminated_input.size()
+        != input_end) {
         return std::nullopt;
     }
     return result;

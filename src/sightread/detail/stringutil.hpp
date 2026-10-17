@@ -19,6 +19,10 @@ std::string to_utf8_string(std::string_view input);
 // Convert a string_view to an int. If there are any problems with the input,
 // this function returns std::nullopt.
 std::optional<int> string_view_to_int(std::string_view input);
+
+// Convert a string_view to a double. If there are any problems with the input,
+// this function returns std::nullopt.
+std::optional<double> string_view_to_double(std::string_view input);
 }
 
 #endif

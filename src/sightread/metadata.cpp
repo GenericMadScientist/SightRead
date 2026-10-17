@@ -76,6 +76,11 @@ void assign_value(SightRead::Metadata& metadata, std::string_view key,
             metadata.hopo_threshold.threshold_type
                 = SightRead::HopoThresholdType::EighthNote;
         }
+    } else if (key == "hammer_on_measure_scale") {
+        const auto double_value = string_view_to_double(value);
+        if (double_value.has_value()) {
+            metadata.hammer_on_measure_scale = *double_value;
+        }
     } else if (key == "sustain_cutoff_threshold") {
         const auto int_value = string_view_to_int(value);
         if (!int_value.has_value()) {
@@ -91,9 +96,16 @@ void assign_value(SightRead::Metadata& metadata, std::string_view key,
 
 SightRead::Metadata parse_ini(std::string_view data)
 {
-    constexpr std::array<std::string_view, 9> INI_KEYS {
-        "artist",         "charter", "eighthnote_hopo",          "frets",
-        "hopo_frequency", "name",    "sustain_cutoff_threshold", "pro_drums",
+    constexpr std::array<std::string_view, 10> INI_KEYS {
+        "artist",
+        "charter",
+        "eighthnote_hopo",
+        "frets",
+        "hammer_on_measure_scale",
+        "hopo_frequency",
+        "name",
+        "sustain_cutoff_threshold",
+        "pro_drums",
         "five_lane_drums"};
 
     std::string u8_string = to_utf8_string(data);
