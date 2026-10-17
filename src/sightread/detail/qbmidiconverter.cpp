@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cassert>
 #include <climits>
 #include <optional>
@@ -3125,23 +3126,6 @@ private:
     std::vector<std::uint32_t> m_fretbars_ms;
     std::vector<QbTimeSignature> m_timesigs;
 
-    [[nodiscard]] double ms_to_beats(std::uint32_t ms) const
-    {
-        const auto it = std::ranges::upper_bound(m_fretbars_ms, ms);
-        assert(it != m_fretbars_ms.cbegin());
-        assert(it != m_fretbars_ms.cend());
-        const auto beat_after = *it;
-        const auto beat_before = *std::prev(it);
-        const auto after_index = std::distance(m_fretbars_ms.cbegin(), it);
-        const auto after_beat
-            = m_fretbars_beats.at(static_cast<std::size_t>(after_index));
-        return after_beat
-            - static_cast<double>(beat_after - ms)
-            * (after_beat
-               - m_fretbars_beats.at(static_cast<std::size_t>(after_index - 1)))
-            / static_cast<double>(beat_after - beat_before);
-    }
-
 public:
     QbTimeData(std::vector<std::uint32_t> fretbars,
                std::vector<QbTimeSignature> timesigs)
@@ -3194,6 +3178,23 @@ public:
         return bpms;
     }
 
+    [[nodiscard]] double ms_to_beats(std::uint32_t ms) const
+    {
+        const auto it = std::ranges::upper_bound(m_fretbars_ms, ms);
+        assert(it != m_fretbars_ms.cbegin());
+        assert(it != m_fretbars_ms.cend());
+        const auto beat_after = *it;
+        const auto beat_before = *std::prev(it);
+        const auto after_index = std::distance(m_fretbars_ms.cbegin(), it);
+        const auto after_beat
+            = m_fretbars_beats.at(static_cast<std::size_t>(after_index));
+        return after_beat
+            - static_cast<double>(beat_after - ms)
+            * (after_beat
+               - m_fretbars_beats.at(static_cast<std::size_t>(after_index - 1)))
+            / static_cast<double>(beat_after - beat_before);
+    }
+
     [[nodiscard]] SightRead::Tick ms_to_ticks(std::uint32_t ms) const
     {
         return SightRead::Tick {static_cast<int>(RESOLUTION * ms_to_beats(ms))};
@@ -3241,7 +3242,7 @@ std::optional<SightRead::NoteTrack>
 note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
            SightRead::Difficulty difficulty,
            std::shared_ptr<SightRead::SongGlobalData> global_data,
-           const QbTimeData& timedata)
+           const QbTimeData& timedata, double hammer_on_measure_scale)
 {
     constexpr auto NUMBER_OF_FRETS = 5U;
     constexpr auto FRET_MASK = (1 << NUMBER_OF_FRETS) - 1;
@@ -3256,7 +3257,8 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
     const auto sustain_threshold = timedata.sustain_threshold();
     std::vector<SightRead::Note> notes;
     notes.reserve(events.size());
-    for (const auto& event : events) {
+    for (auto i = 0U; i < events.size(); ++i) {
+        const auto& event = events.at(i);
         if ((event.flags & FRET_MASK) == 0) {
             continue;
         }
@@ -3272,14 +3274,26 @@ note_track(const SightRead::Detail::QbMidi& midi, std::uint32_t short_name_crc,
             = timedata.ms_to_ticks(event.position + ms_length);
         const auto length = end_position - note.position;
 
-        for (auto i = 0U; i < NUMBER_OF_FRETS; ++i) {
-            if ((event.flags & (1 << i)) != 0) {
-                note.lengths.at(i) = length;
+        for (auto j = 0U; j < NUMBER_OF_FRETS; ++j) {
+            if ((event.flags & (1 << j)) != 0) {
+                note.lengths.at(j) = length;
             }
         }
-        if ((event.flags & (1 << NUMBER_OF_FRETS)) != 0) {
+
+        const auto hopo_if_unforced = (i > 0U)
+            && (std::popcount(event.flags & FRET_MASK) == 1U)
+            && ((event.flags & FRET_MASK)
+                != (events.at(i - 1).flags & FRET_MASK))
+            && (timedata.ms_to_beats(event.position)
+                    - timedata.ms_to_beats(events.at(i - 1).position)
+                < 1 / hammer_on_measure_scale);
+        const auto is_forced = (event.flags & (1 << NUMBER_OF_FRETS)) != 0;
+        if (hopo_if_unforced ^ is_forced) {
             note.flags = static_cast<SightRead::NoteFlags>(
-                note.flags | SightRead::FLAGS_FORCE_FLIP);
+                note.flags | SightRead::FLAGS_FORCE_HOPO);
+        } else {
+            note.flags = static_cast<SightRead::NoteFlags>(
+                note.flags | SightRead::FLAGS_FORCE_STRUM);
         }
 
         notes.push_back(note);
@@ -3403,8 +3417,9 @@ SightRead::Song SightRead::Detail::QbMidiConverter::convert(
         practice_sections(midi, m_short_name_crc, timedata));
 
     for (const auto diff : DIFFICULTIES) {
-        auto track = note_track(midi, m_short_name_crc, diff,
-                                song.global_data_ptr(), timedata);
+        auto track
+            = note_track(midi, m_short_name_crc, diff, song.global_data_ptr(),
+                         timedata, m_hammer_on_measure_scale);
         if (track.has_value()) {
             song.add_note_track(SightRead::Instrument::Guitar, diff,
                                 std::move(*track));
