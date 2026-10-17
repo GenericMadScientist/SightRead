@@ -16,8 +16,8 @@ SightRead::QbMidiParser::QbMidiParser(SightRead::Metadata metadata,
                                       std::string_view short_name,
                                       SightRead::Console console)
     : m_metadata {std::move(metadata)}
-    , m_console {console}
     , m_short_name {short_name}
+    , m_console {console}
 {
 }
 

@@ -9,18 +9,19 @@
 #include "sightread/song.hpp"
 
 namespace SightRead {
-enum class Console { PC, PS2, PS3, Wii, Xbox360 };
+enum class Console : std::uint8_t { PC, PS2, PS3, Wii, Xbox360 };
 
 class QbMidiParser {
 private:
     SightRead::Metadata m_metadata;
-    Console m_console;
     std::string_view m_short_name;
+    Console m_console;
 
 public:
     QbMidiParser(SightRead::Metadata metadata, std::string_view short_name,
                  Console console);
-    SightRead::Song parse(std::span<const std::uint8_t> data) const;
+    [[nodiscard]] SightRead::Song
+    parse(std::span<const std::uint8_t> data) const;
 };
 }
 

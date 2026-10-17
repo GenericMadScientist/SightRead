@@ -14,11 +14,13 @@ private:
     std::string m_song_name;
     std::string m_artist;
     std::string m_charter;
+    double m_hammer_on_measure_scale;
     std::uint32_t m_short_name_crc;
 
 public:
     QbMidiConverter(SightRead::Metadata metadata, std::string_view short_name);
-    SightRead::Song convert(const SightRead::Detail::QbMidi& midi) const;
+    [[nodiscard]] SightRead::Song
+    convert(const SightRead::Detail::QbMidi& midi) const;
 };
 }
 

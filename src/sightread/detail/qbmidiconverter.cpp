@@ -3379,6 +3379,7 @@ SightRead::Detail::QbMidiConverter::QbMidiConverter(
     : m_song_name {std::move(metadata.name)}
     , m_artist {std::move(metadata.artist)}
     , m_charter {std::move(metadata.charter)}
+    , m_hammer_on_measure_scale {metadata.hammer_on_measure_scale}
     , m_short_name_crc {crc32(short_name)}
 {
 }
