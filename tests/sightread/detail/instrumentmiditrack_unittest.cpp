@@ -51,8 +51,8 @@ BOOST_AUTO_TEST_CASE(pro_drums_overrides_five_lane_drums)
 BOOST_AUTO_TEST_CASE(is_four_lane_pro_in_presence_of_tom_markers)
 {
     SightRead::Detail::InstrumentMidiTrack track;
-    track.add_note_on_event(110, 127, 0);
-    track.add_note_off_event(110, 0, 480);
+    track.add_note_on_event(110, 127, 0, 0);
+    track.add_note_off_event(110, 0, 0, 480);
 
     BOOST_CHECK_EQUAL(track.drum_track_type({}),
                       SightRead::Detail::DrumTrackType::FourLanePro);
@@ -61,8 +61,8 @@ BOOST_AUTO_TEST_CASE(is_four_lane_pro_in_presence_of_tom_markers)
 BOOST_AUTO_TEST_CASE(is_five_lane_in_presence_of_fifth_lane_greens)
 {
     SightRead::Detail::InstrumentMidiTrack track;
-    track.add_note_on_event(101, 127, 0);
-    track.add_note_off_event(101, 0, 480);
+    track.add_note_on_event(101, 127, 0, 0);
+    track.add_note_off_event(101, 0, 0, 480);
 
     BOOST_CHECK_EQUAL(track.drum_track_type({}),
                       SightRead::Detail::DrumTrackType::FiveLane);

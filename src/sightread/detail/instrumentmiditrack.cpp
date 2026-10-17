@@ -4,14 +4,16 @@
 #include "sightread/detail/parserutil.hpp"
 
 namespace SightRead::Detail {
-void NoteOnOffEvents::add_note_on_event(int position, std::uint8_t velocity)
+void NoteOnOffEvents::add_note_on_event(int position, std::uint8_t velocity,
+                                        int channel)
 {
-    m_note_on_events.emplace_back(position, velocity, ++m_last_rank);
+    m_note_on_events.emplace_back(position, velocity, channel, ++m_last_rank);
 }
 
-void NoteOnOffEvents::add_note_off_event(int position, std::uint8_t velocity)
+void NoteOnOffEvents::add_note_off_event(int position, std::uint8_t velocity,
+                                         int channel)
 {
-    m_note_off_events.emplace_back(position, velocity, ++m_last_rank);
+    m_note_off_events.emplace_back(position, velocity, channel, ++m_last_rank);
 }
 
 std::size_t NoteOnOffEvents::on_event_count() const
@@ -23,7 +25,7 @@ std::vector<NoteEvent>
 NoteOnOffEvents::combined_events(bool expand_length_zero_events) const
 {
     std::vector<NoteEvent> notes;
-    std::stack<NoteToggleEvent, std::vector<NoteToggleEvent>>
+    std::map<int, std::stack<NoteToggleEvent, std::vector<NoteToggleEvent>>>
         unmatched_on_events;
 
     auto on_iter = m_note_on_events.cbegin();
@@ -31,16 +33,22 @@ NoteOnOffEvents::combined_events(bool expand_length_zero_events) const
         for (; on_iter < m_note_on_events.cend()
              && on_iter->rank < off_event.rank;
              ++on_iter) {
-            unmatched_on_events.push(*on_iter);
+            unmatched_on_events[on_iter->channel].push(*on_iter);
         }
 
-        if (unmatched_on_events.empty()) {
+        const auto channel_stack_iter
+            = unmatched_on_events.find(off_event.channel);
+        if (channel_stack_iter == unmatched_on_events.end()) {
+            continue;
+        }
+        auto& channel_stack = channel_stack_iter->second;
+        if (channel_stack.empty()) {
             continue;
         }
 
-        const auto start = unmatched_on_events.top().position;
-        const auto velocity = unmatched_on_events.top().velocity;
-        unmatched_on_events.pop();
+        const auto start = channel_stack.top().position;
+        const auto velocity = channel_stack.top().velocity;
+        channel_stack.pop();
         auto end = off_event.position;
         if (start == end && expand_length_zero_events) {
             ++end;
@@ -154,19 +162,21 @@ InstrumentMidiTrack::solos(const std::vector<SightRead::Note>& notes,
 }
 
 void InstrumentMidiTrack::add_note_off_event(std::uint8_t key,
-                                             std::uint8_t velocity, int time)
+                                             std::uint8_t velocity, int channel,
+                                             int time)
 {
-    note_events[key].add_note_off_event(time, velocity);
+    note_events[key].add_note_off_event(time, velocity, channel);
 }
 
 void InstrumentMidiTrack::add_note_on_event(std::uint8_t key,
-                                            std::uint8_t velocity, int time)
+                                            std::uint8_t velocity, int channel,
+                                            int time)
 {
     // Velocity 0 Note On events are counted as Note Off events.
     if (velocity == 0) {
-        note_events[key].add_note_off_event(time, velocity);
+        note_events[key].add_note_off_event(time, velocity, channel);
     } else {
-        note_events[key].add_note_on_event(time, velocity);
+        note_events[key].add_note_on_event(time, velocity, channel);
     }
 }
 

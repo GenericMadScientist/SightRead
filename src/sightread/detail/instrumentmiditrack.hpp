@@ -14,6 +14,7 @@ namespace SightRead::Detail {
 struct NoteToggleEvent {
     int position;
     int velocity;
+    int channel;
     int rank;
 };
 
@@ -35,8 +36,8 @@ private:
     int m_last_rank = 0;
 
 public:
-    void add_note_on_event(int position, std::uint8_t velocity);
-    void add_note_off_event(int position, std::uint8_t velocity);
+    void add_note_on_event(int position, std::uint8_t velocity, int channel);
+    void add_note_off_event(int position, std::uint8_t velocity, int channel);
 
     [[nodiscard]] std::size_t on_event_count() const;
 
@@ -88,8 +89,10 @@ public:
     solos(const std::vector<SightRead::Note>& notes,
           SightRead::TrackType track_type, bool permit_solos) const;
 
-    void add_note_off_event(std::uint8_t key, std::uint8_t velocity, int time);
-    void add_note_on_event(std::uint8_t key, std::uint8_t velocity, int time);
+    void add_note_off_event(std::uint8_t key, std::uint8_t velocity,
+                            int channel, int time);
+    void add_note_on_event(std::uint8_t key, std::uint8_t velocity, int channel,
+                           int time);
 
     [[nodiscard]] DrumTrackType
     drum_track_type(const SightRead::Metadata& metadata) const;

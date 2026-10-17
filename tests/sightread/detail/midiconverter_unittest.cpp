@@ -547,6 +547,33 @@ BOOST_AUTO_TEST_CASE(
     BOOST_CHECK_EQUAL(notes.size(), 2U);
 }
 
+BOOST_AUTO_TEST_CASE(notes_only_pair_with_events_of_the_same_channel)
+{
+    SightRead::Detail::MidiTrack note_track {
+        {{.time = 0, .event = {part_event("PART GUITAR")}},
+         {.time = 768,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 769,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x80, .data = {96, 0}}}},
+         {.time = 800,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+         {.time = 801,
+          .event
+          = {SightRead::Detail::MidiEvent {.status = 0x81, .data = {96, 0}}}}}};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+
+    const auto song = guitar_only_converter().convert(midi);
+    const auto& notes = song.track(SightRead::Instrument::Guitar,
+                                   SightRead::Difficulty::Expert)
+                            .notes();
+
+    BOOST_CHECK_EQUAL(notes.size(), 1U);
+}
+
 BOOST_AUTO_TEST_CASE(note_off_events_can_be_zero_ticks_after_the_note_on_events)
 {
     SightRead::Detail::MidiTrack note_track {

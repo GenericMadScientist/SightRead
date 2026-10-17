@@ -525,6 +525,7 @@ SightRead::Detail::InstrumentMidiTrack
 read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
                            SightRead::TrackType track_type)
 {
+    constexpr int CHANNEL_MASK = 0x0F;
     constexpr int NOTE_OFF_ID = 0x80;
     constexpr int NOTE_ON_ID = 0x90;
     constexpr int UPPER_NIBBLE_MASK = 0xF0;
@@ -561,14 +562,17 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
 
             continue;
         }
+        const auto channel = midi_event->status & CHANNEL_MASK;
         switch (midi_event->status & UPPER_NIBBLE_MASK) {
         case NOTE_OFF_ID:
             event_track.add_note_off_event(midi_event->data.at(0),
-                                           midi_event->data.at(1), event.time);
+                                           midi_event->data.at(1), channel,
+                                           event.time);
             break;
         case NOTE_ON_ID:
             event_track.add_note_on_event(midi_event->data.at(0),
-                                          midi_event->data.at(1), event.time);
+                                          midi_event->data.at(1), channel,
+                                          event.time);
             break;
         default:
             break;
