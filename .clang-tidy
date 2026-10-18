@@ -3,6 +3,7 @@ Checks: >
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   cert-*,
+  -cert-dcl03-c,
   -clang-analyzer-optin.core.EnumCastOutOfRange,
   -clang-analyzer-optin.cplusplus.VirtualCall,
   concurrency-*,
@@ -13,6 +14,7 @@ Checks: >
   -misc-const-correctness,
   -misc-include-cleaner,
   -misc-no-recursion,
+  -misc-static-assert,
   -misc-use-internal-linkage,
   modernize-*,
   -modernize-use-integer-sign-comparison,
@@ -21,7 +23,8 @@ Checks: >
   portability-*,
   readability-*,
   -readability-identifier-length,
-  -readability-math-missing-parentheses
+  -readability-math-missing-parentheses,
+  -readability-trailing-comma
 WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 FormatStyle: none
