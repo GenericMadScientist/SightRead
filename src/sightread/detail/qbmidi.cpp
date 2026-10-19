@@ -1,7 +1,7 @@
+#include <string>
 #include <unordered_map>
 
 #include "sightread/detail/utils.hpp"
-#include "sightread/songparts.hpp"
 
 #include "qbmidi.hpp"
 

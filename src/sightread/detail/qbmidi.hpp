@@ -69,7 +69,7 @@ struct QbStructData {
     std::vector<QbStructItem> items;
 };
 
-enum class Endianness { LittleEndian, BigEndian };
+enum class Endianness : std::uint8_t { LittleEndian, BigEndian };
 
 QbMidi parse_qb(std::span<const std::uint8_t> data, Endianness endianness);
 }
