@@ -6,7 +6,7 @@ permissions: {}
 
 jobs:
   clang-tidy:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -17,14 +17,14 @@ jobs:
           tar --bzip2 -xf "$HOME/boost_1_86_0.tar.bz2" -C "$HOME"
           cd "$HOME/boost_1_86_0"
           ./bootstrap.sh --with-libraries=locale,test --prefix=.
-          ./b2 toolset=gcc-14 install > /dev/null
+          ./b2 toolset=gcc-15 install > /dev/null
 
-      - name: Install clang-tidy 22
+      - name: Install clang-tidy 23
         run: |
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          sudo add-apt-repository "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-22 main"
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor --output /etc/apt/keyrings/llvm-snapshot.gpg.key
+          echo "deb [signed-by=/etc/apt/keyrings/llvm-snapshot.gpg.key] http://apt.llvm.org/resolute/ llvm-toolchain-resolute-23 main" | sudo tee /etc/apt/sources.list.d/llvm.list
           sudo apt-get update
-          sudo apt-get install clang-tidy-22
+          sudo apt-get install clang-tidy-23
 
       - name: Make build directory
         run: mkdir build
@@ -33,32 +33,32 @@ jobs:
         working-directory: build
         env:
           BOOST_ROOT: ~/boost_1_86_0
-          CXX: g++-14
+          CXX: g++-15
         run: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_BUILD_FUZZERS=ON ..
 
       - name: Run clang-tidy
-        run: run-clang-tidy-22 -p=build/ -hide-progress -quiet
+        run: run-clang-tidy-23 -p=build/ -hide-progress -quiet
 
   clang-format:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Install clang-format 22
+      - name: Install clang-format 23
         run: |
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          sudo add-apt-repository "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-22 main"
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor --output /etc/apt/keyrings/llvm-snapshot.gpg.key
+          echo "deb [signed-by=/etc/apt/keyrings/llvm-snapshot.gpg.key] http://apt.llvm.org/resolute/ llvm-toolchain-resolute-23 main" | sudo tee /etc/apt/sources.list.d/llvm.list
           sudo apt-get update
-          sudo apt-get install clang-format-22
+          sudo apt-get install clang-format-23
 
       - name: Format
         run: |
-          clang-format-22 -i include/sightread/*.hpp src/sightread/*.cpp src/sightread/detail/*.cpp src/sightread/detail/*.hpp tests/sightread/*.cpp tests/sightread/*.hpp tests/sightread/detail/*.cpp fuzzing_targets/*.cpp
+          clang-format-23 -i include/sightread/*.hpp src/sightread/*.cpp src/sightread/detail/*.cpp src/sightread/detail/*.hpp tests/sightread/*.cpp tests/sightread/*.hpp tests/sightread/detail/*.cpp fuzzing_targets/*.cpp
           git diff --color --exit-code
 
   gersemi:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7

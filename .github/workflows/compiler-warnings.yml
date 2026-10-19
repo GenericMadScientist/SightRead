@@ -130,7 +130,7 @@ jobs:
         run: cmake --build . --verbose
 
   linux-gcc:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -141,7 +141,7 @@ jobs:
           tar --bzip2 -xf "$HOME/boost_1_86_0.tar.bz2" -C "$HOME"
           cd "$HOME/boost_1_86_0"
           ./bootstrap.sh --with-libraries=locale,test --prefix=.
-          ./b2 toolset=gcc-14 install > /dev/null
+          ./b2 toolset=gcc-15 install > /dev/null
 
       - name: Make build directory
         run: mkdir build
@@ -158,7 +158,7 @@ jobs:
         run: cmake --build . --verbose
 
   linux-clang:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -169,7 +169,7 @@ jobs:
           tar --bzip2 -xf "$HOME/boost_1_86_0.tar.bz2" -C "$HOME"
           cd "$HOME/boost_1_86_0"
           ./bootstrap.sh --with-libraries=locale,test --prefix=.
-          ./b2 toolset=clang-18 install > /dev/null
+          ./b2 toolset=clang-22 install > /dev/null
 
       - name: Make build directory
         run: mkdir build
@@ -178,7 +178,7 @@ jobs:
         working-directory: build
         env:
           BOOST_ROOT: ~/boost_1_86_0
-          CXX: clang++-18
+          CXX: clang++-22
         run: cmake -DSIGHTREAD_BUILD_TESTS=ON -DSIGHTREAD_ENABLE_WARNINGS=ON -DSIGHTREAD_BUILD_FUZZERS=ON -DCMAKE_CXX_EXTENSIONS=OFF ..
 
       - name: Build
