@@ -830,6 +830,38 @@ BOOST_AUTO_TEST_CASE(open_chords_allowed_by_default)
         33);
 }
 
+BOOST_AUTO_TEST_CASE(disjoint_chords_are_normalised_if_the_setting_is_on)
+{
+    SightRead::Detail::MidiTrack note_track {{
+        {.time = 0, .event = {part_event("PART GUITAR")}},
+        {.time = 768,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+        {.time = 768,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 64}}}},
+        {.time = 769,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {97, 0}}}},
+        {.time = 960,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}},
+    }};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+
+    const auto converter
+        = guitar_only_converter().normalise_disjoint_sustains(true);
+    const auto song = converter.convert(midi);
+
+    const auto& note = song.track(SightRead::Instrument::Guitar,
+                                  SightRead::Difficulty::Expert)
+                           .notes()
+                           .at(0);
+
+    BOOST_CHECK_EQUAL(note.lengths.at(1), SightRead::Tick {192});
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // Note that a note at the very end of a solo event is not considered part of

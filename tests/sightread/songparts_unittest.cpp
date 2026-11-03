@@ -1025,3 +1025,43 @@ BOOST_AUTO_TEST_CASE(kick_notes_appearing_before_toms_do_not_break_conversion)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(normalise_disjoint_sustains)
+
+BOOST_AUTO_TEST_CASE(normalises_disjoint_sustains_when_one_has_zero_length)
+{
+    SightRead::NoteTrack track {
+        {make_note(0, 192), make_note(0, 0, SightRead::FIVE_FRET_RED)},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+
+    track.normalise_disjoint_sustains();
+
+    BOOST_CHECK_EQUAL(track.notes().at(0).lengths.at(1), SightRead::Tick {192});
+}
+
+BOOST_AUTO_TEST_CASE(
+    normalises_disjoint_sustains_when_both_have_positive_length)
+{
+    SightRead::NoteTrack track {
+        {make_note(0, 384), make_note(0, 192, SightRead::FIVE_FRET_RED)},
+        SightRead::TrackType::FiveFret,
+        std::make_shared<SightRead::SongGlobalData>()};
+
+    track.normalise_disjoint_sustains();
+
+    BOOST_CHECK_EQUAL(track.notes().at(0).lengths.at(1), SightRead::Tick {192});
+}
+
+BOOST_AUTO_TEST_CASE(does_not_extend_zero_length_sustains)
+{
+    SightRead::NoteTrack track {{make_note(0, 0)},
+                                SightRead::TrackType::FiveFret,
+                                std::make_shared<SightRead::SongGlobalData>()};
+
+    track.normalise_disjoint_sustains();
+
+    BOOST_CHECK_EQUAL(track.notes().at(0).lengths.at(0), SightRead::Tick {0});
+}
+
+BOOST_AUTO_TEST_SUITE_END()

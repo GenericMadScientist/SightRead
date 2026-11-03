@@ -18,6 +18,7 @@ private:
     bool m_permit_solos;
     bool m_allow_open_chords;
     bool m_use_sustain_cutoff_threshold;
+    bool m_normalise_disjoint_sustains;
 
     [[nodiscard]] std::optional<SightRead::Instrument>
     midi_section_instrument(const std::string& track_name) const;
@@ -35,6 +36,8 @@ public:
     MidiConverter& allow_open_chords(bool allow_open_chords);
     MidiConverter&
     use_sustain_cutoff_threshold(bool use_sustain_cutoff_threshold);
+    MidiConverter&
+    normalise_disjoint_sustains(bool normalise_disjoint_sustains);
     [[nodiscard]] SightRead::Song
     convert(const SightRead::Detail::Midi& midi) const;
 };

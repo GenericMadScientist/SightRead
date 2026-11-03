@@ -17,6 +17,7 @@ private:
     bool m_permit_solos;
     bool m_allow_open_chords;
     bool m_use_sustain_cutoff_threshold;
+    bool m_normalise_disjoint_sustains;
 
 public:
     explicit MidiParser(SightRead::Metadata metadata);
@@ -25,6 +26,7 @@ public:
     MidiParser& parse_solos(bool permit_solos);
     MidiParser& allow_open_chords(bool allow_open_chords);
     MidiParser& use_sustain_cutoff_threshold(bool use_sustain_cutoff_threshold);
+    MidiParser& normalise_disjoint_sustains(bool normalise_disjoint_sustains);
     [[nodiscard]] SightRead::Song
     parse(std::span<const std::uint8_t> data) const;
 };

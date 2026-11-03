@@ -252,6 +252,7 @@ public:
     void disable_dynamics();
     void apply_disco_flips();
     void apply_flam_markers();
+    void normalise_disjoint_sustains();
     [[nodiscard]] const std::vector<Note>& notes() const { return m_notes; }
 
     void sp_phrases(std::vector<StarPower> sp_phrases);

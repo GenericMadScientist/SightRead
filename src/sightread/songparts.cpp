@@ -597,3 +597,20 @@ void SightRead::NoteTrack::apply_flam_markers()
         < std::tuple {y.position, y.colours()};
     });
 }
+
+void SightRead::NoteTrack::normalise_disjoint_sustains()
+{
+    for (auto& note : m_notes) {
+        auto normalised_length = *std::ranges::max_element(note.lengths);
+        for (auto l : note.lengths) {
+            if (l > SightRead::Tick {0}) {
+                normalised_length = std::min(normalised_length, l);
+            }
+        }
+        for (auto& l : note.lengths) {
+            if (l != SightRead::Tick {-1}) {
+                l = normalised_length;
+            }
+        }
+    }
+}
