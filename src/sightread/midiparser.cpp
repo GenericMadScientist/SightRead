@@ -10,6 +10,7 @@ SightRead::MidiParser::MidiParser(SightRead::Metadata metadata)
     , m_allow_open_chords {true}
     , m_use_sustain_cutoff_threshold {true}
     , m_normalise_disjoint_sustains {false}
+    , m_consecutive_note_ons_cancel {false}
 {
 }
 
@@ -47,6 +48,13 @@ SightRead::MidiParser& SightRead::MidiParser::normalise_disjoint_sustains(
     return *this;
 }
 
+SightRead::MidiParser& SightRead::MidiParser::consecutive_note_ons_cancel(
+    bool consecutive_note_ons_cancel)
+{
+    m_consecutive_note_ons_cancel = consecutive_note_ons_cancel;
+    return *this;
+}
+
 SightRead::Song
 SightRead::MidiParser::parse(std::span<const std::uint8_t> data) const
 {
@@ -58,6 +66,7 @@ SightRead::MidiParser::parse(std::span<const std::uint8_t> data) const
               .parse_solos(m_permit_solos)
               .allow_open_chords(m_allow_open_chords)
               .use_sustain_cutoff_threshold(m_use_sustain_cutoff_threshold)
-              .normalise_disjoint_sustains(m_normalise_disjoint_sustains);
+              .normalise_disjoint_sustains(m_normalise_disjoint_sustains)
+              .consecutive_note_ons_cancel(m_consecutive_note_ons_cancel);
     return converter.convert(midi);
 }

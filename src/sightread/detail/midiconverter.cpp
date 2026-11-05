@@ -523,7 +523,8 @@ void append_disco_flip(SightRead::Detail::InstrumentMidiTrack& event_track,
 
 SightRead::Detail::InstrumentMidiTrack
 read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
-                           SightRead::TrackType track_type)
+                           SightRead::TrackType track_type,
+                           bool consecutive_note_ons_cancel)
 {
     constexpr int CHANNEL_MASK = 0x0F;
     constexpr int NOTE_OFF_ID = 0x80;
@@ -533,7 +534,8 @@ read_instrument_midi_track(const SightRead::Detail::MidiTrack& midi_track,
         SightRead::Difficulty::Easy, SightRead::Difficulty::Medium,
         SightRead::Difficulty::Hard, SightRead::Difficulty::Expert};
 
-    SightRead::Detail::InstrumentMidiTrack event_track;
+    SightRead::Detail::InstrumentMidiTrack event_track {
+        consecutive_note_ons_cancel};
     for (auto d : DIFFICULTIES) {
         event_track.disco_flip_on_events[d] = {};
         event_track.disco_flip_off_events[d] = {};
@@ -795,10 +797,11 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> ghl_note_tracks_from_midi(
     const SightRead::Detail::MidiTrack& midi_track,
     const SightRead::Metadata& metadata,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
-    int sustain_cutoff_threshold, bool permit_solos, bool allow_open_chords)
+    int sustain_cutoff_threshold, bool permit_solos, bool allow_open_chords,
+    bool consecutive_note_ons_cancel)
 {
-    const auto event_track
-        = read_instrument_midi_track(midi_track, SightRead::TrackType::SixFret);
+    const auto event_track = read_instrument_midi_track(
+        midi_track, SightRead::TrackType::SixFret, consecutive_note_ons_cancel);
 
     const auto notes = notes_from_event_track(
         event_track, metadata, {}, false, false, SightRead::TrackType::SixFret,
@@ -828,10 +831,11 @@ drum_note_tracks_from_midi(
     const SightRead::Metadata& metadata,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
     int sustain_cutoff_threshold, bool permit_solos,
+    bool consecutive_note_ons_cancel,
     std::optional<SightRead::Tick> coda_event_time)
 {
-    const auto event_track
-        = read_instrument_midi_track(midi_track, SightRead::TrackType::Drums);
+    const auto event_track = read_instrument_midi_track(
+        midi_track, SightRead::TrackType::Drums, consecutive_note_ons_cancel);
 
     const auto notes = notes_from_event_track(
         event_track, metadata, {}, has_enable_chart_dynamics(midi_track), false,
@@ -923,10 +927,12 @@ fortnite_note_tracks_from_midi(
     const SightRead::Metadata& metadata,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
     int sustain_cutoff_threshold, bool permit_solos,
+    bool consecutive_note_ons_cancel,
     std::optional<SightRead::Tick> coda_event_time)
 {
     const auto event_track = read_instrument_midi_track(
-        midi_track, SightRead::TrackType::FortniteFestival);
+        midi_track, SightRead::TrackType::FortniteFestival,
+        consecutive_note_ons_cancel);
     const auto bres = read_bres(event_track, coda_event_time);
 
     const auto notes = notes_from_event_track(
@@ -954,10 +960,12 @@ std::map<SightRead::Difficulty, SightRead::NoteTrack> note_tracks_from_midi(
     const SightRead::Metadata& metadata,
     const std::shared_ptr<SightRead::SongGlobalData>& global_data,
     int sustain_cutoff_threshold, bool permit_solos, bool allow_open_chords,
+    bool consecutive_note_ons_cancel,
     std::optional<SightRead::Tick> coda_event_time)
 {
-    const auto event_track = read_instrument_midi_track(
-        midi_track, SightRead::TrackType::FiveFret);
+    const auto event_track
+        = read_instrument_midi_track(midi_track, SightRead::TrackType::FiveFret,
+                                     consecutive_note_ons_cancel);
     const auto bres = read_bres(event_track, coda_event_time);
 
     std::map<SightRead::Difficulty, IntervalSet<int>> open_events;
@@ -1002,6 +1010,7 @@ SightRead::Detail::MidiConverter::MidiConverter(SightRead::Metadata metadata)
     , m_allow_open_chords {true}
     , m_use_sustain_cutoff_threshold {true}
     , m_normalise_disjoint_sustains {false}
+    , m_consecutive_note_ons_cancel {false}
 {
 }
 
@@ -1040,6 +1049,14 @@ SightRead::Detail::MidiConverter::normalise_disjoint_sustains(
     bool normalise_disjoint_sustains)
 {
     m_normalise_disjoint_sustains = normalise_disjoint_sustains;
+    return *this;
+}
+
+SightRead::Detail::MidiConverter&
+SightRead::Detail::MidiConverter::consecutive_note_ons_cancel(
+    bool consecutive_note_ons_cancel)
+{
+    m_consecutive_note_ons_cancel = consecutive_note_ons_cancel;
     return *this;
 }
 
@@ -1117,22 +1134,23 @@ void SightRead::Detail::MidiConverter::process_instrument_track(
     if (is_fortnite_instrument(*inst)) {
         auto tracks = fortnite_note_tracks_from_midi(
             track, m_metadata, song.global_data_ptr(), sustain_threshold,
-            m_permit_solos, coda_event_time);
+            m_permit_solos, m_consecutive_note_ons_cancel, coda_event_time);
         append_tracks(*inst, tracks);
     } else if (SightRead::Detail::is_six_fret_instrument(*inst)) {
         auto tracks = ghl_note_tracks_from_midi(
             track, m_metadata, song.global_data_ptr(), sustain_threshold,
-            m_permit_solos, m_allow_open_chords);
+            m_permit_solos, m_allow_open_chords, m_consecutive_note_ons_cancel);
         append_tracks(*inst, tracks);
     } else if (*inst == SightRead::Instrument::Drums) {
         auto tracks = drum_note_tracks_from_midi(
             track, m_metadata, song.global_data_ptr(), sustain_threshold,
-            m_permit_solos, coda_event_time);
+            m_permit_solos, m_consecutive_note_ons_cancel, coda_event_time);
         append_tracks(*inst, tracks);
     } else {
         auto tracks = note_tracks_from_midi(
             track, m_metadata, song.global_data_ptr(), sustain_threshold,
-            m_permit_solos, m_allow_open_chords, coda_event_time);
+            m_permit_solos, m_allow_open_chords, m_consecutive_note_ons_cancel,
+            coda_event_time);
         append_tracks(*inst, tracks);
     }
 }

@@ -28,27 +28,46 @@ NoteOnOffEvents::combined_events(bool expand_length_zero_events) const
     std::map<int, std::stack<NoteToggleEvent, std::vector<NoteToggleEvent>>>
         unmatched_on_events;
 
+    // When m_consecutive_note_ons_cancel is true, we prioritise note off events
+    // before note on events at the same time, regardless of whichever one comes
+    // first. The exception is when there is no note on event active before the
+    // pair, then we want to prioritise the note on event.
+    const auto on_event_precedes_off_event
+        = [&](const auto& on_event, const auto& off_event) {
+              if (on_event.rank >= off_event.rank) {
+                  return false;
+              }
+              if (!m_consecutive_note_ons_cancel) {
+                  return true;
+              }
+              return on_event.position < off_event.position;
+          };
+
     auto on_iter = m_note_on_events.cbegin();
     for (auto off_event : m_note_off_events) {
         for (; on_iter < m_note_on_events.cend()
-             && on_iter->rank < off_event.rank;
+             && on_event_precedes_off_event(*on_iter, off_event);
              ++on_iter) {
             unmatched_on_events[on_iter->channel].push(*on_iter);
         }
 
-        const auto channel_stack_iter
-            = unmatched_on_events.find(off_event.channel);
-        if (channel_stack_iter == unmatched_on_events.end()) {
-            continue;
-        }
-        auto& channel_stack = channel_stack_iter->second;
+        auto& channel_stack = unmatched_on_events[off_event.channel];
         if (channel_stack.empty()) {
-            continue;
+            if (!m_consecutive_note_ons_cancel
+                || on_iter == m_note_on_events.cend()
+                || on_iter->position > off_event.position) {
+                continue;
+            }
+            channel_stack.push(*on_iter);
+            ++on_iter;
         }
 
         const auto start = channel_stack.top().position;
         const auto velocity = channel_stack.top().velocity;
         channel_stack.pop();
+        if (m_consecutive_note_ons_cancel) {
+            channel_stack = {};
+        }
         auto end = off_event.position;
         if (start == end && expand_length_zero_events) {
             ++end;
@@ -105,7 +124,7 @@ bool InstrumentMidiTrack::should_use_solos_for_sp() const
 NoteOnOffEvents InstrumentMidiTrack::solo_events() const
 {
     if (should_use_solos_for_sp()) {
-        return {};
+        return {consecutive_note_ons_cancel};
     }
     return events_with_key(SOLO_KEY);
 }
@@ -130,7 +149,7 @@ NoteOnOffEvents InstrumentMidiTrack::events_with_key(std::uint8_t key) const
 {
     const auto iter = note_events.find(key);
     if (iter == note_events.cend()) {
-        return {};
+        return {consecutive_note_ons_cancel};
     }
     return iter->second;
 }
@@ -165,7 +184,8 @@ void InstrumentMidiTrack::add_note_off_event(std::uint8_t key,
                                              std::uint8_t velocity, int channel,
                                              int time)
 {
-    note_events[key].add_note_off_event(time, velocity, channel);
+    auto [it, _] = note_events.insert({key, {consecutive_note_ons_cancel}});
+    it->second.add_note_off_event(time, velocity, channel);
 }
 
 void InstrumentMidiTrack::add_note_on_event(std::uint8_t key,
@@ -173,10 +193,11 @@ void InstrumentMidiTrack::add_note_on_event(std::uint8_t key,
                                             int time)
 {
     // Velocity 0 Note On events are counted as Note Off events.
+    auto [it, _] = note_events.insert({key, {consecutive_note_ons_cancel}});
     if (velocity == 0) {
-        note_events[key].add_note_off_event(time, velocity, channel);
+        it->second.add_note_off_event(time, velocity, channel);
     } else {
-        note_events[key].add_note_on_event(time, velocity, channel);
+        it->second.add_note_on_event(time, velocity, channel);
     }
 }
 

@@ -34,8 +34,16 @@ private:
     std::vector<NoteToggleEvent> m_note_on_events;
     std::vector<NoteToggleEvent> m_note_off_events;
     int m_last_rank = 0;
+    bool m_consecutive_note_ons_cancel = false;
 
 public:
+    // If consecutive_note_on_cancel is true, then a second note on event before
+    // a note off event negates the first note on event. This comes up in HMX GH
+    // games, e.g. Cheat on the Church.
+    NoteOnOffEvents(bool consecutive_note_ons_cancel)
+        : m_consecutive_note_ons_cancel {consecutive_note_ons_cancel}
+    {
+    }
     void add_note_on_event(int position, std::uint8_t velocity, int channel);
     void add_note_off_event(int position, std::uint8_t velocity, int channel);
 
@@ -80,8 +88,12 @@ public:
         disco_flip_on_events;
     std::map<SightRead::Difficulty, std::vector<MidiEventPosition>>
         disco_flip_off_events;
+    bool consecutive_note_ons_cancel = false;
 
-    InstrumentMidiTrack() = default;
+    InstrumentMidiTrack(bool consecutive_note_ons_cancel)
+        : consecutive_note_ons_cancel {consecutive_note_ons_cancel}
+    {
+    }
 
     [[nodiscard]] NoteOnOffEvents events_with_key(std::uint8_t key) const;
     [[nodiscard]] std::vector<SightRead::StarPower> sp_phrases() const;

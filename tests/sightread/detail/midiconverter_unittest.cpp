@@ -862,6 +862,37 @@ BOOST_AUTO_TEST_CASE(disjoint_chords_are_normalised_if_the_setting_is_on)
     BOOST_CHECK_EQUAL(note.lengths.at(1), SightRead::Tick {192});
 }
 
+BOOST_AUTO_TEST_CASE(consecutive_note_ons_cancel_if_setting_enabled)
+{
+    SightRead::Detail::MidiTrack note_track {{
+        {.time = 0, .event = {part_event("PART GUITAR")}},
+        {.time = 768,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+        {.time = 960,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 64}}}},
+        {.time = 1152,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}},
+        {.time = 1344,
+         .event
+         = {SightRead::Detail::MidiEvent {.status = 0x90, .data = {96, 0}}}},
+    }};
+    const SightRead::Detail::Midi midi {.ticks_per_quarter_note = 192,
+                                        .tracks = {note_track}};
+
+    const auto converter
+        = guitar_only_converter().consecutive_note_ons_cancel(true);
+    const auto song = converter.convert(midi);
+
+    const auto& notes = song.track(SightRead::Instrument::Guitar,
+                                   SightRead::Difficulty::Expert)
+                            .notes();
+
+    BOOST_CHECK_EQUAL(notes.size(), 1U);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // Note that a note at the very end of a solo event is not considered part of
